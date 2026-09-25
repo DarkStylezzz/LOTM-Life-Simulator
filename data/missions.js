@@ -230,7 +230,7 @@ const MISSION_TEMPLATES = [
      choices:[
        {label:'Sumarte a la expedición', small:'Muy arriesgado. Recompensa importante.', resolve:()=>{
          applyEffects({cash:-200});
-         if(chance(0.2 * diffMult('death') - fateSave())){
+         if(chance((STATE.pathway.chosenPathway ? 0.1 : 0.16) * diffMult('death') - fateSave())){
            const c = STATE.character;
            endGame('negative', 'Tragado por la niebla', `${c.nombre} ${c.apellido} se suma a una expedición al Fog Sea. No vuelve.`);
            return;

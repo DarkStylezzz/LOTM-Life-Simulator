@@ -14,7 +14,7 @@
    las funciones y la partida quedaba trabada).
    ========================================================================= */
 const EVENTS_ALL = [].concat(
-  EVENTS_CHILDHOOD, EVENTS_LIFE, EVENTS_MYSTIC, EVENTS_SOCIAL, EVENTS_FAMILY, EVENTS_DECISIONS, EVENTS_TAROT
+  EVENTS_CHILDHOOD, EVENTS_LIFE, EVENTS_MYSTIC, EVENTS_SOCIAL, EVENTS_FAMILY, EVENTS_DECISIONS, EVENTS_TAROT, EVENTS_DIVINITY
 );
 const EVENT_BY_ID = {};
 EVENTS_ALL.forEach(e=>{

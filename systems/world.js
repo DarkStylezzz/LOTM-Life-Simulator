@@ -181,6 +181,7 @@ function timelineTick(){
     if(e.triggered) continue;
     if(e.date.y > y || (e.date.y === y && e.date.m > m)) continue;
     e.triggered = true;
+    e.witnessed = !!(def.city && def.city === currentCityKey());
     // ¿La historia se torció? Sólo en Línea alternativa.
     const altered = STATE.settings.world === 'alternate' && def.alterFlag && worldFlag(def.alterFlag);
     e.altered = !!altered;

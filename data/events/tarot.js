@@ -40,7 +40,7 @@ const EVENTS_TAROT = [
     title:'La niebla gris', text:'Estás por dormirte cuando el techo se abre en una niebla gris infinita. Te encontrás sentado en una silla de respaldo alto, frente a una mesa larga de bronce, en un palacio que flota sobre la nada. En la cabecera, una figura envuelta en niebla te observa. Una voz tranquila dice: "Bienvenido al Tarot Club."',
     choices:[
       {label:'Aceptar un lugar en la mesa', small:'Nadie llega acá por pedirlo.', run:()=>tarotJoin()},
-      {label:'Pedir volver', small:'No estás listo.', run:()=>{ STATE.tarot.stage = 5; STATE.tarot.declined = (STATE.tarot.declined||0)+1; tarotObserve(-10, 'pediste volver');
+      {label:'Pedir volver', small:'No estás listo.', run:()=>{ STATE.tarot.stage = 5; STATE.tarot.declined = (STATE.tarot.declined||0)+1; STATE.tarot.lastDecline = STATE.time.totalMonths; tarotObserve(-10, 'pediste volver');
         return 'La figura inclina apenas la cabeza. La niebla se cierra. Te despertás en tu cama, con el corazón desbocado y la certeza de que eso no fue un sueño.'; }}
     ]},
   {id:'tarot_meeting', type:'tarot', rarity:'common', tags:['tarot','meeting'], weight:0, cooldown:0, chainOnly:true, narrativeImportance:3,

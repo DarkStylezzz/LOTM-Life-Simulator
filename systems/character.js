@@ -68,6 +68,7 @@ function startNewGame(){
     nombre:cd.nombre, apellido:cd.apellido, edad:0, genero:cd.genero, ciudad:cd.ciudad, birthCity:cd.ciudad,
     clase:cd.clase, profesion:'Desempleado', educacion:'Sin escolarizar', rasgos:[...cd.rasgos]
   });
+  STATE.flags.startClass = c.clase;
   STATE.time.startYear = STATE.settings.world === 'libre' ? rndInt(1300, 1345) : rndInt(1322, 1330);
   const cashByClass = {Baja:[50,180], Media:[300,900], Alta:[2200,6500]};
   const [cMin,cMax] = cashByClass[c.clase];
@@ -170,15 +171,19 @@ function monthlyBody(){
   const c = STATE.character;
   const mp = oldAgeMortalityParams();
   // Recuperación natural (se debilita con la edad; ver oldAgeMortalityParams).
+  // El cuerpo se repara solo, cada vez menos; a partir del umbral, se gasta.
+  const over = c.edad - mp.threshold;
   if(c.salud < 92){
-    const heal = (pathwayMods().healMonthly || 0);
-    if(c.edad < mp.threshold-15) applyEffects({salud:rndInt(1,3)+Math.round(heal)});
-    else if(c.edad < mp.threshold) applyEffects({salud:rndInt(0,2)+Math.round(heal)});
-    else if(c.edad < mp.threshold+10) applyEffects({salud:rndInt(0,1)});
+    const heal = Math.round(pathwayMods().healMonthly || 0);
+    let r = over < -15 ? rndInt(1,3) : over < 0 ? rndInt(1,2) : over < 12 ? rndInt(0,1) : (chance(0.5) ? 1 : 0);
+    // Convalecencia: el cuerpo muy golpeado se concentra en reponerse.
+    if(c.salud < 50) r += 1;
+    if(c.salud < 25) r += 1;
+    applyEffects({salud: r + heal});
   }
-  if(c.edad >= mp.threshold) applyEffects({salud:-rndInt(0,2)});
-  if(c.edad >= mp.threshold+10) applyEffects({salud:-rndInt(1,3)});
-  if(c.edad >= mp.threshold+20) applyEffects({salud:-rndInt(1,3)});
+  if(over >= 0 && chance(0.4)) applyEffects({salud:-1});
+  if(over >= 10 && chance(0.5)) applyEffects({salud:-1});
+  if(over >= 20) applyEffects({salud:-rndInt(0,2)});
   // Recuperación de Cordura: la corrupción alta la frena; las anclas la empujan.
   if(c.sanity < 85){
     const regenPenalty = c.corruption > 50 ? 0.4 : 1;
@@ -233,12 +238,14 @@ function agingHumanity(){
 // envejece de forma natural.
 function oldAgeMortalityParams(){
   const seq = STATE.pathway.chosenPathway ? STATE.pathway.sequence : null;
-  if(seq === null || seq >= 7) return {threshold:65,  coef:0.012,  cap:0.5};
-  if(seq >= 5)                 return {threshold:90,  coef:0.008,  cap:0.4};
-  if(seq === 4)                return {threshold:150, coef:0.004,  cap:0.3};
-  if(seq >= 2)                 return {threshold:250, coef:0.002,  cap:0.25};
-  if(seq === 1)                return {threshold:400, coef:0.001,  cap:0.2};
-  return {threshold:Infinity, coef:0, cap:0};
+  // threshold: edad a la que el cuerpo empieza a gastarse. span: cuánto tarda
+  // la mortalidad anual en volverse alta (curva cuadrática, ver checkDeathAndCrisis).
+  if(seq === null || seq >= 7) return {threshold:62,  span:28, cap:0.5};
+  if(seq >= 5)                 return {threshold:90,  span:40, cap:0.4};
+  if(seq === 4)                return {threshold:150, span:60, cap:0.3};
+  if(seq >= 2)                 return {threshold:250, span:90, cap:0.25};
+  if(seq === 1)                return {threshold:400, span:140, cap:0.2};
+  return {threshold:Infinity, span:1, cap:0};
 }
 function checkDeathAndCrisis(){
   const c = STATE.character;
@@ -252,7 +259,8 @@ function checkDeathAndCrisis(){
   const mp = oldAgeMortalityParams();
   if(c.edad >= mp.threshold && STATE.time.month === 1){
     // Una tirada por año (antes era por mes, con la misma curva escalada).
-    const p = clamp((c.edad-mp.threshold) * mp.coef * 6 * diffMult('death'), 0, mp.cap*3) - fateSave();
+    const x = Math.max(0, (c.edad - mp.threshold) / mp.span);
+    const p = clamp(x*x*0.3 * diffMult('death'), 0, mp.cap) - fateSave();
     if(chance(Math.min(0.9, Math.max(0, p)))) endGame('natural', 'Una vida completa', '', {cause:'vejez'});
   }
 }
@@ -272,6 +280,21 @@ function tryDollSave(){
 function resolveLossOfControl(){
   const c = STATE.character;
   const corr = c.corruption;
+  // Sin poción no hay "pérdida de control": hay un quiebre nervioso. Duro,
+  // pero humano (§23: la vida normal y la mística no se sienten igual).
+  if(!STATE.pathway.chosenPathway){
+    STATE._importantMoment = true;
+    const pMad = clamp(0.12 + corr/250 - fateSave() + (diffMult('death')-1)*0.1, 0.05, 0.4);
+    if(chance(pMad)){
+      endGame('negative', 'Locura', `${c.nombre} ${c.apellido} se quiebra. Pasa el resto de sus días internado, hablando de cosas que nadie más puede ver — y que, tal vez, eran reales.`, {cause:'locura'});
+      return;
+    }
+    applyEffects({sanity:[28,38], reputation:[-6,-2]});
+    const cond = randomCondition('control'); if(cond && chance(0.6)) addCondition(cond);
+    remember('breakdown', 'Tuviste un quiebre nervioso.', {cat:'trauma'});
+    logJournal('Un quiebre', 'Algo en vos se rompe. Semanas en cama, sin poder mirar a nadie a los ojos. Volvés, de a poco. No del todo igual.', {cat:'life', imp:3});
+    return;
+  }
   // La estabilidad de identidad (anclas) reduce el ANCHO de las dos peores
   // franjas (muerte y locura), no sólo dónde empiezan.
   const a = STATE.anchors;

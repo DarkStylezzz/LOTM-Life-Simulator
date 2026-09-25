@@ -131,6 +131,8 @@ function applyEffects(eff, ctx){
   }
   if(eff.item){ (Array.isArray(eff.item)?eff.item:[eff.item]).forEach(it=>{ addItem(it.add, it.qty||1, it.provenance||''); changes.push({msg:'Conseguís: '+(ITEM_DEFS[it.add]?ITEM_DEFS[it.add].name:it.add), type:'pos'}); }); }
   if(eff.removeItem){ removeItemByDef(eff.removeItem); }
+  if(eff.characteristic){ const ch = eff.characteristic; const pw = ch.pathway==='$chosen' ? STATE.pathway.chosenPathway : ch.pathway; if(pw && PATHWAYS[pw]){ addCharacteristic(pw, ch.seq, ch.from||''); changes.push({msg:'Una Característica Beyonder', type:'mystic'}); } }
+  if(eff.artifact){ addArtifact(eff.artifact, eff.artifactFrom || 'volvió por su cuenta'); changes.push({msg:'Un objeto sellado llega a tus manos', type:'mystic'}); }
   if(eff.condition){ addCondition(eff.condition); changes.push({msg:'Algo en vos cambió para siempre', type:'neg'}); }
   if(eff.lead){ addRumor(eff.lead === true ? undefined : eff.lead); }
   if(eff.combat){ startCombat(eff.combat, {}); }
@@ -197,6 +199,8 @@ function effectsToToastList(eff){
 }
 function applyAndToast(eff, ctx){
   const ch = applyEffects(eff, ctx);
+  // Dentro de una misión, los cambios van a la tarjeta de resolución.
+  if(STATE._collect){ STATE._collect.push(...ch); return ch; }
   if(ch.length) toast(ch);
   return ch;
 }

@@ -121,6 +121,9 @@ function processMonth(){
   // que el journal quede en orden cronológico).
   if(processPendingConsequences()) STATE._importantMoment = true;
 
+  // Sequence 0: el tiempo de un dios es otro (ver systems/divinity.js).
+  if(STATE.divinity && STATE.divinity.ascended){ divineMonth(); return; }
+
   monthlyEconomy();
   monthlyBody();
   monthlyMystic();
@@ -130,6 +133,7 @@ function processMonth(){
   npcTick();
   factionTick();
   tarotTick();
+  divinityTick();
   if(!STATE.gameOver) rollMonthlyEvent();
   if(c.edad >= 13 && !STATE.pendingEvent) maybeTriggerCombat();
   checkNpcMortality();
@@ -139,7 +143,7 @@ function processMonth(){
 function yearlyUpkeep(){
   decayRelationships();
   yearlyEconomy();
-  recomputeAnchors();
+  anchorsYearly();
   agingHumanity();
 }
 

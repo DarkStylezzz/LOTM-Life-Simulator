@@ -112,3 +112,68 @@ const INVENTORY_SORTS = {
   name:(a,b)=>a.name.localeCompare(b.name),
   rarity:(a,b)=>(ITEM_RARITY[b.rarity]||{rank:0}).rank - (ITEM_RARITY[a.rarity]||{rank:0}).rank
 };
+
+/* ------------------------------ acciones por objeto ------------------------------ */
+// Qué se puede hacer con cada cosa (la UI sólo muestra lo que existe acá).
+function itemActions(it){
+  const acts = [];
+  const d = ITEM_DEFS[it.def];
+  if(it.cat === 'artifact') return artifactActions(it);
+  if(d && d.read && (it.readCount||0) < 2) acts.push({id:'read', label: it.readCount ? 'Releer' : 'Leer', small:'1 tiempo libre.'});
+  if(d && d.consumable) acts.push({id:'use', label:'Usar', small:d.uses});
+  if(it.def === 'tarot_card' && !it.studied) acts.push({id:'study_card', label:'Estudiar la carta', small:'1 tiempo libre.'});
+  if(it.def === 'quest_notebook'){
+    acts.push({id:'study_notebook', label:'Leer el cuaderno', small:'Muy peligroso.', danger:true});
+    acts.push({id:'deliver_notebook', label:'Entregarlo a la Iglesia', small:'Que lo guarde quien sabe.'});
+  }
+  if(it.cat === 'potion' && it.seq === 9 && !STATE.pathway.chosenPathway) acts.push({id:'drink', label:'Beber', small:'No hay vuelta atrás.', danger:true});
+  if(it.cat === 'formula' && it.pathway && !it.verified && canVerifyFormulas()) acts.push({id:'verify', label:'Verificar la fórmula', small:'1 tiempo libre.'});
+  if(['book','document','weapon','misc','potion','characteristic','formula','ingredient'].includes(it.cat) && it.def !== 'quest_notebook') acts.push({id:'sell', label:'Vender', small: ['potion','characteristic','formula','ingredient'].includes(it.cat) ? 'Sólo en el mercado negro.' : ''});
+  return acts;
+}
+function doItemAction(uidv, act){
+  if(timeBlocked()) return;
+  const it = itemByUid(uidv); if(!it){ toast('Ya no tenés eso.', 'neg'); return; }
+  if(it.cat === 'artifact') return artifactAction(uidv, act);
+  if(act === 'read') return readItem(uidv);
+  if(act === 'use') return useConsumable(uidv);
+  if(act === 'sell') return sellItem(uidv);
+  if(act === 'drink') return startDrinkPotion(uidv);
+  if(act === 'verify'){
+    if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }
+    const pm = pathwayMods(); const helper = !(pm.verifyFormula || pm.verifyClues) ? pick(knownMysticNpcs()) : null;
+    const res = verifyFormula(uidv, helper ? `con ayuda de ${helper.name}, verificás` : 'verificás');
+    if(helper) adjustRel(helper, {trust:[1,3], dependence:[0,2]});
+    const txt = res === 'true' ? 'Cada ingrediente, cada proporción: todo coincide. Es auténtica.' : res === 'partial' ? 'Algo no cierra. Le falta un paso, o un ingrediente. Así como está, la poción saldría incompleta.' : 'Es falsa. Alguien la escribió para que la bebiera otro.';
+    setResolution('Verificar la fórmula', txt, []);
+    saveGame(true); renderAll(); return;
+  }
+  const before = snapshotForChanges();
+  let title = it.name, text = '';
+  if(act === 'study_card'){
+    if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }
+    it.studied = true; markMysticAct();
+    tarotHear('una carta que estudiaste');
+    applyEffects({clue:{pathway:'fool', reliability:'partial', strength:[3,6], source:'una carta de tarot'}, sanity:[-2,0]});
+    tarotObserve(3, 'estudiaste la carta con respeto');
+    text = 'Pasás una noche entera mirando la carta. La niebla pintada en el reverso parece moverse si no la mirás directamente. En un momento, jurarías que alguien, del otro lado, también te mira.';
+  } else if(act === 'study_notebook'){
+    if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }
+    markMysticAct();
+    applyEffects({sanity:[-12,-5], corruption:[2,5], attention:5});
+    const pool = lorePool('forbidden').filter(x=>!knowsLore(x));
+    if(pool.length) learnLore(pick(pool), 'el cuaderno de tapas negras');
+    text = 'Leés. La letra cambia de mano a mitad de página. En la última hoja escrita hay una fecha: la de mañana.';
+    if(chance(0.25)){ logJournal(it.name, text, {cat:'mystery', imp:2}); startCombat('forsakenHorror', {env:'home', source:'el cuaderno'}); saveGame(true); renderAll(); return; }
+  } else if(act === 'deliver_notebook'){
+    removeItem(uidv);
+    setWorldFlag('tingen_notebook_delivered', true);
+    factionMeet('church'); factionAdjust('church', {trust:10, merit:6, publicRep:5});
+    remember('delivered_notebook', 'Entregaste el cuaderno de tapas negras a la Iglesia.', {cat:'choice', faction:'church'});
+    text = 'El diácono se pone pálido al verlo. Lo guarda en una caja de plomo sin tocarlo con los dedos. "No se lo diga a nadie. A nadie."';
+  } else return;
+  logJournal(title, text, {cat:'mystery', imp:2});
+  setResolution(title, text, diffForDisplay(before));
+  checkDeathAndCrisis();
+  saveGame(true); renderAll();
+}

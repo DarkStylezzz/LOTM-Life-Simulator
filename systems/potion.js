@@ -307,7 +307,7 @@ function finishDrink(){
   p = clamp(p, 0.03, 0.95);
   const pw = PATHWAYS[key];
   if(chance(p)){
-    STATE.pathway.chosenPathway = key; STATE.pathway.sequence = 9; STATE.pathway.digestion = 0;
+    STATE.pathway.chosenPathway = key; STATE.pathway.sequence = 9; STATE.pathway.digestion = 0; STATE.flags.beyonderSince = STATE.time.totalMonths;
     STATE.pathway.identified[key] = true; STATE.pathway.potionMonth = STATE.time.totalMonths;
     STATE.pathway.acting = {history:[], quality:50, consistency:0.5, deviation:0};
     applyEffects({sanity:-rndInt(8,18), corruption:rndInt(2,8), spirituality:[4,10], humanity:-2});

@@ -15,10 +15,12 @@ function pickEncounter(kind){
   return wpick(pool, k=>ENEMIES[k].w || 1) || 'mugger';
 }
 function combatEncounterChance(){
-  const base = 0.005;
-  const mysticBonus = Math.min(0.012, (STATE.flags.mysticExposure||0)/7000);
+  // Una vida común casi nunca termina a los golpes; una vida metida en lo
+  // oculto, sí (§23: la mística y la vida normal chocan).
+  const base = 0.0025;
+  const mysticBonus = Math.min(STATE.pathway.chosenPathway ? 0.012 : 0.005, (STATE.flags.mysticExposure||0)/9000);
   const threat = (STATE.world.threat||0)/4000;
-  return clamp((base + mysticBonus + threat) * worldDangerMult(), 0.003, 0.05);
+  return clamp((base + mysticBonus + threat) * worldDangerMult(), 0.0015, 0.05);
 }
 function maybeTriggerCombat(){
   if(STATE.combat || STATE.gameOver || STATE.pendingEvent || STATE.pendingMission) return false;
@@ -50,7 +52,7 @@ function startCombat(keyOrTpl, opts){
     env:envKey, distance: tpl.archetype==='smart' ? 1 : (env.hide ? 2 : 1), round:1,
     info:{stage:0, range, estimate: seq!==null && seq!==undefined ? (chance(0.8) ? seq : clamp(seq + pick([-1,1]),0,9)) : null},
     player:{statuses:[], cooldowns:{}, guard:false, usedPowers:false, startSalud:STATE.character.salud, dmgTaken:0},
-    witnesses: chance(env.witnesses||0), log:[], opts:{bonusCash:opts.bonusCash||null, source:opts.source||'', allies:!!opts.allies}
+    witnesses: chance(env.witnesses||0), log:[], opts:{bonusCash:opts.bonusCash||null, source:opts.source||'', allies:!!opts.allies, onWin:opts.onWin||null, onFlee:opts.onFlee||null}
   };
   // La campanita de cobre avisa: nunca te toman por sorpresa.
   if(!artifactActiveEffect('warn')) enemyChooseNext();
@@ -135,6 +137,7 @@ function combatActions(){
   items.forEach(it=>acts.push({id:'item:'+it.uid, label:'Usar: '+it.name, small:ITEM_DEFS[it.def].uses}));
   itemsByCat('artifact').forEach(it=>{ const eff = artifactCombatEffect(it); if(eff) acts.push({id:'art:'+it.uid, label:'Usar: '+it.name, small:eff.text}); });
   if(e.humanoid && e.talk > 0) acts.push({id:'talk', label:'Hablar', small:'Intimidar, convencer, engañar'});
+  if(e.tier === 'mundane' && !e.faction && e.key !== 'hitman' && STATE.character.cash > 0) acts.push({id:'pay', label:'Darle lo que tenés', small:'Perdés la plata que llevás encima. Salís entero.'});
   acts.push({id:'flee', label:'Huir', small:'No siempre funciona, pero es una salida válida'});
   return acts;
 }
@@ -169,6 +172,12 @@ function combatAction(action){
     const p = clamp(e.talk + skill + (e.hp < e.maxHp*0.4 ? 0.2 : 0) + luckMod(), 0, 0.9);
     if(chance(p)){ peace = true; log.push(`Hablás. Algo de lo que decís le llega a ${e.name}: baja la guardia y se va.`); }
     else { log.push('Hablás. No sirve de nada.'); e.statuses.push({id:'furioso', turns:1}); }
+  } else if(action === 'pay'){
+    const lost = Math.min(STATE.character.cash, Math.round(rndInt(15,60)*priceIndex()) + Math.round(STATE.character.cash*0.1));
+    applyEffects({cash:-lost, sanity:[-2,0]});
+    log.push(`Le das ${fmtMoney(lost)}. Los agarra y se va sin mirar atrás.`);
+    remember('robbed', 'Te robaron en la calle y no te resististe.', {cat:'event'});
+    peace = true;
   } else if(action === 'flee'){
     const env = COMBAT_ENVS[cb.env] || {};
     const p = clamp(e.fleeChance + (env.flee||0) + cb.distance*0.12 + (pathwayMods().fleeBonus||0) + luckMod(), 0.05, 0.95);
@@ -279,7 +288,9 @@ function enemyTurn(incoming, negate){
     return d;
   };
   const mental = (mult)=>{
-    if(e.sanityDmg[1] > 0 && chance(0.7)){ const sd = Math.round(rndInt(e.sanityDmg[0], e.sanityDmg[1])*mult); if(sd>0){ applyEffects({sanity:-sd}); log.push('Lo que ves te deja perturbado.'); } }
+    // La espiritualidad y la costumbre amortiguan el horror (un Beyonder ya vio cosas).
+    const steel = clamp(1 - STATE.character.spirituality/250 - (STATE.pathway.chosenPathway ? 0.15 : 0), 0.45, 1);
+    if(e.sanityDmg[1] > 0 && chance(0.55)){ const sd = Math.round(rndInt(e.sanityDmg[0], e.sanityDmg[1])*mult*0.7*steel); if(sd>0){ applyEffects({sanity:-sd}); log.push('Lo que ves te deja perturbado.'); } }
     if(e.corruptionDmg[1] > 0 && chance(0.4)){ const cd = rndInt(e.corruptionDmg[0], e.corruptionDmg[1]); if(cd>0){ applyEffects({corruption:cd}); log.push('Algo de esa presencia se te queda pegado.'); } }
   };
   switch(act){
@@ -359,23 +370,26 @@ function endCombat(result){
     const text = e.tier==='mystic' && e.humanoid ? `${c.nombre} ${c.apellido} no sobrevive al encuentro con ${e.name}. Era demasiado para cualquier persona.`
       : e.tier==='mystic' ? `${c.nombre} ${c.apellido} no sobrevive al encuentro con ${e.name}. No era humano, y no tenía intención de dejarlo con vida.`
       : `${c.nombre} ${c.apellido} no sobrevive al encuentro con ${e.name}. La violencia de la calle no perdona.`;
-    endGame('negative', title, text, {cause:'combate', enemy:e.name});
+    endGame('negative', title, text, {cause:'combate', enemy:e.name, source:cb.opts.source||''});
     return;
   }
   if(result === 'fled'){
     c.stats.combatsFled++;
+    if(cb.opts.onFlee) STATE.flags[cb.opts.onFlee] = STATE.time.totalMonths;
     logJournal('Huida', `Escapás de ${e.name} sin mirar atrás.`, {cat:'combat', imp:1});
     setResolution('Huiste', `Escapás de ${e.name} sin mirar atrás.`, []);
     if(e.faction) factionAdjust(e.faction, {suspicion:4}, true);
     saveGame(true); renderAll(); return;
   }
   if(result === 'peace'){
+    if(cb.opts.onWin) STATE.flags[cb.opts.onWin] = STATE.time.totalMonths;
     logJournal('Sin sangre', `La pelea con ${e.name} termina sin que nadie caiga.`, {cat:'combat', imp:1});
     setResolution('Sin sangre', `La pelea con ${e.name} termina con palabras.`, []);
     saveGame(true); renderAll(); return;
   }
   // Victoria (o rendición).
   c.stats.combatsWon++;
+  if(cb.opts.onWin) STATE.flags[cb.opts.onWin] = STATE.time.totalMonths;
   const rw = e.reward || {};
   const eff = {};
   const cash = rw.cash ? (Array.isArray(rw.cash) ? rndInt(rw.cash[0], rw.cash[1]) : rw.cash) : 0;

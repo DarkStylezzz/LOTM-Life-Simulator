@@ -113,6 +113,7 @@ function actingQuality(choice, scene){
   // Artefactos y buffs.
   if(STATE.flags.actingBuffUntil > STATE.time.totalMonths) q += STATE.flags.actingBuff || 0;
   q += pathwayMods().acting || 0;
+  q += artifactResonance() * 5;   // la máscara sin rasgos resuena con quien cambia de rostro
   // Azar (mayor en lo arriesgado).
   const spread = choice.align === 'bold' ? 26 : choice.align === 'aligned' ? 14 : 10;
   q += rnd(-spread, spread) + luckMod()*60;
@@ -255,6 +256,7 @@ function monthlyMystic(){
   passiveDigestion();
   maybeReadyForAdvancement(prevDig);
   expireLeads();
+  if(STATE.character.edad >= 16) maybeIngredientLead();
   artifactMonthly();
   characteristicInfluence();
   // Exposición ambiental mínima (el mundo siempre filtra algo) y decaimiento
@@ -269,7 +271,7 @@ function monthlyMystic(){
   // sistema anterior): sólo si ya la entendés casi toda.
   if(!p.chosenPathway){
     Object.keys(PATHWAYS).forEach(k=>{
-      if(isIdentified(k) && knowledgeOf(k) >= 75 && !hasFormula(k, 9) && chance(0.012)){
+      if(isIdentified(k) && knowledgeOf(k) >= 70 && !hasFormula(k, 9) && chance(0.02)){
         addFormula(k, 9, chance(0.4) ? 'true' : 'partial', 'tu propia reconstrucción');
         logJournal('Una fórmula reconstruida', `Juntando todo lo que sabés de la vía ${PATHWAYS[k].name}, lográs reconstruir su primera fórmula. O algo que se le parece mucho.`, {cat:'pathway', imp:2});
       }

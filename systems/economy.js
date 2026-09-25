@@ -86,14 +86,23 @@ function monthlyEconomy(){
   const income = monthlySalary() + spouseIncome() + rentalIncome();
   const expenses = monthlyExpenses();
   c.cash += income - expenses;
-  // Banco: interés modesto. Deuda: interés que muerde.
+  // Banco: interés modesto.
   if(c.bank > 0) c.bank = Math.round(c.bank * 1.002);
-  if(c.debt > 0) c.debt = Math.round(c.debt * 1.01);
+  // Deuda: interés que muerde y una cuota mensual (amortización a ~15 años).
+  if(c.debt > 0){
+    const interest = Math.round(c.debt * 0.006);
+    c.debt += interest;
+    const due = Math.min(c.debt, Math.max(Math.round(12*priceIndex()), interest + Math.round(c.debt/180)));
+    let paid = Math.min(due, Math.max(0, c.cash)); c.cash -= paid;
+    if(paid < due){ const fb = Math.min(c.bank, due - paid); c.bank -= fb; paid += fb; }
+    c.debt -= paid;
+    STATE.flags.missedPayments = paid < due ? (STATE.flags.missedPayments||0) + 1 : Math.max(0, (STATE.flags.missedPayments||0) - 1);
+  } else STATE.flags.missedPayments = 0;
   // Si no alcanza: primero el banco, después la deuda.
   if(c.cash < 0){
     const fromBank = Math.min(c.bank, -c.cash);
     c.bank -= fromBank; c.cash += fromBank;
-    if(c.cash < 0){ c.debt += -c.cash; c.cash = 0; }
+    if(c.cash < 0){ c.debt += -c.cash; c.cash = 0; STATE.flags.missedPayments = (STATE.flags.missedPayments||0) + 1; }
   }
   if(isEmployed()){
     c.job.months = (c.job.months||0) + 1;
@@ -143,12 +152,13 @@ function promoteInJob(){
 function checkDebtPressure(){
   const c = STATE.character;
   const salary = Math.max(40, monthlySalary());
-  if(c.debt > salary * 8 && chance(0.08)){
+  const missed = STATE.flags.missedPayments || 0;
+  if(missed >= 3 && chance(0.15)){
     applyEffects({sanity:[-6,-2], reputation:[-3,-1]});
     logJournal('Los cobradores', 'Dos hombres de sombrero te esperan en la puerta. No amenazan: explican, con mucha paciencia, lo que les pasa a los que no pagan.', {cat:'life', imp:2});
     STATE._importantMoment = true;
   }
-  if(c.debt > salary * 30 && !STATE.flags.bankrupt){
+  if((missed >= 18 || (missed >= 6 && c.debt > salary * 40)) && !STATE.flags.bankrupt){
     STATE.flags.bankrupt = STATE.time.totalMonths;
     const lostHouse = !!c.vivienda;
     if(c.vivienda){ c.debt = Math.max(0, c.debt - c.vivienda.valor*0.7); c.vivienda = null; }
@@ -286,6 +296,7 @@ function comprarVivienda(mortgage){
   const down = mortgage ? Math.round(cost*0.25) : cost;
   if(c.cash + c.bank < down){ toast(`Te faltaría dinero: ${mortgage?'el adelanto':'una vivienda'} ronda ${fmtMoney(down)}.`, 'neg'); return; }
   if(mortgage && monthlySalary() < 40){ toast('Sin un ingreso fijo, ningún banco te da una hipoteca.', 'neg'); return; }
+  if(mortgage){ const pay = Math.round((cost-down)*1.15*(0.006 + 1/180)); if(pay > (monthlySalary()+spouseIncome())*0.45){ toast(`El banco hace cuentas: la cuota rondaría ${fmtMoney(pay)} por mes. Con lo que ganás, no llegás.`, 'neg'); return; } }
   if(c.cash >= down) c.cash -= down; else { c.bank -= (down - c.cash); c.cash = 0; }
   if(mortgage) c.debt += Math.round((cost - down)*1.15);
   c.vivienda = {tipo: c.clase==='Alta' ? 'Casa' : (c.clase==='Media' ? 'Departamento' : 'Habitación propia'), valor:cost, city:currentCityKey()};

@@ -39,7 +39,7 @@ function researchAvailable(m){
 }
 function interrogableNpcs(){ return aliveNpcs().filter(n=>n.met && n.lifeState==='presente' && (n.mystic >= 25 || n.hidden.pathway || n.secrets.some(s=>s.mystic))); }
 
-function doResearch(methodId, targetId){
+function doResearch(methodId, targetId, focus){
   if(timeBlocked()) return;
   const m = RESEARCH_METHODS[methodId];
   if(!m) return;
@@ -80,10 +80,21 @@ function doResearch(methodId, targetId){
   }
   const [gMin,gMax] = m.gain;
   const clueSource = target ? target.name : m.name.toLowerCase();
+  // Seguir un hilo: la investigación se concentra en lo que ya sospechás.
+  const own = STATE.pathway.chosenPathway;
+  const focusK = focus && PATHWAYS[focus] && (focus === own || (STATE.pathway.belief[focus]||0) > 0 || isIdentified(focus)) ? focus : null;
   if(outcome === 'clue'){
-    const pw = target && target.hidden.pathway ? target.hidden.pathway : (m.clueBias && chance(0.5) ? pick(m.clueBias) : '$random');
+    const pw = target && target.hidden.pathway ? target.hidden.pathway : focusK && chance(0.65) ? focusK : (m.clueBias && chance(0.5) ? pick(m.clueBias) : '$random');
     const cl = addClue({pathway:pw, reliability: chance(0.8) ? 'real' : 'partial', strength:[gMin,gMax], source:clueSource});
     text += cl ? `Encontrás algo real: un rastro que apunta hacia ${cl.shown && isIdentified(cl.shown) ? 'la vía '+PATHWAYS[cl.shown].name : 'algo relacionado con '+cl.desc}.` : 'Encontrás algo que confirma lo que ya sabías de tu propio camino.';
+    // Quien sigue un hilo que ya entiende, a veces encuentra la receta. Las
+    // fórmulas de Sequences bajas circulan; las altas, casi nunca.
+    const fTarget = focusK && focusK === own ? (STATE.pathway.sequence > 0 ? STATE.pathway.sequence - 1 : null) : (focusK && !own ? 9 : null);
+    if(fTarget !== null && fTarget >= 6 && isIdentified(focusK) && !hasFormula(focusK, fTarget) && knowledgeOf(focusK) >= 50 + (9-fTarget)*5 && chance(0.14 + skill - (9-fTarget)*0.02)){
+      const rel = resolveReliability('mixed');
+      addFormula(focusK, fTarget, rel==='real' ? 'true' : rel, m.name.toLowerCase());
+      text += ` Entre las notas aparece algo más: una lista de ingredientes y proporciones. Una fórmula. ${rel==='real' ? '' : 'No sabés si es confiable.'}`;
+    }
     if(m.verify && chance(0.5)){ const u = unverifiedClues(); if(u.length){ const res = verifyClue(pick(u).id, 'el místico te ayuda a ver'); if(res) text += res==='real' ? ' Además, te confirma que una pista vieja era cierta.' : ' Además, te hace ver que una pista vieja era falsa.'; } }
   } else if(outcome === 'secret'){
     if(target && target.secrets.some(s=>!s.known) && chance(0.6)){ learnNpcSecret(target); text += `Te enterás de algo que ${target.name} esconde.`; }
@@ -175,7 +186,54 @@ function followLead(id){
   checkDeathAndCrisis();
   saveGame(true); renderAll();
 }
+// Ley de convergencia, versión humilde: cuando sabés qué buscar, el mundo
+// empieza a mostrarte dónde podría estar (una pista con riesgo y precio).
+const INGREDIENT_LEAD_TEXTS = [
+  'Un boticario de la ciudad consigue "cosas raras". Alguien le vio {ing}.',
+  'En el puerto se ofrece, en voz baja, algo que se parece mucho a {ing}.',
+  'Un coleccionista murió y sus herederos venden todo sin saber qué es. Entre sus cosas habría {ing}.',
+  'Un cazador que vuelve del bosque dice haber visto algo que sirve como {ing}.',
+  'En una casa de empeño, detrás del mostrador, guardan {ing} para "clientes especiales".'
+];
+function wantedIngredient(){
+  const p = STATE.pathway;
+  let pw = null, seq = null;
+  if(p.chosenPathway){ if(p.sequence <= 0 || (STATE.divinity && STATE.divinity.ascended)) return null; pw = p.chosenPathway; seq = p.sequence - 1; if(!formulaItems(pw, seq).length) return null; }
+  else { const f = itemsByCat('formula').find(x=>x.seq===9 && x.pathway && isIdentified(x.pathway)); if(!f) return null; pw = f.pathway; seq = 9; }
+  const need = ingredientsNeededFor(pw, seq).filter((n,i)=>ownedQty(pw, n) <= 0 && !(i===0 && characteristicFor(pw, seq)));
+  return need.length ? {pathway:pw, seq, name:need[0]} : null;
+}
+function maybeIngredientLead(){
+  if(STATE.leads.some(l=>l.rumor==='ingredient' && !l.done)) return null;
+  const w = wantedIngredient(); if(!w) return null;
+  if(STATE.pathway.chosenPathway && STATE.pathway.digestion < 50) return null;
+  if(!chance(0.06 * diffMult('hints'))) return null;
+  const o = wpick([{k:'real',w:60},{k:'danger',w:20},{k:'fake',w:20}], x=>x.w).k;
+  const price = Math.round((w.seq >= 8 ? rndInt(60,160) : w.seq >= 6 ? rndInt(200,500) : rndInt(600,1600)) * priceIndex());
+  const lead = {id:uid('ld'), rumor:'ingredient', pathway:w.pathway, seq:w.seq, name:w.name, price,
+    text: pick(INGREDIENT_LEAD_TEXTS).replace('{ing}', w.name), steps: w.seq <= 6 ? 2 : 1, progress:0, done:false, outcome:o,
+    heard:STATE.time.totalMonths, expires:STATE.time.totalMonths + rndInt(8,18), cy:calendarYear()};
+  STATE.leads.push(lead);
+  logJournal('Un rumor útil', `"${lead.text}"`, {cat:'mystery', imp:1});
+  return lead;
+}
 function resolveLead(l){
+  if(l.rumor === 'ingredient'){
+    const c = STATE.character;
+    if(l.outcome === 'danger'){
+      logJournal('Al final de la pista', 'Alguien más buscaba lo mismo. Y llegó antes.', {cat:'mystery', imp:2});
+      startCombat(l.seq <= 7 ? 'rivalBeyonder' : 'thugs', {env:'alley', overrides: l.seq <= 7 ? {pathway:l.pathway, seq:Math.max(5, l.seq)} : {}});
+      return 'Alguien más buscaba lo mismo. Y llegó antes.';
+    }
+    if(c.cash < l.price) return `Llegás hasta el vendedor. Pide ${fmtMoney(l.price)}. No los tenés. Se encoge de hombros: "Otro va a tenerlos."`;
+    applyEffects({cash:-l.price});
+    if(l.outcome === 'fake'){
+      addItem({cat:'misc', name:l.name+' (dudoso)', desc:'Se parece a lo que buscabas. Demasiado.', rarity:'comun', provenance:'un rumor', risk:'Probablemente falso.'}, 1);
+      return `Pagás ${fmtMoney(l.price)} por ${l.name}. Recién en tu casa, a la luz de una vela, notás que es una imitación.`;
+    }
+    addIngredient(l.pathway, l.seq, l.name, rndInt(55,90), 'siguiendo un rumor');
+    return `Pagás ${fmtMoney(l.price)} y te llevás ${l.name}. Es real: lo sentís en las manos.`;
+  }
   if(l.rumor === 'missing'){
     const n = npcById(l.npc);
     if(n && l.outcome === 'truth'){

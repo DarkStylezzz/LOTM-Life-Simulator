@@ -110,7 +110,8 @@ const EVENTS_DECISIONS = [
     hiddenRequirements:()=>STATE.world.attention >= 50 && (maxFactionSuspicion() >= 35),
     run:()=>{ applyEffects({sanity:[-8,-3]}); const f = mostSuspiciousFaction(); addHiddenTruth(`Quien revisó tu casa aquella vez era de ${factionName(f)}. Buscaban pruebas. Encontraron algunas.`);
       if(f) factionAdjust(f, {suspicion:5});
-      return {title:'Alguien estuvo en tu casa', text:'Volvés a tu casa y todo está en su lugar. Demasiado en su lugar: alguien revisó cada cajón y volvió a dejarlo exactamente como estaba. Casi exactamente.'}; }},
+      const lost = confiscateExposedArtifact(f);
+      return {title:'Alguien estuvo en tu casa', text:'Volvés a tu casa y todo está en su lugar. Demasiado en su lugar: alguien revisó cada cajón y volvió a dejarlo exactamente como estaba. Casi exactamente.' + (lost ? ` Falta una sola cosa: ${lost.toLowerCase()}.` : '')}; }},
   {id:'threat_interrogation', type:'threat', rarity:'rare', tags:['threat','faction'], weight:6, cooldown:36, narrativeImportance:3,
     hiddenRequirements:()=>maxFactionSuspicion() >= 55,
     context:(ctx)=>{ ctx.f = mostSuspiciousFaction(); return ctx.f ? ctx : null; },
@@ -129,12 +130,36 @@ const EVENTS_DECISIONS = [
         if(chance(0.5)){ startCombat(factionAgentFor(ctx.f), {env:'street'}); return 'Corrés. Uno de ellos corre más rápido.'; }
         return 'Te perdés entre la gente. Desde ese día, tu nombre está en otra lista.'; }}
     ]},
-  {id:'threat_hunted', type:'threat', rarity:'uncommon', tags:['threat','hunted'], weight:8, cooldown:8, narrativeImportance:2,
+  {id:'threat_hunted', type:'threat', rarity:'uncommon', tags:['threat','hunted'], weight:8, cooldown:10, narrativeImportance:3,
     hiddenRequirements:()=>huntingFactions().length > 0,
-    run:()=>{ const f = pick(huntingFactions()); startCombat(factionAgentFor(f), {env:pick(['alley','night','street']), source:'caza'});
-      return {title:'Te encontraron', text:`${factionName(f)} no olvida. Esta noche, te encontraron.`}; }},
-  {id:'aurora_revenge', type:'threat', rarity:'rare', tags:['aurora'], weight:0, cooldown:999, chainOnly:true,
-    run:()=>{ startCombat('auroraZealot', {env:'home'}); return {title:'La Aurora no olvida', text:'Alguien de la Aurora te espera en la puerta de tu casa. Sonríe. Tiene un cuchillo ceremonial.'}; }},
+    context:(ctx)=>{ ctx.f = pick(huntingFactions()); return ctx.f ? ctx : null; },
+    title:'Te encontraron', text:(ctx)=>`${factionName(ctx.f)} no olvida. Esta noche, al doblar una esquina, los ves: te estaban esperando.`,
+    choices:[
+      {label:'Correr', small:'Conocés estas calles. Ellos también.', run:(ctx)=>{
+        const p = clamp(0.45 + (pathwayMods().stealth||0) + (pathwayMods().fleeBonus||0) + luckMod(), 0.2, 0.85);
+        if(chance(p)){ applyEffects({salud:[-4,0], attention:-5}); return 'Corrés sin mirar atrás. Por esta vez, alcanza.'; }
+        startCombat(factionAgentFor(ctx.f), {env:pick(['alley','night','street']), source:'caza'}); return 'Uno de ellos corre más rápido.'; }},
+      {label:'Pelear', small:'Si hay que hacerlo, que sea ahora.', run:(ctx)=>{ startCombat(factionAgentFor(ctx.f), {env:pick(['alley','night','street']), source:'caza'}); return 'No retrocedés.'; }},
+      {label:'Entregarte', small:'Que te lleven. Que se termine.', requires:(ctx)=>['church','nighthawks','storm','mi9','machinery'].includes(ctx.f), run:(ctx)=>{
+        const f = F(ctx.f); f.hunted = false; f.relationship = 'enemiga'; f.suspicion = 40;
+        applyEffects({sanity:[-12,-6], reputation:[-12,-5], attention:-20});
+        if(isEmployed()) fireFromJob();
+        remember('arrested_'+ctx.f, `Te entregaste a ${factionName(ctx.f)}.`, {cat:'trauma', faction:ctx.f});
+        return 'Meses en una celda sin ventanas. Preguntas, siempre las mismas. Un día abren la puerta y te dicen que te vayas. Nadie te explica qué decidieron. Seguís vigilado, pero vivo.'; }},
+      {label:'Pedir que otros te cubran', small:'Tu organización tiene deudas con vos.', requires:()=>memberFactions().some(k=>F(k).merit >= 5 && !huntingFactions().includes(k)), run:(ctx)=>{
+        const k = memberFactions().find(x=>F(x).merit >= 5 && !huntingFactions().includes(x)); F(k).merit -= 5;
+        if(chance(0.6)){ F(ctx.f).hunted = false; F(ctx.f).relationship = 'enemiga'; return `${cap(factionShort(k))} se mete. Esa noche nadie te toca. Unas semanas después, dejan de buscarte.`; }
+        startCombat(factionAgentFor(ctx.f), {env:'street', source:'caza', allies:true}); return `${cap(factionShort(k))} manda a alguien. Llega justo a tiempo para pelear a tu lado.`; }}
+    ]},
+  {id:'aurora_revenge', type:'threat', rarity:'rare', tags:['aurora'], weight:0, cooldown:999, chainOnly:true, narrativeImportance:3,
+    title:'La Aurora no olvida', text:'Alguien de la Aurora te espera en la puerta de tu casa. Sonríe. Tiene un cuchillo ceremonial y reza en voz baja.',
+    choices:[
+      {label:'Enfrentarlo', small:'Es tu casa.', run:()=>{ startCombat('auroraZealot', {env:'home', source:'venganza'}); return 'Das un paso hacia él.'; }},
+      {label:'Escapar por atrás', small:'No vas a pelear con un fanático.', run:()=>{ if(chance(0.55 + luckMod())){ applyEffects({sanity:[-5,-2]}); scheduleConsequence({inMonths:[12,36], eventId:'aurora_revenge', chance:0.4}); return 'Saltás el muro del fondo y no parás hasta la otra punta de la ciudad. Esa noche dormís en una pensión. No va a ser la última.'; }
+        startCombat('auroraZealot', {env:'alley', source:'venganza'}); return 'Te espera del otro lado del muro. Sabía.'; }},
+      {label:'Hablarle de su Creador', small:'Si conocés sus palabras, tal vez duda.', requires:()=>knowsLore('e_creator') || hasMemory('joined_aurora'), run:()=>{ if(chance(0.5)){ applyEffects({corruption:[1,3]}); return 'Le hablás con sus propias palabras. Duda. Guarda el cuchillo. "El Creador decidirá." Se va.'; }
+        startCombat('auroraZealot', {env:'home', source:'venganza'}); return 'Tus palabras lo enfurecen más.'; }}
+    ]},
   {id:'lie_low_pays', type:'mundane', rarity:'common', tags:['quiet'], weight:3, cooldown:12,
     hiddenRequirements:()=>STATE.world.attention >= 20 && STATE.flags.quietSeasons >= 2,
     run:()=>{ applyEffects({attention:-8, sanity:[1,3]}); Object.keys(STATE.factions).forEach(k=>factionAdjust(k, {suspicion:-2}));
@@ -160,6 +185,18 @@ const EVENTS_DECISIONS = [
       {label:'Quedártelo', small:'Algo tan raro vale la pena.', run:()=>{ addItem('quest_notebook', 1, 'la casa de un anticuario muerto'); applyEffects({sanity:[-6,-2], attention:4});
         remember('kept_notebook', 'Te quedaste con el cuaderno de tapas negras.', {cat:'secret'}); return 'Lo guardás en el fondo de un cajón. Esa noche soñás con una escalera que baja para siempre.'; }},
       {label:'Quemarlo', small:'Algunas cosas no deberían existir.', run:()=>{ applyEffects({sanity:[-4,-1]}); if(chance(0.5)){ applyEffects({salud:[-10,-4]}); return 'El cuaderno no quiere arder. Cuando por fin se enciende, el fuego es verde y grita.'; } return 'Arde como cualquier papel. Casi decepciona.'; }}
+    ]},
+
+  // Una organización le ofrece a un miembro convertirse en Beyonder (systems/factions.js).
+  {id:'fac_potion_offer', type:'faction', rarity:'rare', tags:['faction','potion'], weight:0, cooldown:0, chainOnly:true, narrativeImportance:3,
+    title:(ctx)=>`Una oferta de ${factionShort(ctx.f)}`,
+    text:(ctx)=>`Un superior de ${factionName(ctx.f)} te lleva aparte. Habla bajo, sin rodeos: hay gente como vos, que sirve bien y sabe callar, a la que se le ofrece algo más. "No es un regalo. Es una herramienta. Y un compromiso." No dice la palabra poción. No hace falta.`,
+    choices:[
+      {label:'Aceptar', small:'Una vez que la bebas, no hay vuelta atrás. Tampoco con ellos.', run:(ctx)=>factionPotionAccept(ctx.f)},
+      {label:'Pedir tiempo para pensarlo', small:'Lo van a entender. Una vez.', requires:(ctx)=>!F(ctx.f).potionDelayed, run:(ctx)=>{ const f = F(ctx.f); f.potionDelayed = true; f.potionOffered = false; f.merit = Math.max(0, f.merit - 6);
+        return 'Asiente despacio. "Nadie debería decir que sí a esto sin pensarlo. Pero no pienses demasiado."'; }},
+      {label:'Rechazar', small:'Seguir siendo una persona común.', run:(ctx)=>{ factionAdjust(ctx.f, {trust:-4}); remember('refused_potion', `Rechazaste la poción que te ofreció ${factionName(ctx.f)}.`, {cat:'choice', faction:ctx.f});
+        return 'Te mira un largo rato. "Es la respuesta correcta más a menudo de lo que la gente cree." No vuelve a mencionarlo.'; }}
     ]},
 
   // ------------------------- extraordinarios (§6) -------------------------

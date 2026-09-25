@@ -121,7 +121,8 @@ function joinFaction(k){
 function leaveFaction(k){
   const f = F(k); if(!isMember(k)) return;
   f.access = 2; f.relationship = 'neutral'; f.rank = 0;
-  factionAdjust(k, {trust:-15, suspicion:10});
+  factionAdjust(k, {trust:-15, suspicion: f.potionDebt ? 30 : 10});
+  if(f.potionDebt && chance(0.4)) markHunted(k, 'se fue con lo que le dieron');
   logJournal('Te vas', `Dejás ${factionName(k)}. Nadie te detiene. Todos te miran salir.`, {cat:'faction', imp:2});
   if(k==='aurora' && chance(0.5)) scheduleConsequence({inMonths:[2,12], eventId:'aurora_revenge'});
   saveGame(true); renderAll();
@@ -141,6 +142,62 @@ function betrayFaction(k, to){
   if(chance(0.7)) scheduleConsequence({inMonths:[2,18], title:'Se enteraron', text:`${cap(factionShort(k))} sabe lo que hiciste.`, effect:{attention:10}, memory:{tag:'betrayal_known_'+k, text:`${factionName(k)} supo que los traicionaste.`, cat:'organization', faction:k}});
   f.suspicion = 80; markHunted(k, 'traición');
   saveGame(true); renderAll();
+}
+
+/* ------------------------------ colaborar (sin ser miembro) ------------------------------ */
+// El camino de "contacto" a "colaborador/a": hacer cosas por ellos. Cada
+// facción pide cosas distintas, y algunas cobran a su manera.
+const FACTION_COLLAB_TEXT = {
+  church:['Ayudás en la parroquia: repartir pan, ordenar archivos viejos, escuchar a quien no tiene a nadie.', 'Acompañás a un diácono a bendecir una casa. Él reza; vos mirás los rincones. Te agradece que no hagas preguntas.', 'Copiás a mano registros bautismales. En algunos, alguien tachó nombres con tinta negra.'],
+  nighthawks:['Llevás un sobre de una dirección a otra, de noche, sin abrirlo.', 'Te piden que vigiles una puerta durante una noche entera. No pasa nada. Te agradecen igual, como si algo hubiera podido pasar.', 'Ayudás a vaciar un departamento después de "un incidente". Nadie te dice qué incidente.'],
+  storm:['Ayudás a descargar donaciones para las familias de marineros perdidos.', 'Remás en un bote de la Iglesia para buscar a alguien que el mar no devolvió.', 'Anotás, en el puerto, qué barcos llegan y de dónde. Te pagan en pescado y en confianza.'],
+  machinery:['Asistís a un técnico que mide "fluctuaciones" con aparatos de latón. Anotás números que no entendés.', 'Transportás una caja pesadísima que no debe inclinarse. Nadie te dice por qué.', 'Probás un invento que no hace nada visible. El técnico parece muy satisfecho.'],
+  mi9:['Contás a un señor de traje gris lo que se dice en tu barrio. Anota todo.', 'Seguís a alguien una tarde y anotás adónde va. No sabés quién es.', 'Firmás un papel que dice que nunca firmaste nada.'],
+  aurora:['Participás de una reunión a la luz de las velas. Te hablan del Creador. Te miran demasiado.', 'Llevás una ofrenda a un sótano. No te dicen qué hay en la caja. Pesa como algo vivo.', 'Te enseñan una oración. No te dicen a quién va dirigida.'],
+  psychology:['Asistís a una sesión como "testigo". El paciente habla de un mar que está adentro de todos.', 'Ordenás fichas de pacientes. Algunas tienen dibujos que se repiten entre personas que no se conocen.', 'Te hacen un test con manchas. Te dicen que tus respuestas son "muy interesantes".']
+};
+function canCollaborate(k){
+  const f = F(k);
+  return k !== 'tarotClub' && !!f && f.known && f.access >= 1 && !isMember(k) && !factionHostile(k) && STATE.character.edad >= 14;
+}
+function factionCollaborate(k){
+  if(timeBlocked() || !canCollaborate(k)) return;
+  if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }
+  const f = F(k), d = FACTIONS_DATA[k];
+  const before = snapshotForChanges();
+  factionAdjust(k, {trust:[3,6], merit:[2,4], publicRep:[0,2]}, true);
+  let text = pick(FACTION_COLLAB_TEXT[k] || ['Hacés lo que te piden, sin preguntar demasiado.']);
+  if(k === 'aurora') applyEffects({corruption:[1,2]});
+  if(k === 'nighthawks' && chance(0.12)){ applyEffects({sanity:[-5,-2]}); text += ' Esa noche ves algo que no te explican.'; }
+  if(k === 'mi9' && chance(0.3)){ const other = pick(['aurora','tarotClub']); factionAdjust(other, {suspicion:2}, true); }
+  (d.enemies||[]).forEach(e=>{ if(chance(0.15)) factionAdjust(e, {suspicion:2}, true); });
+  if(f.access < 2 && f.trust >= 18 && f.merit >= 6){ factionAdjust(k, {access:2}); text += ` ${cap(factionShort(k))} empieza a contar con vos.`; }
+  if(chance(0.3)){
+    const lp = (d.secretLore||[]).filter(id=>!knowsLore(id));
+    if(lp.length && f.access >= 2) learnLore(lp[0], factionName(k));
+    else if(d.pathways) applyEffects({clue:{pathway:wpick(Object.keys(d.pathways), x=>d.pathways[x]), reliability:'real', strength:[2,5], source:factionName(k)}});
+  }
+  remember('collab_'+k, `Colaboraste con ${factionName(k)}.`, {cat:'organization', faction:k});
+  logJournal(factionName(k), text, {cat:'faction', imp:1});
+  setResolution(factionName(k), text, diffForDisplay(before));
+  saveGame(true); renderAll();
+}
+// Una organización le ofrece a un miembro fiel convertirse en Beyonder.
+function factionPotionAccept(k){
+  const f = F(k), d = FACTIONS_DATA[k];
+  const pool = (f.formulas||[]).filter(p=>PATHWAYS[p]);
+  const pw = pool.length ? wpick(pool, p=>(d.pathways||{})[p]||1) : pick(Object.keys(d.pathways||{fool:1}));
+  if(!isIdentified(pw)) identifyPathway(pw, factionName(k));
+  if(knowledgeOf(pw) < 50) STATE.pathway.knowledge[pw] = 50;
+  ['beyonders_exist','potions_named','sequences'].forEach(id=>learnLore(id, factionName(k)));
+  const sd = seqData(pw, 9);
+  addItem({cat:'potion', pathway:pw, seq:9, quality:rndInt(70,88), flaws:[], fidelity:'true', name:`Poción: ${sd ? sd.name : 'Sequence 9'} (Sequence 9)`, rarity:'raro',
+    desc:`Preparada por ${factionName(k)}. Te la dieron en un frasco sin etiqueta.`, uses:'Beberla para convertirte en Beyonder.',
+    risk:'Viene de gente que sabe. Igual puede salir mal. Y desde ahora les debés algo.', provenance:factionName(k)}, 1);
+  f.merit = Math.max(0, f.merit - 12); f.potionDebt = true;
+  remember('faction_potion_'+k, `${factionName(k)} te dio tu primera poción.`, {cat:'pact', faction:k});
+  addHiddenTruth(`La poción que te dio ${factionName(k)} fue anotada en un registro. Desde ese día, tu nombre figura como "activo".`, {key:'faction_potion_registry'});
+  return `Te citan en una sala sin ventanas. Sobre la mesa hay un frasco sin etiqueta y un papel con el nombre de lo que vas a ser: ${sd ? sd.name : 'algo nuevo'}. "Tomala cuando estés listo. No antes. Y recordá quién te la dio."`;
 }
 
 /* ------------------------------ pedidos (mérito) ------------------------------ */
@@ -182,7 +239,8 @@ function ingredientTargetFor(k){
   const p = STATE.pathway;
   const t = p.chosenPathway ? {pathway:p.chosenPathway, seq:p.sequence-1} : (formulaTargetFor(k) || null);
   if(!t || t.seq < 0) return null;
-  if(!F(k).formulas.includes(t.pathway) && !chance(0.3)) return null;
+  // Guardan ingredientes de las vías que custodian (y las grandes iglesias, de casi todo).
+  if(!F(k).formulas.includes(t.pathway) && !['church','storm','machinery'].includes(k)) return null;
   const need = ingredientsNeededFor(t.pathway, t.seq).filter(n=>ownedQty(t.pathway, n) <= 0);
   return need.length ? {pathway:t.pathway, seq:t.seq, name:need[0]} : null;
 }
@@ -218,7 +276,7 @@ function factionRequest(k, what){
     text = `${cap(factionShort(k))} te reserva un espacio consagrado para tu próximo ritual.`;
   } else if(what==='artifact'){
     const key = pick(ARTIFACT_KEYS.filter(a=>ARTIFACTS[a].grade>=2));
-    addArtifact(key, factionName(k)+' (en préstamo)');
+    addArtifact(key, factionName(k)+' (en préstamo)', {loan:k});
     text = `Te prestan ${ARTIFACTS[key].name}. "Lo devolvés entero. Vos también."`;
   }
   logJournal(factionName(k), text, {cat:'faction', imp:2});
@@ -247,6 +305,11 @@ function factionTick(){
     const f = F(k);
     // La sospecha se enfría sola, más rápido si vivís tranquilo.
     if(f.suspicion > 0 && chance(0.3)) f.suspicion = Math.max(0, f.suspicion - (STATE.flags.quietSeasons >= 2 ? 2 : 1));
+    // Una persecución sin resultados termina perdiendo prioridad.
+    if(f.hunted && chance(STATE.flags.quietSeasons >= 2 ? 0.03 : 0.012)){
+      f.hunted = false; f.relationship = 'enemiga'; f.suspicion = Math.min(f.suspicion, 60);
+      logJournal(factionName(k), `Pasa el tiempo. ${cap(factionShort(k))} tiene otras prioridades. Dejás de sentir que te siguen. No te olvidaron: te archivaron.`, {cat:'faction', imp:2});
+    }
     // Sueldo y rango de los miembros.
     if(isMember(k)){
       const sal = (FACTIONS_DATA[k].salary||[])[f.rank] || 0;
@@ -260,6 +323,11 @@ function factionTick(){
       if(STATE.time.totalMonths - (f.lastDuty||0) > 18 && chance(0.05)){ factionAdjust(k, {trust:-6}); logJournal(factionName(k), `Te recuerdan, con frialdad, que un miembro también tiene deberes.`, {cat:'faction'}); f.lastDuty = STATE.time.totalMonths - 12; }
     }
   });
+  // Un miembro fiel que todavía no es Beyonder puede recibir una oferta.
+  if(!STATE.pathway.chosenPathway && STATE.character.edad >= 18 && STATE.character.edad <= 55 && !STATE.pendingEvent && !STATE.combat){
+    const k = memberFactions().find(x=>x!=='tarotClub' && F(x).merit >= 18 && !F(x).potionOffered && (F(x).formulas||[]).length);
+    if(k && chance(0.08)){ F(k).potionOffered = true; triggerEventById('fac_potion_offer', {f:k}); }
+  }
   // Reclutamiento: un Beyonder sin afiliación y sin sospechas llama la atención
   // de quien está buscando gente (§29: las organizaciones reclutan).
   if(STATE.pathway.chosenPathway && !memberFactions().length && chance(0.015)){

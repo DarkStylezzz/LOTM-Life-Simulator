@@ -104,7 +104,8 @@ function loadGame(opts={}){
   ctx.window.document = document; ctx.window.localStorage = localStorage;
   ctx.globalThis = ctx; ctx.self = ctx;
   vm.createContext(ctx);
-  for(const src of scriptList()){
+  if(opts.prelude) new vm.Script(opts.prelude, {filename:'prelude'}).runInContext(ctx);
+  for(const src of (opts.scripts || scriptList())){
     const file = path.join(ROOT, src);
     const code = fs.readFileSync(file,'utf8');
     try{
@@ -114,6 +115,7 @@ function loadGame(opts={}){
       throw e;
     }
   }
+  if(opts.postlude) new vm.Script(opts.postlude, {filename:'postlude'}).runInContext(ctx);
   ctx.__listeners = listeners;
   if(opts.boot !== false){
     (listeners['DOMContentLoaded']||[]).forEach(fn=>fn());

@@ -323,9 +323,9 @@ function npcTick(){
 // jugador (un cónyuge común no vive 300 años por estar casado con un Saint:
 // verlos morir es parte del precio de las Sequences altas, y de las Anclas).
 const NPC_MORTALITY = {
-  padre:{threshold:65, coef:0.010, cap:0.4}, madre:{threshold:65, coef:0.010, cap:0.4},
-  hermano:{threshold:65, coef:0.010, cap:0.4}, conyuge:{threshold:65, coef:0.010, cap:0.4},
-  hijo:{threshold:70, coef:0.008, cap:0.35}, otro:{threshold:66, coef:0.009, cap:0.35}
+  padre:{threshold:60, span:28, cap:0.5}, madre:{threshold:62, span:28, cap:0.5},
+  hermano:{threshold:60, span:28, cap:0.5}, conyuge:{threshold:60, span:28, cap:0.5},
+  hijo:{threshold:62, span:30, cap:0.45}, otro:{threshold:60, span:28, cap:0.5}
 };
 function npcMortalityGroup(npc){
   if(npc.id==='padre' || npc.id==='madre') return npc.id;
@@ -345,7 +345,8 @@ function checkNpcMortality(){
     const mp = NPC_MORTALITY[group];
     const age = npcAge(npc);
     if(age < mp.threshold) return;
-    let p = clamp((age-mp.threshold)*mp.coef*6, 0, mp.cap*3);
+    const x = (age - mp.threshold) / mp.span;
+    let p = clamp(x*x*0.3, 0, mp.cap);
     if(npc.flags.ill) p *= 1.6;
     if(chance(Math.min(0.85, p))) npcDies(npc, 'vejez', null, age);
   });

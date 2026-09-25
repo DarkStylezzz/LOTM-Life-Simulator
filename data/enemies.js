@@ -62,7 +62,7 @@ const ENEMIES = {
   mi9Agent:{name:'Agente de MI9', archetype:'smart', tier:'mundane', w:0, hp:[32,44], dmg:[8,14], defense:4, sanityDmg:[1,4], corruptionDmg:[0,0], fleeChance:0.3, seq:null, faction:'mi9',
             talk:0.35, reward:{cash:[10,50], clue:4}, env:['street','home','alley'],
             desc:'Traje gris, placa que muestra un segundo, un revólver que no muestra.'},
-  auroraZealot:{name:'Zelote de la Aurora', archetype:'desperate', tier:'mystic', w:0, hp:[38,52], dmg:[9,17], defense:3, sanityDmg:[8,15], corruptionDmg:[3,8], fleeChance:0.3, seq:[8,9], pathway:'hangedMan', faction:'aurora',
+  auroraZealot:{name:'Zelote de la Aurora', archetype:'desperate', tier:'mystic', w:0, hp:[34,48], dmg:[7,14], defense:3, sanityDmg:[6,12], corruptionDmg:[2,6], fleeChance:0.38, seq:[8,9], pathway:'hangedMan', faction:'aurora',
             talk:0, reward:{cash:[5,30], clue:10, characteristic:0.35}, env:['sewer','alley','night'],
             desc:'Tiene una sonrisa de iluminado y un cuchillo ceremonial. Reza mientras avanza.'}
 };
@@ -92,7 +92,7 @@ const COMBAT_ENVS = {
   sewer:   {name:'Las alcantarillas', witnesses:0, flee:-0.15, dark:true, desc:'Agua hasta los tobillos y un olor que no se va más.'},
   forest:  {name:'El bosque', witnesses:0, flee:0.15, hunt:true, desc:'Raíces, sombras y rastros.'},
   ruins:   {name:'Unas ruinas', witnesses:0, flee:-0.05, mysticLand:true, desc:'Piedra vieja que no recuerda haber sido construida.'},
-  home:    {name:'Tu propia casa', witnesses:0.4, flee:-0.2, desc:'Conocés cada rincón. También sabés quién duerme en la otra habitación.'},
+  home:    {name:'Tu propia casa', witnesses:0.4, flee:0.05, desc:'Conocés cada rincón. También sabés quién duerme en la otra habitación.'},
   chapel:  {name:'Una capilla', witnesses:0.2, flee:0, holy:true, desc:'Velas, bancos, una fe que pesa.'}
 };
 // Afinidad de cada vía con los entornos (bonus de daño y defensa ahí).

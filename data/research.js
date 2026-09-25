@@ -42,6 +42,7 @@ const RESEARCH_METHODS = {
     gain:[5,10], attention:[1,3], corruptionChance:0.06, verify:true }
 };
 const RESEARCH_ORDER = ['library','church','symbol','document','interrogate','clandestine','mystic'];
+Object.keys(RESEARCH_METHODS).forEach(k=>{ RESEARCH_METHODS[k].id = k; });
 
 /* ---------------------------------------------------------------------
    RUMORES Y PISTAS (§41)

@@ -134,8 +134,8 @@ function checkPathwayDiscoveryReveal(k, confirming){
   }
   if(!isIdentified(k)){
     const kn = knowledgeOf(k);
-    const confirmChance = confirming ? 1 : kn >= 65 ? 1 : kn >= 50 ? 0.25 : 0;
-    if(kn >= 50 && chance(confirmChance)) identifyPathway(k);
+    const confirmChance = confirming ? (kn >= 30 ? 1 : 0) : kn >= 60 ? 1 : kn >= 45 ? 0.3 : 0;
+    if(confirmChance > 0 && chance(confirmChance)) identifyPathway(k);
   }
 }
 function identifyPathway(k, how){

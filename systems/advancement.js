@@ -129,7 +129,7 @@ function ritualScore(){
   const r = STATE.ritual || {acc:0}; const p = STATE.pathway, c = STATE.character;
   const potion = r.potion ? itemByUid(r.potion) : null;
   const locBonus = {casa:0, faccion:6, niebla:10, ruinas:-2}[r.place] || 0;
-  const artifactBonus = inventoryItems().some(it=>it.cat==='artifact' && it.def==='candle' && (it.known||{}).effects && it.known.effects.includes('ritual')) ? 3 : 0;
+  const artifactBonus = inventoryItems().some(it=>it.cat==='artifact' && it.def==='candle' && !it.sealed && (it.known||{}).effects && it.known.effects.includes('ritual')) ? 3 : 0;
   let s = 40
     + clamp(r.acc, -10, 12) * 2.2                  // ritualAccuracy
     + (p.ritualPrepBonus||0) * 60                  // ritualPreparation
