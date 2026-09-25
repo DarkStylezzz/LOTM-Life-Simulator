@@ -2,39 +2,117 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<meta name="description" content="Un simulador de vida en el mundo de Lord of the Mysteries: nacé, crecé, descubrí el mundo oculto y decidí qué precio pagar.">
 <title>Lord of the Mysteries: Life Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
 <div id="app">
 
-  <!-- ============ INTRO / CHARACTER CREATION ============ -->
-  <div id="screen-intro">
+  <!-- ============ CREACIÓN DE PERSONAJE ============ -->
+  <section id="screen-intro" aria-label="Nueva vida">
     <div class="intro-wrap">
-      <div class="game-title">Lord of the Mysteries</div>
+      <h1 class="game-title">Lord of the Mysteries</h1>
       <div class="game-sub">— Life Simulator —</div>
-      <div class="intro-card" id="intro-content"><!-- populated by JS --></div>
+      <div class="intro-card" id="intro-content"><!-- ui/intro.js --></div>
     </div>
-  </div>
+  </section>
 
-  <!-- ============ MAIN GAME ============ -->
+  <!-- ============ PARTIDA ============ -->
   <div id="screen-game" class="hidden">
-    <div id="tabbar"></div>
+    <nav id="sidebar" aria-label="Secciones"><!-- ui/shell.js --></nav>
     <div id="main-col">
-      <div id="topbar"></div>
-      <div id="content"></div>
+      <header id="topbar"><!-- ui/shell.js --></header>
+      <main id="main" tabindex="-1"><div id="content"></div></main>
     </div>
+    <aside id="context-panel" aria-label="Panel contextual"><!-- ui/shell.js --></aside>
+    <nav id="tabbar" aria-label="Secciones"><!-- navegación inferior (móvil) --></nav>
   </div>
 
-  <!-- ============ END SCREEN ============ -->
-  <div id="screen-end" class="hidden"></div>
+  <!-- ============ FINAL / BIOGRAFÍA ============ -->
+  <section id="screen-end" class="hidden" aria-label="Biografía"></section>
 
-  <div id="toast-container"></div>
+  <div id="overlay-root"></div>
+  <div id="toast-container" role="status" aria-live="polite"></div>
 </div>
 
-<script src="app.js"></script>
+<!-- Núcleo -->
+<script src="systems/core.js"></script>
+<!-- Datos (data-driven: todo el contenido vive acá) -->
+<script src="data/pathways.js"></script>
+<script src="data/traits.js"></script>
+<script src="data/difficulty.js"></script>
+<script src="data/cities.js"></script>
+<script src="data/jobs.js"></script>
+<script src="data/npcs.js"></script>
+<script src="data/factions.js"></script>
+<script src="data/lore.js"></script>
+<script src="data/items.js"></script>
+<script src="data/enemies.js"></script>
+<script src="data/abilities.js"></script>
+<script src="data/acting.js"></script>
+<script src="data/research.js"></script>
+<script src="data/timeline.js"></script>
+<script src="data/missions.js"></script>
+<script src="data/exploration.js"></script>
+<script src="data/conditions.js"></script>
+<script src="data/world_events.js"></script>
+<script src="data/events/childhood.js"></script>
+<script src="data/events/life.js"></script>
+<script src="data/events/mystic.js"></script>
+<script src="data/events/social.js"></script>
+<script src="data/events/family.js"></script>
+<script src="data/events/decisions.js"></script>
+<script src="data/events/tarot.js"></script>
+<script src="data/events/divinity.js"></script>
+<!-- Sistemas -->
+<script src="systems/state.js"></script>
+<script src="systems/effects.js"></script>
+<script src="systems/memory.js"></script>
+<script src="systems/events.js"></script>
+<script src="systems/time.js"></script>
+<script src="systems/character.js"></script>
+<script src="systems/economy.js"></script>
+<script src="systems/npc.js"></script>
+<script src="systems/relations.js"></script>
+<script src="systems/family.js"></script>
+<script src="systems/world.js"></script>
+<script src="systems/factions.js"></script>
+<script src="systems/pathway.js"></script>
+<script src="systems/research.js"></script>
+<script src="systems/knowledge.js"></script>
+<script src="systems/acting.js"></script>
+<script src="systems/inventory.js"></script>
+<script src="systems/potion.js"></script>
+<script src="systems/advancement.js"></script>
+<script src="systems/abilities.js"></script>
+<script src="systems/combat.js"></script>
+<script src="systems/artifacts.js"></script>
+<script src="systems/tarot.js"></script>
+<script src="systems/anchors.js"></script>
+<script src="systems/divinity.js"></script>
+<script src="systems/missions.js"></script>
+<script src="systems/endings.js"></script>
+<script src="systems/save.js"></script>
+<!-- Interfaz -->
+<script src="ui/dom.js"></script>
+<script src="ui/widgets.js"></script>
+<script src="ui/intro.js"></script>
+<script src="ui/shell.js"></script>
+<script src="ui/dashboard.js"></script>
+<script src="ui/people.js"></script>
+<script src="ui/mystic.js"></script>
+<script src="ui/world.js"></script>
+<script src="ui/inventory.js"></script>
+<script src="ui/journal.js"></script>
+<script src="ui/combat.js"></script>
+<script src="ui/end.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
