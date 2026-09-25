@@ -104,16 +104,16 @@ const PATHWAY_ENV_AFFINITY = {
 
 /* Estados: duran unos turnos y los aplican habilidades, enemigos y objetos. */
 const STATUSES = {
-  sangrando:  {label:'Sangrando',  dot:[2,4], turns:3, bad:true},
-  aturdido:   {label:'Aturdido',   skip:true, turns:1, bad:true},
-  asustado:   {label:'Asustado',   dmgMult:0.7, turns:2, bad:true},
-  ardiendo:   {label:'Ardiendo',   dot:[3,6], turns:2, bad:true},
-  oculto:     {label:'Oculto',     evade:0.6, turns:1},
-  marcado:    {label:'Marcado',    dmgTaken:1.3, turns:3, bad:true},
-  confundido: {label:'Confundido', miss:0.4, turns:2, bad:true},
-  debilitado: {label:'Debilitado', dmgMult:0.75, turns:3, bad:true},
-  furioso:    {label:'Furioso',    dmgMult:1.35, defense:-2, turns:2},
-  protegido:  {label:'Protegido',  dmgTaken:0.5, turns:1},
-  dormido:    {label:'Dormido',    skip:true, turns:2, breakOnHit:true, bad:true},
-  analizado:  {label:'Analizado',  dmgTaken:1.2, turns:99, bad:true}
+  sangrando:  {label:'Sangrando',  dot:[2,4], turns:3, bad:true, desc:'Pierde salud cada turno.'},
+  aturdido:   {label:'Aturdido',   skip:true, turns:1, bad:true, desc:'Pierde el próximo turno.'},
+  asustado:   {label:'Asustado',   dmgMult:0.7, turns:2, bad:true, desc:'Pega más flojo.'},
+  ardiendo:   {label:'Ardiendo',   dot:[3,6], turns:2, bad:true, desc:'Se quema: pierde salud cada turno.'},
+  oculto:     {label:'Oculto',     evade:0.6, turns:1, desc:'Difícil de alcanzar.'},
+  marcado:    {label:'Marcado',    dmgTaken:1.3, turns:3, bad:true, desc:'Recibe más daño.'},
+  confundido: {label:'Confundido', miss:0.4, turns:2, bad:true, desc:'Puede errar el golpe.'},
+  debilitado: {label:'Debilitado', dmgMult:0.75, turns:3, bad:true, desc:'Pega más flojo.'},
+  furioso:    {label:'Furioso',    dmgMult:1.35, defense:-2, turns:2, desc:'Pega más fuerte, se cuida menos.'},
+  protegido:  {label:'Protegido',  dmgTaken:0.5, turns:1, desc:'Recibe la mitad del daño.'},
+  dormido:    {label:'Dormido',    skip:true, turns:2, breakOnHit:true, bad:true, desc:'No se mueve hasta que lo golpean.'},
+  analizado:  {label:'Analizado',  dmgTaken:1.2, turns:99, bad:true, desc:'Sus puntos débiles están a la vista.'}
 };

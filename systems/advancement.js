@@ -35,12 +35,17 @@ function advancementRequirements(){
   const diff = ADVANCE_DIFFICULTY[seq] || ADVANCE_DIFFICULTY[1];
   const reqs = [];
   reqs.push({label:'La poción actual, digerida', ok: p.digestion >= (DIGESTION_REQ[seq]||100)});
+  // Sequence 0 no es una poción: es la Unicidad y las Características (systems/divinity.js).
+  if(target === 0){
+    reqs.push({label:'Cordura suficiente', ok: c.sanity >= 50});
+    reqs.push({label:'El camino al trono', ok: divinityReady()});
+    return reqs;
+  }
   reqs.push({label:`La poción de Sequence ${target}, preparada`, ok: potionItems(p.chosenPathway, target).length > 0});
   reqs.push({label:'Dinero para los materiales del ritual: '+fmtMoney(ritualCost()), ok: c.cash >= ritualCost()});
   reqs.push({label:'Cordura suficiente', ok: c.sanity >= 35});
   const sr = specialRequirementLabel(seq);
   if(sr) reqs.push({label:sr, ok: specialRequirementOk(seq)});
-  if(target === 0) reqs.push({label:'El camino al trono (ver Sequence 0)', ok: divinityReady()});
   return reqs;
 }
 function ritualCost(){ const d = ADVANCE_DIFFICULTY[STATE.pathway.sequence] || {moneyCost:1000}; return Math.round(d.moneyCost * 0.5 * priceIndex()); }

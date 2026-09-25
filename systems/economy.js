@@ -328,8 +328,16 @@ function buyRentalProperty(){
 
 /* ------------------------------ mercado negro ------------------------------ */
 // Requiere conocer el secreto 'black_market'. Caro, riesgoso y poco confiable.
+// Las ofertas se fijan por temporada: no cambian cada vez que mirás.
 function blackMarketOffers(){
   if(!knowsLore('black_market')) return [];
+  const season = Math.floor(STATE.time.totalMonths/3);
+  if(STATE.bmOffers && STATE.bmOffers.season === season) return STATE.bmOffers.offers;
+  const offers = buildBlackMarketOffers();
+  STATE.bmOffers = {season, offers};
+  return offers;
+}
+function buildBlackMarketOffers(){
   const offers = [];
   const target = STATE.pathway.chosenPathway ? {p:STATE.pathway.chosenPathway, s:STATE.pathway.sequence-1} : null;
   const ids = identifiedPathways();
@@ -338,15 +346,15 @@ function blackMarketOffers(){
   if(p && s >= 0){
     offers.push({kind:'formula', pathway:p, seq:s, price:Math.round((400 + (9-s)*900)*priceIndex()), label:`Una fórmula que dicen que es "${formulaName(p,s)}"`});
     const need = ingredientsNeededFor(p, s).filter(n=>ownedQty(p, n) <= 0);
-    if(need.length) offers.push({kind:'ingredient', pathway:p, seq:s, name:pick(need), price:Math.round((250 + (9-s)*700)*priceIndex()), label:`Un ingrediente: ${pick(need)}`});
+    if(need.length){ const nm = pick(need); offers.push({kind:'ingredient', pathway:p, seq:s, name:nm, price:Math.round((250 + (9-s)*700)*priceIndex()), label:`Un ingrediente: ${nm}`}); }
   }
   offers.push({kind:'artifact', price:Math.round(rndInt(300,900)*priceIndex()), label:'Un objeto "con historia" que el vendedor no quiere describir'});
   return offers;
 }
 function buyBlackMarket(i){
   if(timeBlocked()) return;
-  const offers = STATE._bmOffers || blackMarketOffers();
-  const o = offers[i]; if(!o) return;
+  const offers = blackMarketOffers();
+  const o = offers[i]; if(!o || o.sold) return;
   const c = STATE.character;
   if(c.cash < o.price){ toast('No te alcanza.', 'neg'); return; }
   if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }
@@ -366,7 +374,7 @@ function buyBlackMarket(i){
     addArtifact(pick(ARTIFACT_KEYS), 'el mercado negro');
     text = 'El vendedor te lo da envuelto en tela negra y no te mira mientras cobra.';
   }
-  STATE._bmOffers = null;
+  o.sold = true;
   logJournal('Mercado negro', text, {cat:'mystery', imp:1});
   setResolution('Mercado negro', text, []);
   saveGame(true); renderAll();

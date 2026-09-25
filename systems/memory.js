@@ -60,7 +60,7 @@ function addHiddenTruth(text, opts){
 function revealHiddenTruth(keyOrId, how){
   const h = STATE.hiddenTruths.find(x=>!x.revealed && (x.key===keyOrId || x.id===keyOrId));
   if(!h) return null;
-  h.revealed = true; h.revealedAge = STATE.character.edad;
+  h.revealed = true; h.revealedAge = STATE.character.edad; h.how = how || null;
   logJournal('Ahora lo entendés', h.text + (how ? ' ('+how+')' : ''), {cat:'mystery', imp:3});
   remember('truth_revealed', h.text, {cat:'secret'});
   return h;

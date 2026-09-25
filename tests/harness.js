@@ -19,6 +19,7 @@ function makeElement(tag, id){
     disabled:false, hidden:false, attributes:{},
     get innerHTML(){ return this._html; }, set innerHTML(v){ this._html = String(v); },
     get outerHTML(){ return this._html; },
+    get firstChild(){ return this.children[0] || null; }, get lastChild(){ return this.children[this.children.length-1] || null; },
     classList:{ _s:new Set(),
       add(...c){ c.forEach(x=>this._s.add(x)); }, remove(...c){ c.forEach(x=>this._s.delete(x)); },
       contains(c){ return this._s.has(c); }, toggle(c, force){ const on = force===undefined ? !this._s.has(c) : !!force; if(on) this._s.add(c); else this._s.delete(c); return on; } },

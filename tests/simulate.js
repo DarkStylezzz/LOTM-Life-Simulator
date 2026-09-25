@@ -148,6 +148,22 @@ function __playerTurn(){
   const bm = knowsLore('black_market') ? blackMarketOffers() : [];
   if(bm.length && Math.random() < 0.1){ const i = __pickIdx(bm.length); if(c.cash > bm[i].price*1.5) buyBlackMarket(i); }
 }
+// Con --ui: dibuja todas las pestañas y sub-secciones (detecta errores de render).
+function __renderEverything(){
+  const tabs = ['vida','personas','misticismo','mundo','inventario','diario'];
+  const subs = {misticismo:['mystic', typeof mysticSections === 'function' ? mysticSections().map(x=>x.id) : []], mundo:['world', typeof worldSections === 'function' ? worldSections().map(x=>x.id) : []]};
+  tabs.forEach(t=>{
+    UI.tab = t;
+    if(subs[t]) subs[t][1].forEach(id=>{ UI.sub[subs[t][0]] = id; renderNow(); });
+    else renderNow();
+  });
+  // Ficha de una persona, detalle de un objeto, cada sección del diario.
+  const n = pick(STATE.npcs); if(n){ UI.tab = 'personas'; UI.npcSel = n.id; renderNow(); UI.npcSel = null; }
+  const it = pick(inventoryItems()); if(it){ UI.tab = 'inventario'; UI.invSel = it.uid; renderNow(); }
+  UI.tab = 'diario'; JOURNAL_SECTIONS.forEach(s=>{ UI.journalSec = s.id; renderNow(); });
+  UI.tab = 'vida'; renderNow();
+  if(STATE.gameOver) renderEnd();
+}
 function __checkSerializable(){
   const bad = [];
   (function walk(o, p, depth){
@@ -172,6 +188,7 @@ function __liveOne(i, maxMonths){
     if(acted){ stuck++; if(stuck > 300){ __sim.errors.push({label:'stuck', msg:'demasiadas decisiones seguidas sin avanzar', age:STATE.character.edad, month:STATE.time.totalMonths, pe: JSON.stringify(STATE.pendingEvent||STATE.pendingMission||(STATE.combat&&'combat')).slice(0,200)}); STATE.pendingEvent = null; STATE.pendingMission = null; STATE.combat = null; stuck = 0; } continue; }
     stuck = 0;
     __tryAct('player', __playerTurn);
+    if(typeof renderNow === 'function' && steps % 15 === 0) __tryAct('ui', __renderEverything);
     if(timeBlocked()) continue;
     __tryAct('advance', ()=>{ if(Math.random() < 0.5) advanceOneSeason(); else advanceUntilImportant(); });
     // Guardar y recargar a mitad de la vida (con decisiones pendientes incluidas).

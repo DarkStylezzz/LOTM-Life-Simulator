@@ -166,6 +166,8 @@ function studyArtifact(it, d){
   return {title:'Estudiar '+d.name.toLowerCase(), text, imp:1};
 }
 function useArtifact(it, d){
+  if(it.sealed){ toast('Está sellado en la caja.', 'neg'); return null; }
+  if(!d.effects.some(e=>e.kind!=='combat' && e.kind!=='save' && e.kind!=='ritual')){ toast('No es algo que se use así. Tal vez en otro momento.', 'neg'); return null; }
   if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return null; }
   markMysticAct();
   const k = artifactKnown(it);
