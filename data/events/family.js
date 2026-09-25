@@ -112,6 +112,21 @@ const EVENTS_FAMILY = [
     context:(ctx)=>{ const s = spouseNpc(); if(!s || s.affection < 40) return null; ctx.npc = s; return ctx; },
     run:(ctx)=>{ adjustRel(ctx.npc, {affection:[3,6]}); applyEffects({sanity:[2,5], cash:-rndInt(5,30)});
       return {title:'Un aniversario', text:`Con ${ctx.npc.name} festejan otro año juntos. Nada extravagante: la misma fonda de siempre, la misma mesa del rincón.`}; }},
+  {id:'fam_partner_proposes', type:'family', rarity:'uncommon', tags:['love','wedding'], weight:5, cooldown:30, narrativeImportance:3,
+    context:(ctx)=>{ const n = partnerNpc(); if(!n || STATE.character.estadoCivil === 'Casado/a' || n.affection < 55) return null; const m = memoryWithNpc(n.id, 'dating'); if(m && STATE.time.totalMonths - m.totalMonths < 14) return null; ctx.npc = n; return ctx; },
+    title:'Una pregunta', text:(ctx)=>`${ctx.npc.name} se pone nervioso de una forma que no le conocías. Después de dar muchas vueltas, lo dice: quiere casarse con vos.`.replace('nervioso', ng(ctx.npc,'nervioso','nerviosa')),
+    choices:[
+      {label:'Decir que sí', small:'Una boda chica. Lo importante es otra cosa.', run:(ctx)=>{ marryPartner(ctx.npc, true); return 'Dicen que sí los dos, en voz baja, como si alguien pudiera escucharlos y cambiar de idea.'; }},
+      {label:'Todavía no', small:'No es un no.', run:(ctx)=>{ adjustRel(ctx.npc, {affection:-5, trust:-3}); return 'Asiente. Se le nota la desilusión, y también que va a esperar.'; }},
+      {label:'Terminar la relación', small:'Esto no va a ningún lado.', run:(ctx)=>{ const n = ctx.npc; n.id = 'ex_' + uid('x'); n.role = ng(n,'Ex pareja','Ex pareja'); n.relType = 'acquaintance'; n.lifeState = 'distanciado'; adjustRel(n, {affection:-25, trust:-15}); applyEffects({sanity:[-6,-2]}); remember('breakup', `Terminaste con ${n.name}.`, {cat:'loss', npc:n.id}); return 'No hay gritos. Hay algo peor: silencio, y una puerta que se cierra despacio.'; }}
+    ]},
+  {id:'fam_pregnancy', type:'family', rarity:'uncommon', tags:['children'], weight:4, cooldown:30, narrativeImportance:3,
+    context:(ctx)=>{ const s = spouseNpc(); const c = STATE.character; if(!s || c.edad > 46 || npcAge(s) > 44 || childrenNpcs().length >= 5) return null; if(!STATE.flags.tryingForChild && !chance(0.35)) return null; ctx.npc = s; return ctx; },
+    title:'Una noticia', text:(ctx)=>`${ctx.npc.name} te toma de las manos antes de decir nada. Va a nacer un hijo.`,
+    choices:[
+      {label:'Alegrarte sin reservas', small:'Es una buena noticia.', run:(ctx)=>{ adjustRel(ctx.npc, {affection:6, trust:4}); const k = birthChild(); return `Meses después nace ${k.name}. Llora fuerte. Todos dicen que es una buena señal.`; }},
+      {label:'Alegrarte, con miedo', small:'Con lo que sabés del mundo...', run:(ctx)=>{ adjustRel(ctx.npc, {affection:3}); applyEffects({sanity:[-2,1]}); const k = birthChild(); remember('fear_for_child', `Tuviste miedo por ${k.name} desde el primer día.`, {cat:'person', npc:k.id}); return `Nace ${k.name}. Lo mirás dormir y pensás en todo lo que no le vas a poder contar nunca.`; }}
+    ]},
   {id:'fam_spouse_wants_child', type:'family', rarity:'uncommon', tags:['spouse','children'], weight:4, cooldown:24, narrativeImportance:3,
     context:(ctx)=>{ const s = spouseNpc(); if(!s || childrenNpcs().length || npcAge(s) > 44 || STATE.character.edad > 48) return null; ctx.npc = s; return ctx; },
     title:'Una conversación pendiente', text:(ctx)=>`${ctx.npc.name} saca el tema durante la cena: quiere tener hijos. "No ahora mismo. Pero no quiero que sea nunca."`,

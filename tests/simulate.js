@@ -37,6 +37,7 @@ const ctx = WITH_UI ? loadGame({prelude:SEEDED}) : loadGame({scripts:systemScrip
 // El "jugador": todo lo que hace está en el contexto del juego.
 run(ctx, `
 var __sim = {errors:[], stats:[]};
+console.error = function(){ __sim.errors.push({label:'console.error', msg:Array.from(arguments).map(a=>a && a.message ? a.message : String(a)).join(' ').slice(0,200), stack:Array.from(arguments).map(a=>a && a.stack ? a.stack.split('\\n').slice(0,4).join(' | ') : '').join(''), age:STATE.character.edad}); };
 function __tryAct(label, fn){ try{ fn(); }catch(e){ __sim.errors.push({label, msg:String(e && e.message || e), stack:(e && e.stack || '').split('\\n').slice(0,6).join(' | '), age:STATE.character.edad, month:STATE.time.totalMonths}); if(__sim.errors.length > 400) throw e; } }
 function __pickIdx(n){ return Math.floor(Math.random()*n); }
 function __newLife(i){

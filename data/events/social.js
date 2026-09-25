@@ -100,6 +100,18 @@ const EVENTS_SOCIAL = [
       {label:'Contarle la verdad', small:'Alguien tiene que saberlo.', run:(ctx)=>{ return confideBeyonderSecret(ctx.npc); }},
       {label:'Alejarte', small:'Mejor que no sepa nada.', run:(ctx)=>{ adjustRel(ctx.npc, {affection:-8, suspicion:5}); if(chance(0.4)) ctx.npc.lifeState='distanciado'; return 'Te alejás de a poco. Es más seguro. Es más solo.'; }}
     ]},
+  {id:'life_someone_special', type:'social', rarity:'uncommon', tags:['love'], requirements:{ageMin:18, ageMax:45, single:true}, weight:5, cooldown:24, narrativeImportance:3,
+    hiddenRequirements:()=>!partnerNpc(),
+    title:'Alguien', text:()=>pick(['En una fiesta de un conocido, alguien se ríe de un chiste tuyo que no era tan bueno. Se quedan hablando hasta que apagan las luces.',
+      'Todas las mañanas se cruzan en la misma esquina. Hoy, por fin, alguien dice buen día primero.',
+      'Te toca compartir mesa en una taberna llena. Para el final de la noche, ya no son desconocidos.']),
+    choices:[
+      {label:'Invitarle a salir', small:'Arriesgarse un poco.', run:()=>{ const c = STATE.character; const g = c.genero==='Hombre' ? 'f' : c.genero==='Mujer' ? 'm' : (chance(0.5)?'f':'m');
+        const n = createNpc({gender:g, relType:'acquaintance', ageMin:Math.max(18, c.edad-8), ageMax:c.edad+8, met:true, trust:rndInt(30,50), affection:rndInt(45,65)});
+        if(chance(0.7 + luckMod())){ startDating(n); return `Se llama ${n.name}. Dice que sí. Ninguno de los dos sabe todavía adónde va esto.`; }
+        adjustRel(n, {affection:-10}); return `Se llama ${n.name}. Te dice que no, con amabilidad. Igual te quedás con su nombre.`; }},
+      {label:'Dejarlo pasar', small:'No es el momento.', run:()=>'Es un buen recuerdo. A veces eso alcanza.'}
+    ]},
   {id:'npc_romance', type:'social', rarity:'uncommon', tags:['love'], requirements:{ageMin:18, single:true}, weight:4, cooldown:18, narrativeImportance:3,
     context:(ctx)=>{ const c = aliveNpcs().filter(n=>n.met && n.lifeState==='presente' && n.affection>=50 && romanceCompatible(n)); if(!c.length) return null; ctx.npc = pick(c); return ctx; },
     title:(ctx)=>'Algo con '+ctx.npc.name, text:(ctx)=>`Con ${ctx.npc.name} ya no es sólo amistad. Los dos lo saben desde hace un tiempo. Esta noche, a la salida, se queda mirándote un segundo de más.`,

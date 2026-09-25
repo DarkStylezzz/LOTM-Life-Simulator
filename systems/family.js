@@ -114,6 +114,39 @@ function proponerMatrimonio(){
   setResolution('Una propuesta', text, []);
   saveGame(true); renderAll();
 }
+// Un hijo nace (lo usan la acción "Buscar un hijo" y los eventos de familia).
+function birthChild(){
+  const c = STATE.character;
+  const isMale = chance(0.5);
+  const n = childrenNpcs().length;
+  const kid = createNpc({id:'hijo'+(n+1), name: randomFirstName(isMale?'m':'f')+' '+c.apellido, gender:isMale?'m':'f', role:isMale?'Hijo':'Hija',
+    relType:'family', tier:'importante', age:0, met:true, allowHidden:false, clase:c.clase, profession:'—',
+    trust:rndInt(60,85), affection:rndInt(70,90), loyalty:rndInt(50,80)});
+  kid.ageOffset = -c.edad;
+  kid.personality = rollPersonality();
+  applyEffects({sanity:[3,8], reputation:[1,4]});
+  logJournal('Un nacimiento', `${kid.name} nace. La vida de ${c.nombre} ${c.apellido} ya no es la misma.`, {cat:'family', imp:3});
+  remember('child_born', `Nació ${kid.name}.`, {cat:'person', npc:kid.id});
+  addMilestone('family', `Nace ${kid.name}`);
+  STATE.flags.tryingForChild = false;
+  STATE._importantMoment = true;
+  return kid;
+}
+// Una boda (la propuesta la puede hacer el personaje o la pareja).
+function marryPartner(n, modest){
+  const c = STATE.character;
+  const cost = modest ? Math.round(weddingCost()*0.35) : weddingCost();
+  const pay = Math.min(cost, c.cash + c.bank);
+  if(c.cash >= pay) applyEffects({cash:-pay}); else { const rest = pay - c.cash; applyEffects({cash:-c.cash, bank:-rest}); }
+  n.id = 'conyuge'; n.role = 'Cónyuge';
+  adjustRel(n, {trust:10, affection:8, loyalty:10});
+  c.estadoCivil = 'Casado/a';
+  applyEffects({reputation:[3,8], sanity:[4,9]});
+  logJournal('Boda', `${c.nombre} ${c.apellido} se casa con ${n.name}.${modest ? ' Una boda chica, en una tarde de lluvia, con pocos testigos y mucha comida.' : ' Una boda modesta, pero real.'}`, {cat:'family', imp:3});
+  remember('wedding', `Te casaste con ${n.name}.`, {cat:'person', npc:n.id});
+  addMilestone('family', `Se casa con ${n.name}`);
+  STATE._importantMoment = true;
+}
 function intentarTenerHijo(){
   if(timeBlocked()) return;
   const c = STATE.character;
@@ -124,19 +157,8 @@ function intentarTenerHijo(){
   const fert = clamp(0.55 - Math.max(0, Math.min(c.edad, npcAge(s)) - 35)*0.04 + (STATE.flags.tryingForChild?0.1:0), 0.08, 0.7);
   let text;
   if(chance(fert)){
-    const isMale = chance(0.5);
-    const n = childrenNpcs().length;
-    const kid = createNpc({id:'hijo'+(n+1), name: randomFirstName(isMale?'m':'f')+' '+c.apellido, gender:isMale?'m':'f', role:isMale?'Hijo':'Hija',
-      relType:'family', tier:'importante', age:0, met:true, allowHidden:false, clase:c.clase, profession:'—',
-      trust:rndInt(60,85), affection:rndInt(70,90), loyalty:rndInt(50,80)});
-    kid.ageOffset = -c.edad;
-    kid.personality = rollPersonality();
-    applyEffects({sanity:[3,8], reputation:[1,4]});
+    const kid = birthChild();
     text = `${kid.name} nace. La vida de ${c.nombre} ${c.apellido} ya no es la misma.`;
-    logJournal('Un nacimiento', text, {cat:'family', imp:3});
-    remember('child_born', `Nació ${kid.name}.`, {cat:'person', npc:kid.id});
-    addMilestone('family', `Nace ${kid.name}`);
-    STATE.flags.tryingForChild = false;
   } else {
     text = 'Lo intentan, pero por ahora no llega.';
     logJournal('Vida personal', text, {cat:'family'});

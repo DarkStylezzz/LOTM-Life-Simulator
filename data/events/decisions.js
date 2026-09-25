@@ -189,6 +189,7 @@ const EVENTS_DECISIONS = [
 
   // Una organización le ofrece a un miembro convertirse en Beyonder (systems/factions.js).
   {id:'fac_potion_offer', type:'faction', rarity:'rare', tags:['faction','potion'], weight:0, cooldown:0, chainOnly:true, narrativeImportance:3,
+    context:(ctx)=>{ ctx.f = ctx.f || memberFactions().find(k=>k!=='tarotClub'); return ctx.f ? ctx : null; },
     title:(ctx)=>`Una oferta de ${factionShort(ctx.f)}`,
     text:(ctx)=>`Un superior de ${factionName(ctx.f)} te lleva aparte. Habla bajo, sin rodeos: hay gente como vos, que sirve bien y sabe callar, a la que se le ofrece algo más. "No es un regalo. Es una herramienta. Y un compromiso." No dice la palabra poción. No hace falta.`,
     choices:[
