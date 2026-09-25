@@ -379,7 +379,7 @@ function buyBlackMarket(i){
     else addItem({cat:'misc', name:o.name+' (dudoso)', desc:'Se parece a lo que buscabas. Demasiado.', rarity:'comun', provenance:'el mercado negro', risk:'Probablemente falso.'}, 1);
     text = real ? `Te entregan ${o.name}. Parece real.` : `Te entregan algo que se parece a ${o.name}. Recién en tu casa notás que es una imitación.`;
   } else {
-    addArtifact(pick(ARTIFACT_KEYS), 'el mercado negro');
+    addArtifact(randomArtifactKey(), 'el mercado negro');
     text = 'El vendedor te lo da envuelto en tela negra y no te mira mientras cobra.';
   }
   o.sold = true;

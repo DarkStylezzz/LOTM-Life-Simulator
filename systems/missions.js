@@ -109,6 +109,7 @@ function exploreLocation(id){
   ['ingredient','clue','artifact','lore'].forEach(k=>{ if(w[k]) w[k] *= findMult; });
   if(l.resonates && STATE.pathway.chosenPathway && l.resonates.includes(STATE.pathway.chosenPathway)){ if(w.ingredient) w.ingredient *= 1.5; if(w.clue) w.clue *= 1.2; }
   if(!eligibleIngredientPathways().length) w.ingredient = 0;
+  else if(wantedIngredient() && w.ingredient) w.ingredient *= 1.4;   // sabés exactamente qué buscar
   if(maxPathwayKnowledge() < 10 && !STATE.pathway.chosenPathway) w.mystic = (w.mystic||0) * 0.5;
   const outcome = wpick(Object.keys(w), k=>w[k]) || 'nothing';
   let text = '';

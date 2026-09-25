@@ -68,6 +68,11 @@ function initDelegation(){
   document.addEventListener('click', (ev)=>{
     const el = ev.target.closest && ev.target.closest('[data-act]');
     if(!el || ['SELECT','INPUT','TEXTAREA'].includes(el.tagName)) return;
+    // Un control nativo (casilla, opción, archivo, su etiqueta) dentro de algo
+    // con acción —por ejemplo, el fondo de una ventana— se maneja solo (con
+    // data-change): cancelar el click lo dejaría sin marcar o sin abrir.
+    const native = ev.target.closest('input, label, select, textarea');
+    if(native && native !== el && el.contains(native)) return;
     ev.preventDefault();
     dispatchAct(el, ev);
   });

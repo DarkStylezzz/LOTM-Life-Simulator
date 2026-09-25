@@ -16,6 +16,12 @@ function artName(d){ return d ? (d.the ? d.the + ' ' : '') + d.name.toLowerCase(
 // peleando; los de ritual, en el ritual; 'save' y 'owned' actúan solos.
 const ARTIFACT_USE_KINDS = ['passive','social','cash','exploration'];
 function artifactUsable(d){ return !!d && d.effects.some(e=>ARTIFACT_USE_KINDS.includes(e.kind)); }
+// Un objeto sellado al azar que no tengas ya. Los de grado 0 no andan
+// sueltos por ahí (sólo en lugares de peligro extremo: ver exploración).
+function randomArtifactKey(allowGrade0){
+  const pool = ARTIFACT_KEYS.filter(k=>!hasArtifact(k) && (allowGrade0 || ARTIFACTS[k].grade > 0));
+  return pick(pool.length ? pool : ARTIFACT_KEYS.filter(k=>ARTIFACTS[k].grade > 0));
+}
 function hasArtifact(key){ return artifactItems().some(it=>it.def===key); }
 function artifactByKey(key){ return artifactItems().find(it=>it.def===key) || null; }
 function artifactDef(it){ return it && ARTIFACTS[it.def] || null; }
@@ -24,7 +30,7 @@ function artifactKnown(it){ return it.known || (it.known = {activation:false, gr
 function addArtifact(key, provenance, opts){
   opts = opts || {};
   const d = ARTIFACTS[key]; if(!d) return null;
-  const it = addItem({cat:'artifact', def:key, name:d.name, rarity:d.rarity||'raro', desc:d.foundText, grade:d.grade,
+  const it = addItem({cat:'artifact', def:key, name:d.name, rarity:d.rarity||'raro', desc:cap(d.foundText), grade:d.grade,
     risk:'Desconocido.', uses:'Desconocidos.', provenance: provenance || 'encontrado',
     known:{activation:false, grade:false, effects:[], drawbacks:[], hidden:false, origin:false},
     useCount:0, studied:0, sealed:false, loan:opts.loan||null, loanUntil: opts.loan ? STATE.time.totalMonths + 12 : null}, 1);

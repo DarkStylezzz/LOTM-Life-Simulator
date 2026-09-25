@@ -134,7 +134,7 @@ function checkPathwayDiscoveryReveal(k, confirming){
   }
   if(!isIdentified(k)){
     const kn = knowledgeOf(k);
-    const confirmChance = confirming ? (kn >= 30 ? 1 : 0) : kn >= 60 ? 1 : kn >= 45 ? 0.3 : 0;
+    const confirmChance = confirming ? (kn >= 30 ? 1 : 0) : kn >= 55 ? 1 : kn >= 42 ? 0.35 : 0;
     if(confirmChance > 0 && chance(confirmChance)) identifyPathway(k);
   }
 }
@@ -150,7 +150,7 @@ function connectDots(k){
   const kn = knowledgeOf(k), b = p.belief[k] || 0;
   const skill = researchSkill('study');
   let text;
-  if(kn >= 45 && chance(clamp((kn-35)/25 + skill, 0.1, 0.95))){
+  if(kn >= 40 && chance(clamp((kn-30)/25 + skill, 0.1, 0.95))){
     identifyPathway(k, 'atando cabos');
     text = `Ponés todo sobre la mesa, una noche entera. Y de golpe encaja: esto tiene nombre. ${PATHWAYS[k].name}.`;
   } else if(kn < b * 0.5){
@@ -159,7 +159,7 @@ function connectDots(k){
     text = bad.length ? `Al ponerlas lado a lado, algunas pistas se contradicen. ${bad.length === 1 ? 'Una era falsa' : 'Dos eran falsas'}: la de ${bad.map(c=>c.source||'aquella vez').join(' y la de ')}.` : 'Nada encaja con nada. Tal vez estás viendo patrones donde no los hay.';
   } else {
     p.knowledge[k] = clamp(kn + 1, 0, 100);
-    text = kn >= 45 ? 'Estás cerca. Lo sentís. Pero todavía falta una pieza.' : 'Ponés todo sobre la mesa. No alcanza: sabés muy poco todavía.';
+    text = kn >= 40 ? 'Estás cerca. Lo sentís. Pero todavía falta una pieza.' : 'Ponés todo sobre la mesa. No alcanza: sabés muy poco todavía.';
   }
   logJournal('Atar cabos', text, {cat:'mystery', imp:1});
   setResolution('Atar cabos', text, []);

@@ -144,7 +144,7 @@ function resolveActingChoice(idx){
     const npc = pe.npc ? npcById(pe.npc) : null;
     // Digestión según calidad, Sequence (más alta = más lenta), consistencia
     // y cuánto entendés el Método.
-    const baseDig = {excelente:[10,16], buena:[6,10], mediocre:[1,3], mala:[-8,-3]}[tier];
+    const baseDig = {excelente:[12,18], buena:[7,12], mediocre:[2,4], mala:[-8,-3]}[tier];
     const seqFactor = 1 - (9 - p.sequence)*0.06;
     const methodFactor = [0.55, 1, 1.25][actingMethodLevel()];
     let dig = roll(baseDig);
@@ -219,7 +219,7 @@ function actingStyleLabel(){
 function passiveDigestion(){
   const p = STATE.pathway, c = STATE.character;
   if(!p.chosenPathway || p.digestion >= 100) return;
-  let d = 0.25; // vivir con la poción adentro ya digiere un poco
+  let d = 0.35; // vivir con la poción adentro ya digiere un poco
   const job = JOBS[c.profesion];
   if(job && job.align && (job.align[p.chosenPathway]||[]).includes(p.sequence)) d += 0.9;
   const a = p.acting;

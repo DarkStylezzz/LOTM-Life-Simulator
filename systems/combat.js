@@ -398,7 +398,13 @@ function endCombat(result){
   if(cash + bonus > 0) eff.cash = cash + bonus;
   if(rw.clue) eff.clue = {pathway: e.pathway || (rw.clueBias ? pick(rw.clueBias) : '$random'), reliability:'real', strength:[Math.round(rw.clue/3), Math.round(rw.clue/2)], source:e.name};
   const ch = applyEffects(eff);
-  const text = `Vencés a ${e.name}. ${cash+bonus>0 ? 'Conseguís '+fmtMoney(cash+bonus)+' entre sus pertenencias.' : ''}`.trim();
+  let text = `Vencés a ${e.name}. ${cash+bonus>0 ? 'Conseguís '+fmtMoney(cash+bonus)+' entre sus pertenencias.' : ''}`.trim();
+  // Lo que queda de una criatura del mundo oculto sirve: muchos ingredientes
+  // salen de ahí. Sólo lo reconoce quien sabe qué está buscando.
+  if(e.tier === 'mystic' && wantedIngredient() && chance(e.humanoid ? 0.15 : 0.35)){
+    const got = grantIngredientFind('los restos de ' + e.name.toLowerCase(), e.seq !== null && e.seq <= 7);
+    if(got) text += ` Entre lo que queda, algo que reconocés: ${got.name}.`;
+  }
   logJournal('Combate — victoria', text, {cat:'combat', imp:2});
   // Un Beyonder vencido (o que se rinde): decidir qué hacer con él (§24).
   if(e.seq !== null && e.humanoid && !cb.enemySuicide && !cb.enemySelfDestroyed){

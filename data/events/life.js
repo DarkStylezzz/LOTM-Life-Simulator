@@ -198,7 +198,7 @@ const EVENTS_LIFE = [
   {id:'life_inheritance', type:'mundane', rarity:'rare', tags:['money','luck'], requirements:{ageMin:18}, weight:2, cooldown:999, repeatable:false, narrativeImportance:2,
     run:()=>{ const v = Math.round(rndInt(300,1800)*priceIndex()); applyEffects({cash:v});
       let extra = '';
-      if(chance(0.25)){ const k = pick(ARTIFACT_KEYS); addArtifact(k, 'la herencia de un pariente lejano'); extra = ' Entre sus cosas hay una caja que nadie quiso: adentro, '+ARTIFACTS[k].foundText; }
+      if(chance(0.25)){ const k = randomArtifactKey(); addArtifact(k, 'la herencia de un pariente lejano'); extra = ' Entre sus cosas hay una caja que nadie quiso: adentro, '+ARTIFACTS[k].foundText; }
       return {title:'Una herencia inesperada', text:`Un pariente lejano, al que viste dos veces en tu vida, te deja ${fmtMoney(v)} en su testamento.${extra}`}; }},
   {id:'life_old_friend_back', type:'social', rarity:'uncommon', tags:['friend'], requirements:{ageMin:20}, weight:3, cooldown:24,
     context:(ctx)=>{ const far = aliveNpcs().filter(n=>n.lifeState==='lejos' && n.met); if(!far.length) return null; ctx.npc = pick(far); return ctx; },

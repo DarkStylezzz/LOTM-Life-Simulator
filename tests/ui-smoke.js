@@ -40,6 +40,17 @@ async function run(viewport, label){
   await page.click('[data-act="intro-start"]');
   await page.waitForSelector('#screen-game:not(.hidden)');
   if(SHOTS) await page.screenshot({path:path.join(SHOTS, `${label}-02-inicio.png`)});
+  // Opciones: las casillas y las opciones dentro de una ventana tienen que
+  // responder al click (antes el fondo de la ventana se tragaba el click).
+  await page.locator('[data-act="open-settings"]:visible').first().click();
+  await page.locator('.modal-box input[data-change="toggle-numbers"]').click();
+  await page.locator('.modal-box input[name="s-diff"][value="easy"]').click();
+  const opt = await page.evaluate(()=>({nums:STATE.settings.showNumbers, diff:STATE.settings.difficulty, note:(document.getElementById('s-diff-note')||{}).textContent||''}));
+  if(!opt.nums) errors.push('la casilla "Mostrar números exactos" no responde al click');
+  if(opt.diff !== 'easy' || !/segundas oportunidades/.test(opt.note)) errors.push('cambiar la dificultad desde Opciones no funcionó: ' + JSON.stringify(opt));
+  await page.locator('.modal-box input[data-change="toggle-numbers"]').click();
+  await page.locator('.modal-box input[name="s-diff"][value="normal"]').click();
+  await page.locator('.modal-box [data-act="modal-close"]').first().click();
   let shotAdult = false, shotMystic = false, reloaded = false;
   const stats = {scenes:0, tabs:0, actions:0, advances:0};
   // Espera a que se dibuje el cuadro pendiente (la UI renderiza en requestAnimationFrame).
