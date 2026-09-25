@@ -194,7 +194,7 @@ function rollMonthlyEvent(){
     if(!chance(0.5)) return false;
     let pick1 = null;
     if(chance(0.04)) pick1 = pickEventFromPool(d=>d.type==='childhood' && d.rarity==='rare');
-    if(!pick1) pick1 = pickEventFromPool(d=>(d.type==='childhood') || (d.type==='family' && (d.tags||[]).includes('children') && false));
+    if(!pick1) pick1 = pickEventFromPool(d=>d.type==='childhood');
     if(!pick1) return false;
     return fireEvent(pick1.def, pick1.ctx);
   }

@@ -36,7 +36,7 @@ const EVENTS_SOCIAL = [
         return 'Pone cara de entenderlo, pero algo se enfría entre ustedes.'; }}
     ]},
   {id:'npc_argument', type:'social', rarity:'uncommon', tags:['conflict'], requirements:{ageMin:14}, weight:4, cooldown:12, narrativeImportance:3,
-    context:(ctx)=>{ const c = aliveNpcs().filter(n=>n.met && n.lifeState==='presente' && (n.suspicion>=40 || (n.affection<35 && n.dependence>=30) || n.flags.grudge) && !['padre','madre'].includes(n.id) || (n.alive && n.suspicion>=55)); if(!c.length) return null; ctx.npc = pick(c); return ctx; },
+    context:(ctx)=>{ const c = aliveNpcs().filter(n=>n.met && n.lifeState==='presente' && ((n.suspicion>=40 || (n.affection<35 && n.dependence>=30) || n.flags.grudge) && !['padre','madre'].includes(n.id) || n.suspicion>=55)); if(!c.length) return null; ctx.npc = pick(c); return ctx; },
     title:(ctx)=>'Una discusión con '+ctx.npc.name, text:(ctx)=>`Lo que venía acumulándose explota. ${ctx.npc.name} te reprocha ${ctx.npc.suspicion>=40 ? 'que ya no sabe quién sos, que hay cosas que le ocultás' : 'que nunca estás cuando hace falta'}.`,
     choices:[
       {label:'Pedir perdón y reconciliarte', small:'Vale más el vínculo que tener razón.', run:(ctx)=>{
@@ -121,7 +121,6 @@ const EVENTS_SOCIAL = [
     ]},
   {id:'npc_rival', type:'social', rarity:'uncommon', tags:['work','conflict'], requirements:{ageMin:18, employed:true}, weight:3, cooldown:36, narrativeImportance:3,
     title:'Un rival en el trabajo', text:()=>{ return 'Entra a tu trabajo alguien con más ambición que escrúpulos. En su primera semana ya se llevó el crédito de algo que hiciste vos.'; },
-    run:null,
     choices:[
       {label:'Competir limpio', small:'Que hablen los resultados.', run:()=>{ const r = createRival(); jobPerformance(3); adjustRel(r, {respect:6}); return `Trabajás el doble. ${r.name} lo nota. Te mira con otros ojos: todavía como rival, pero con respeto.`; }},
       {label:'Hacerle la vida imposible', small:'Nadie te roba el crédito.', run:()=>{ const r = createRival(); adjustRel(r, {fear:6, affection:-15}); r.flags.grudge = true; applyEffects({reputation:[-2,1]});
@@ -155,7 +154,7 @@ const EVENTS_SOCIAL = [
       {label:'Cortar todo vínculo', small:'Para vos ya no existe.', run:(ctx)=>{ const n = ctx.npc; n.flags.betrayalKnown = true; n.lifeState = 'distanciado'; adjustRel(n, {trust:-40, affection:-30, loyalty:-40}); return 'No le decís nada. Simplemente dejás de existir para esa persona.'; }},
       {label:'Perdonar', small:'Todos tienen miedo a veces.', run:(ctx)=>{ const n = ctx.npc; n.flags.betrayalKnown = true; adjustRel(n, {loyalty:15, trust:5, dependence:6}); remember('forgave', `Perdonaste a ${n.name} por denunciarte.`, {cat:'person', npc:n.id}); return `${n.name} no puede creerlo. Te va a deber esto toda la vida.`; }}
     ],
-    run:null, cat:'relation'},
+    cat:'relation'},
   {id:'npc_gossip_spread', type:'social', rarity:'uncommon', tags:['secret','attention'], weight:5, cooldown:18,
     context:(ctx)=>{ const c = aliveNpcs().filter(n=>n.knows.beyonder && npcHasTrait(n,'chismoso') && n.lifeState==='presente'); if(!c.length) return null; ctx.npc = pick(c); return ctx; },
     run:(ctx)=>{ applyEffects({attention:[3,7], reputation:[-3,0]}); addHiddenTruth(`${ctx.npc.name} le contó a media ciudad lo que le confiaste. No con mala intención: con entusiasmo.`);
