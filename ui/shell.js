@@ -65,7 +65,10 @@ function renderNow(){
   content.classList.toggle('scene-open', !!sk);
   const html = renderTab(UI.tab);
   const changed = setHTML(content, html);
+  const sceneClosed = !sk && UI.hadScene;
+  UI.hadScene = !!sk;
   if(changed){
+    if(sceneClosed){ const r = byId('resolution-title'); if(r && document.activeElement && (document.activeElement === document.body || !document.body.contains(document.activeElement))) r.focus({preventScroll:true}); }
     if(newScene){ const h = byId('scene-title'); if(h){ h.focus({preventScroll:true}); const top = h.getBoundingClientRect().top + window.scrollY - 90; if(top < window.scrollY || top > window.scrollY + window.innerHeight*0.6) window.scrollTo({top:Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth'}); } }
     else restoreFocus();
   }
@@ -103,15 +106,17 @@ function renderNav(){
 }
 function renderTopbar(){
   const c = STATE.character, p = STATE.pathway;
-  const sal = statView('salud');
-  const chips = [`<span class="stat-chip" title="Salud">${tierMark('objective')} <b>♥ ${c.salud}</b></span>`, `<span class="stat-chip" title="Dinero en mano">${esc(fmtMoney(c.cash))}</span>`];
-  if(p.chosenPathway || (STATE.flags.mysticExposure||0) >= 10){
+  const chips = isDivine()
+    ? [`<span class="stat-chip" title="Humanidad">${tierMark(statView('humanity').tier)} ${esc(statView('humanity').tier === 'objective' ? 'Humanidad '+c.humanity : phraseFor('humanity', c.humanity??0))}</span>`]
+    : [`<span class="stat-chip" title="Salud">${tierMark('objective')} <b>♥ ${c.salud}</b></span>`, `<span class="stat-chip" title="Dinero en mano">${esc(fmtMoney(c.cash))}</span>`];
+  if(!isDivine() && (p.chosenPathway || (STATE.flags.mysticExposure||0) >= 10)){
     const s = statView('sanity');
     chips.push(`<span class="stat-chip ${c.sanity < 35 ? 'warn' : ''}" title="Cordura">${tierMark(s.tier)} ${s.tier==='objective' ? '<b>✧ '+s.value+'</b>' : esc(shortPhrase('sanity', c.sanity))}</span>`);
   }
   const ft = freeTimeLeft();
   chips.push(`<span class="stat-chip" title="Tiempo libre que te queda esta temporada">⧗ ${ft}/${STATE.season.free||0}</span>`);
   const place = isDivine() ? 'Más allá de la niebla' : c.ciudad;
+  requestAnimationFrame(()=>{ const tb = byId('topbar'); if(tb && tb.offsetHeight) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px'); });
   setHTML(byId('topbar'), `<div class="topbar-row1"><div class="tb-name">${esc(c.nombre)} ${esc(c.apellido)} <span class="tb-age">· ${ageText(c.edad)}</span></div>
       <div class="tb-meta">${esc(dateLabel())} · ${esc(place)}</div></div>
     <div class="tb-stats">${chips.join('')}${p.chosenPathway ? `<span class="tb-pathway-badge">${esc(PATHWAYS[p.chosenPathway].name)} · Seq ${p.sequence}</span>` : ''}</div>`);

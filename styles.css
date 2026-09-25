@@ -200,12 +200,12 @@ kbd{font-family:var(--font-ui); font-size:12px; border:1px solid var(--line); bo
   .side-foot{display:flex; flex-direction:column; gap:4px; border-top:1px solid var(--line-soft); padding-top:10px;}
   .side-foot .btn{justify-content:flex-start; min-height:34px; padding:8px 10px;}
   #content{padding:22px 28px 48px;}
-  .only-narrow{display:none;}
 }
 /* pantalla ancha: panel contextual */
 @media (min-width:1320px){
   #screen-game{grid-template-columns:var(--side-w) minmax(0,1fr) var(--ctx-w);}
   #context-panel{display:block; position:sticky; top:0; height:100vh; overflow-y:auto; border-left:1px solid var(--line); padding:18px 14px; background:rgba(14,13,16,0.6);}
+  .only-narrow{display:none;}
 }
 .ctx-card{border:1px solid var(--line-soft); border-radius:var(--radius); padding:12px; margin-bottom:12px; background:var(--panel);}
 .ctx-title{font-family:var(--font-display); font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold); margin-bottom:8px;}

@@ -263,7 +263,8 @@ function monthlyMystic(){
   // si no te metés: una vida "normal" puede volver a serlo.
   if(c.edad >= 13){
     if(STATE.season.mysticActs) STATE.flags.mysticExposure += 0.2;
-    else if(STATE.flags.mysticExposure > 5 && chance(0.2)) STATE.flags.mysticExposure -= 0.5;
+    // Una vida que no busca lo oculto lo va olvidando (se reduce a la mitad en unos cinco años).
+    else if(STATE.flags.mysticExposure > 0) STATE.flags.mysticExposure = Math.max(0, STATE.flags.mysticExposure*0.988 - 0.1);
   }
   // Sin conocer el Método, a veces el cuerpo te lo cuenta de a poco.
   if(p.chosenPathway && p.actingMethod < 1 && monthsSincePotion() >= 18 && chance(0.02 * diffMult('hints'))) nudgeActingMethod(1, 'con el tiempo');
@@ -280,11 +281,13 @@ function monthlyMystic(){
   // Presencia de lo sobrenatural en Sequences altas: amenaza que atrae.
   if(p.chosenPathway && p.sequence <= 4 && chance(0.01)) STATE.world.threat = clamp(STATE.world.threat + 1, 0, 100);
 }
+// Qué tan seguido lo sobrenatural roza la vida. Crece con lo que te metés,
+// pero con techo: el mundo oculto no se vuelve rutina (§59).
 function mysticExposureChance(){
   const exp = STATE.flags.mysticExposure || 0;
   const k = sum(Object.values(STATE.pathway.knowledge));
-  let base = 0.012 + exp/450 + k/1500 + (STATE.world.mysticBoost||0)*0.05;
+  let base = 0.004 + Math.min(0.045, exp/1400) + Math.min(0.025, k/6000) + (STATE.world.mysticBoost||0)*0.03;
   base *= getTraitMods().mysticExposureMult * diffMult('mystic') * (0.6 + currentCity().occult*0.8);
-  if(STATE.pathway.chosenPathway) base += 0.03;
-  return clamp(base, 0.008, 0.3);
+  if(STATE.pathway.chosenPathway) base += 0.025;
+  return clamp(base, 0.003, 0.11);
 }

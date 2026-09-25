@@ -219,3 +219,20 @@ function applyTimelineEffect(eff, def){
       effect:{salud:[-15,-5], sanity:[-15,-6], reputation:[2,6]}, memory:{tag:'war_veteran', text:'Fuiste a la guerra.', cat:'trauma'}});
   }
 }
+
+/* ------------------------------ desaparecer ------------------------------ */
+// Cuando el mundo oculto se cierra encima, una salida posible es irse para
+// siempre: otro nombre, otro país, nadie que sepa quién fuiste. Es un final.
+function canDisappear(){
+  if(STATE.character.edad < 18 || STATE.gameOver) return false;
+  return huntingFactions().length > 0 || (STATE.world.attention||0) >= 60 || maxFactionSuspicion() >= 70;
+}
+function disappear(){
+  if(timeBlocked() || !canDisappear()) return;
+  const c = STATE.character;
+  const left = spouseNpc() || childrenNpcs().find(k=>k.alive) || aliveNpcs().filter(n=>n.met).sort((a,b)=>bondScore(b)-bondScore(a))[0];
+  const hunters = huntingFactions();
+  const text = `Una mañana, ${c.nombre} ${c.apellido} no vuelve. ${left ? `Deja una carta para ${left.name} que no explica nada y lo explica todo.` : 'No deja nada.'} ${hunters.length ? `${cap(factionShort(hunters[0]))} lo sigue buscando durante años.`.replace(' lo sigue', gx(' lo sigue',' la sigue',' le sigue')) : 'Nadie lo busca demasiado.'.replace('lo busca', gx('lo busca','la busca','le busca'))} En algún puerto lejano, alguien con otro nombre empieza de nuevo.`;
+  remember('disappeared', 'Desapareciste.', {cat:'choice'});
+  endGame('special', 'Desaparecer', text, {cause:'desaparecido'});
+}

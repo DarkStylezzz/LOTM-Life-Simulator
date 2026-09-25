@@ -38,6 +38,10 @@ function worldCity(){
     out.push(`<div class="action-grid">${CITY_KEYS.filter(x=>x!==k).map(x=>{ const cd = CITIES_DATA[x]; const cost = Math.round(120*cd.cost*priceIndex());
       return actionButton({label:cd.name, small:`${cd.desc.split('.')[0]}. Mudarse cuesta ~${fmtMoney(cost)} y casi toda una temporada.`, disabled: STATE.character.cash < cost, why:'No te alcanza.'}, 'move', {k:x}); }).join('')}</div>`);
   }
+  if(!isDivine() && canDisappear()){
+    out.push(sec('Desaparecer'));
+    out.push(`<div class="action-grid">${actionButton({label:'Irte para siempre', small:'Otro nombre, otro país, nadie que sepa quién fuiste. Esta vida termina acá.', danger:true}, 'disappear')}</div>`);
+  }
   if(STATE.character.edad >= 16 && !isDivine()){
     out.push(sec('Comprar'));
     const shop = ['weapon_knife','weapon_cane','weapon_revolver','tool_alchemy'].map(id=>{ const d = ITEM_DEFS[id]; const cost = Math.round(d.price*priceIndex()); const owned = hasItem(id);
@@ -46,6 +50,7 @@ function worldCity(){
   }
   return out.join('');
 }
+onAct('disappear', ()=>confirmModal('Desaparecer termina esta historia. Las personas que dejás atrás no van a saber qué pasó.', ()=>disappear(), {yes:'Desaparecer', danger:true, title:'Irte para siempre'}));
 onAct('move', (d)=>confirmModal(`¿Mudarte a ${CITIES_DATA[d.k].name}? La gente que no venga con vos va a quedar lejos.`, ()=>moveToCity(d.k), {yes:'Mudarme'}));
 onAct('buy', (d)=>buyWeapon(d.id));
 

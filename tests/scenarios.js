@@ -137,6 +137,14 @@ scenario('finales: muerte natural con biografía y "lo que nunca supo"', ()=>{
   assert(!/score|puntaje/i.test(JSON.stringify(ed)), 'hay un puntaje');
 });
 
+scenario('desaparecer cuando te persiguen', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 35; factionMeet('mi9'); markHunted('mi9', 'prueba');`);
+  assert(run(ctx, `canDisappear()`), 'debería poder desaparecer');
+  run(ctx, `disappear()`);
+  assert(run(ctx, `STATE.gameOver && STATE.endingData.meta.cause`) === 'desaparecido', 'no terminó como desaparición');
+});
+
 scenario('cada habilidad de combate de cada vía y cada Sequence', ()=>{
   const ctx = fresh();
   run(ctx, NEWLIFE + `STATE.character.edad = 30;`);

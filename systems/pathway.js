@@ -138,6 +138,33 @@ function checkPathwayDiscoveryReveal(k, confirming){
     if(confirmChance > 0 && chance(confirmChance)) identifyPathway(k);
   }
 }
+// Atar cabos: poner todas las pistas de un hilo sobre la mesa. Si lo que
+// sabés es real y suficiente, el hilo tiene nombre; si en realidad seguías
+// pistas falsas, las contradicciones empiezan a notarse.
+function canConnectDots(k){ return !isIdentified(k) && (STATE.pathway.belief[k]||0) >= 25 && STATE.character.edad >= 14; }
+function connectDots(k){
+  if(timeBlocked() || !canConnectDots(k)) return;
+  if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }
+  markMysticAct();
+  const p = STATE.pathway;
+  const kn = knowledgeOf(k), b = p.belief[k] || 0;
+  const skill = researchSkill('study');
+  let text;
+  if(kn >= 45 && chance(clamp((kn-35)/25 + skill, 0.1, 0.95))){
+    identifyPathway(k, 'atando cabos');
+    text = `Ponés todo sobre la mesa, una noche entera. Y de golpe encaja: esto tiene nombre. ${PATHWAYS[k].name}.`;
+  } else if(kn < b * 0.5){
+    const bad = p.clues.filter(c=>c.shown===k && !c.resolved && c.truth !== k).slice(0,2);
+    bad.forEach(c=>{ c.resolved = 'false'; p.belief[k] = Math.max(0, (p.belief[k]||0) - c.strength); });
+    text = bad.length ? `Al ponerlas lado a lado, algunas pistas se contradicen. ${bad.length === 1 ? 'Una era falsa' : 'Dos eran falsas'}: la de ${bad.map(c=>c.source||'aquella vez').join(' y la de ')}.` : 'Nada encaja con nada. Tal vez estás viendo patrones donde no los hay.';
+  } else {
+    p.knowledge[k] = clamp(kn + 1, 0, 100);
+    text = kn >= 45 ? 'Estás cerca. Lo sentís. Pero todavía falta una pieza.' : 'Ponés todo sobre la mesa. No alcanza: sabés muy poco todavía.';
+  }
+  logJournal('Atar cabos', text, {cat:'mystery', imp:1});
+  setResolution('Atar cabos', text, []);
+  saveGame(true); renderAll();
+}
 function identifyPathway(k, how){
   const p = STATE.pathway;
   if(isIdentified(k)) return;

@@ -124,6 +124,12 @@ function analyzeLife(category, meta){
     if(a.people.length >= 2) P.push(`Lo que lo mantuvo humano tuvo nombres: ${a.people.map(id=>npcById(id)).filter(Boolean).slice(0,3).map(n=>n.name).join(', ')}.`.replace('lo mantuvo', gx('lo mantuvo','la mantuvo','le mantuvo')));
     else P.push('Al final, casi no quedaba nadie que lo recordara como había sido.'.replace('lo recordara', gx('lo recordara','la recordara','le recordara')));
   }
+  // Lo que quedó entre sus cosas (y quién lo encontró).
+  const strange = itemsByCat('artifact').filter(it=>!it.loan)[0] || itemsByCat('characteristic')[0] || inventoryItems().find(it=>['quest_notebook','tarot_card','book_untitled','book_grimoire'].includes(it.def));
+  if(strange && category !== 'divine'){
+    const heir = aliveKids.slice().sort((x,y)=>bondScore(y)-bondScore(x))[0] || aliveNpcs().find(n=>n.id.startsWith('hermano'));
+    P.push(heir ? `Entre sus cosas quedó ${strange.name.toLowerCase()}. ${heir.name} lo encontró años después, en el fondo de un cajón, y nunca supo del todo qué era.` : `Entre sus cosas quedó ${strange.name.toLowerCase()}. Nadie supo nunca qué era. Alguien, algún día, lo va a encontrar.`);
+  }
   // 10. Decisiones históricas.
   const hist = (STATE.world.timeline||[]).filter(e=>e.triggered && (e.altered || e.witnessed));
   hist.forEach(e=>{ const d = timelineDef(e); if(d) P.push(e.altered ? `Por algo que hizo, "${d.title}" no pasó como tenía que pasar.` : `Estuvo ahí cuando pasó "${d.title}".`); });

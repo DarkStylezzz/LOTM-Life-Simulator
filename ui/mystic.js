@@ -107,7 +107,7 @@ function mysticThreads(){
       ${t.contradictory ? `<p class="small-note warn">${tierMark('estimated')} Las pistas de este hilo no terminan de cerrar entre sí.</p>` : ''}
       <ul class="clue-list">${t.clues.slice(-5).reverse().map(c=>`<li>${clueBadge(c)} ${esc(cap(c.desc))} <span class="dim">— ${esc(c.source||'')}${c.cy ? ', '+c.cy : ''}</span></li>`).join('')}</ul>
       ${t.clues.length > 5 ? `<p class="small-note">Y ${t.clues.length-5} pistas más.</p>` : ''}
-      <div class="btn-row">${btn('Investigar este hilo','focus-thread',{k:t.key})}${unv ? `<span class="small-note">${unv} sin verificar</span>` : ''}</div>
+      <div class="btn-row">${btn('Investigar este hilo','focus-thread',{k:t.key})}${canConnectDots(t.key) ? btn('Atar cabos','connect-dots',{k:t.key},{disabled:!canSpendFreeTime(1), title:'Poner todas las pistas sobre la mesa (1 tiempo libre)'}) : ''}${unv ? `<span class="small-note">${unv} sin verificar</span>` : ''}</div>
     </section>`);
   });
   return out.join('');
@@ -117,6 +117,7 @@ function clueBadge(c){
   if(c.resolved === 'false' || c.verified === 'false') return `<span class="clue-b bad" title="Resultó falsa">✘</span>`;
   return `<span class="clue-b" title="Sin verificar">?</span>`;
 }
+onAct('connect-dots', (d)=>connectDots(d.k));
 onAct('focus-thread', (d)=>{ UI.researchFocus = d.k; UI.sub.mystic = 'investigar'; saveUiPrefs(); renderNow(); window.scrollTo(0,0); }, {free:true});
 
 /* ------------------------------ investigar ------------------------------ */

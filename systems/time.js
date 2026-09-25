@@ -24,6 +24,7 @@ function fullDateLabel(){ return `${cap(MONTH_NAMES[STATE.time.month-1])} de ${c
 /* --------------------------- tiempo libre --------------------------- */
 function computeFreeTime(){
   const c = STATE.character;
+  if(STATE.divinity && STATE.divinity.ascended) return 3;
   if(c.edad < 6) return 0;
   if(c.edad < 13) return 1;
   let t = 3;

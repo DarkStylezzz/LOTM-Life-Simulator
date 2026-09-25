@@ -84,13 +84,17 @@ function markEventFired(id){
   h.n++; h.last = STATE.time.totalMonths;
   STATE.eventHistory[id] = h;
 }
+// Enfriamiento mínimo por rareza (§59: nada de eventos repetitivos). Un
+// evento común puede volver, pero no el mes que viene; uno místico, casi nunca.
+const RARITY_MIN_COOLDOWN = {common:20, uncommon:36, rare:72, mystic:84, extraordinary:360};
 // Devuelve el contexto si el evento puede pasar ahora, o null.
 function eventEligible(def){
   if(def.chainOnly) return null;
   const h = eventHistoryOf(def.id);
   if(h){
     if(def.repeatable === false) return null;
-    if(def.cooldown && STATE.time.totalMonths - h.last < def.cooldown) return null;
+    const cd = Math.max(def.cooldown||0, RARITY_MIN_COOLDOWN[def.rarity]||0);
+    if(cd && STATE.time.totalMonths - h.last < cd) return null;
   }
   if(!requirementsOk(def.requirements)) return null;
   let ctx = {};
@@ -102,7 +106,10 @@ function eventEligible(def){
 }
 function eventWeight(def, ctx){
   const w = typeof def.weight === 'function' ? def.weight(ctx) : (def.weight ?? 1);
-  return Math.max(0, w || 0);
+  // Lo que ya pasó muchas veces pesa menos: la vida prefiere lo nuevo.
+  const h = eventHistoryOf(def.id);
+  const seen = h ? h.n : 0;
+  return Math.max(0, (w || 0) / (1 + seen*0.6));
 }
 
 /* -------------------------- disparar eventos -------------------------- */
@@ -196,7 +203,7 @@ function rollMonthlyEvent(){
     const m = pickEventFromPool(d=>d.rarity==='mystic' || (d.type==='mystic' && d.rarity!=='extraordinary' && d.rarity!=='rare'));
     if(m) return fireEvent(m.def, m.ctx);
   }
-  if(!chance(0.5)) return false;
+  if(!chance(0.36)) return false;
   let rarity = rollRarity();
   const order = ['extraordinary','rare','uncommon','common'];
   for(let i = order.indexOf(rarity); i < order.length; i++){

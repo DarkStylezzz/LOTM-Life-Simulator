@@ -109,6 +109,8 @@ function __playerTurn(){
   FACTION_KEYS.forEach(k=>{ if(!timeBlocked() && canCollaborate(k) && Math.random() < 0.15) factionCollaborate(k); });
   FACTION_KEYS.forEach(k=>{ if(!timeBlocked() && canJoin(k) && Math.random() < 0.25) joinFaction(k); });
   if(timeBlocked()) return;
+  if(!p.chosenPathway && Math.random() < 0.2){ const t = pathwayThreads().find(x=>canConnectDots(x.key)); if(t) connectDots(t.key); }
+  if(timeBlocked()) return;
   const leads = activeLeads();
   const ingLead = leads.find(l=>l.rumor==='ingredient');
   if(ingLead && Math.random() < 0.8) followLead(ingLead.id);

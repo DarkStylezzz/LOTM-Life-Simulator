@@ -59,7 +59,7 @@ function resolutionCard(){
   const r = STATE.lastResolution;
   if(r && STATE.time.totalMonths - (r.month||0) <= 3){
     return `<article class="evt-card resolution" aria-live="polite"><div class="evt-date">${esc(dateLabel())}</div>
-      <h2 class="evt-title">${esc(r.title)}</h2><div class="evt-text">${paragraphs(r.text)}</div>${changeChips(r.changes)}</article>`;
+      <h2 class="evt-title" id="resolution-title" tabindex="-1">${esc(r.title)}</h2><div class="evt-text">${paragraphs(r.text)}</div>${changeChips(r.changes)}</article>`;
   }
   const s = STATE.lastSeasonSummary;
   const quiet = s && s.quiet ? 'Una temporada tranquila. De esas que después no se recuerdan, y que hacen falta.' : 'La vida sigue su curso.';
