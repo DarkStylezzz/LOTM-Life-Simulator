@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Lord of the Mysteries: Life Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ INTRO / CHARACTER CREATION ============ -->
+  <div id="screen-intro">
+    <div class="intro-wrap">
+      <div class="game-title">Lord of the Mysteries</div>
+      <div class="game-sub">— Life Simulator —</div>
+      <div class="intro-card" id="intro-content"><!-- populated by JS --></div>
+    </div>
+  </div>
+
+  <!-- ============ MAIN GAME ============ -->
+  <div id="screen-game" class="hidden">
+    <div id="tabbar"></div>
+    <div id="main-col">
+      <div id="topbar"></div>
+      <div id="content"></div>
+    </div>
+  </div>
+
+  <!-- ============ END SCREEN ============ -->
+  <div id="screen-end" class="hidden"></div>
+
+  <div id="toast-container"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
