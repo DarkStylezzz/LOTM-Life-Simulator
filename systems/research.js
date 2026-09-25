@@ -84,13 +84,15 @@ function doResearch(methodId, targetId, focus){
   const own = STATE.pathway.chosenPathway;
   const focusK = focus && PATHWAYS[focus] && (focus === own || (STATE.pathway.belief[focus]||0) > 0 || isIdentified(focus)) ? focus : null;
   if(outcome === 'clue'){
-    const pw = target && target.hidden.pathway ? target.hidden.pathway : focusK && chance(0.65) ? focusK : (m.clueBias && chance(0.5) ? pick(m.clueBias) : '$random');
-    const cl = addClue({pathway:pw, reliability: chance(0.8) ? 'real' : 'partial', strength:[gMin,gMax], source:clueSource});
+    const pw = target && target.hidden.pathway ? target.hidden.pathway : focusK && chance(0.75) ? focusK : (m.clueBias && chance(0.5) ? pick(m.clueBias) : '$random');
+    // Quien sabe qué está buscando, encuentra más de eso.
+    const focused = focusK && pw === focusK;
+    const cl = addClue({pathway:pw, reliability: chance(0.8) ? 'real' : 'partial', strength: focused ? [gMin+1, gMax+2] : [gMin,gMax], source:clueSource});
     text += cl ? `Encontrás algo real: un rastro que apunta hacia ${cl.shown && isIdentified(cl.shown) ? 'la vía '+PATHWAYS[cl.shown].name : 'algo relacionado con '+cl.desc}.` : 'Encontrás algo que confirma lo que ya sabías de tu propio camino.';
     // Quien sigue un hilo que ya entiende, a veces encuentra la receta. Las
     // fórmulas de Sequences bajas circulan; las altas, casi nunca.
     const fTarget = focusK && focusK === own ? (STATE.pathway.sequence > 0 ? STATE.pathway.sequence - 1 : null) : (focusK && !own ? 9 : null);
-    if(fTarget !== null && fTarget >= 6 && isIdentified(focusK) && !hasFormula(focusK, fTarget) && knowledgeOf(focusK) >= 50 + (9-fTarget)*5 && chance(0.14 + skill - (9-fTarget)*0.02)){
+    if(fTarget !== null && fTarget >= 5 && isIdentified(focusK) && !hasFormula(focusK, fTarget) && knowledgeOf(focusK) >= 50 + (9-fTarget)*5 && chance(0.14 + skill - (9-fTarget)*0.02)){
       const rel = resolveReliability('mixed');
       addFormula(focusK, fTarget, rel==='real' ? 'true' : rel, m.name.toLowerCase());
       text += ` Entre las notas aparece algo más: una lista de ingredientes y proporciones. Una fórmula. ${rel==='real' ? '' : 'No sabés si es confiable.'}`;
@@ -131,7 +133,7 @@ function doResearch(methodId, targetId, focus){
 function addRumor(id){
   let tpl = id ? RUMOR_BY_ID[id] : null;
   if(!tpl){
-    const pool = RUMOR_POOL.filter(r=>(!r.port || currentCity().port) && !STATE.leads.some(l=>l.rumor===r.id && !l.done) && (!r.rare || chance(0.3)));
+    const pool = RUMOR_POOL.filter(r=>(!r.port || currentCity().port) && (!r.city || r.city === currentCityKey()) && !STATE.leads.some(l=>l.rumor===r.id && !l.done) && (!r.rare || chance(0.3)));
     if(!pool.length) return null;
     tpl = pick(pool);
   }
@@ -206,8 +208,9 @@ function wantedIngredient(){
 function maybeIngredientLead(){
   if(STATE.leads.some(l=>l.rumor==='ingredient' && !l.done)) return null;
   const w = wantedIngredient(); if(!w) return null;
-  if(STATE.pathway.chosenPathway && STATE.pathway.digestion < 50) return null;
-  if(!chance(0.06 * diffMult('hints'))) return null;
+  if(STATE.pathway.chosenPathway && STATE.pathway.digestion < 30) return null;
+  // Cuanto más alto, más conectado estás con quienes comercian estas cosas.
+  if(!chance((w.seq <= 7 ? 0.12 : 0.09) * diffMult('hints'))) return null;
   const o = wpick([{k:'real',w:60},{k:'danger',w:20},{k:'fake',w:20}], x=>x.w).k;
   const price = Math.round((w.seq >= 8 ? rndInt(60,160) : w.seq >= 6 ? rndInt(200,500) : rndInt(600,1600)) * priceIndex());
   const lead = {id:uid('ld'), rumor:'ingredient', pathway:w.pathway, seq:w.seq, name:w.name, price,
@@ -222,7 +225,10 @@ function resolveLead(l){
     const c = STATE.character;
     if(l.outcome === 'danger'){
       logJournal('Al final de la pista', 'Alguien más buscaba lo mismo. Y llegó antes.', {cat:'mystery', imp:2});
-      startCombat(l.seq <= 7 ? 'rivalBeyonder' : 'thugs', {env:'alley', overrides: l.seq <= 7 ? {pathway:l.pathway, seq:Math.max(5, l.seq)} : {}});
+      // Quien busca el mismo ingrediente suele estar donde estás vos: de tu
+      // misma Sequence, no más arriba. A veces, ni siquiera es un Beyonder.
+      const rival = l.seq <= 7 && chance(0.6);
+      startCombat(rival ? 'rivalBeyonder' : 'thugs', {env:'alley', source:'una pista', overrides: rival ? {pathway:l.pathway, seq:clamp(l.seq + 1, 5, 9)} : {}});
       return 'Alguien más buscaba lo mismo. Y llegó antes.';
     }
     if(c.cash < l.price) return `Llegás hasta el vendedor. Pide ${fmtMoney(l.price)}. No los tenés. Se encoge de hombros: "Otro va a tenerlos."`;
@@ -262,7 +268,8 @@ function resolveLead(l){
       if(o.faction === 'aurora') applyEffects({corruption:[1,3]});
       break;
     case 'item':
-      if(o.artifact) addArtifact(pick(ARTIFACT_KEYS), 'el final de un rumor');
+      if(o.artifactKey && !hasArtifact(o.artifactKey)) addArtifact(o.artifactKey, 'el final de un rumor');
+      else if(o.artifact || o.artifactKey){ const pool = ARTIFACT_KEYS.filter(a=>!hasArtifact(a) && ARTIFACTS[a].grade > 0); addArtifact(pick(pool.length ? pool : ARTIFACT_KEYS), 'el final de un rumor'); }
       else addItem(pick(o.items), 1, 'el final de un rumor');
       break;
     case 'secret':
@@ -282,6 +289,8 @@ function resolveLead(l){
       addClue({pathway:o.pathway, reliability:'false', strength:[5,9], source:'un rumor'});
       break;
   }
+  // Cualquier final puede enseñar además un secreto propio (los de las ciudades).
+  if(o.lore && o.type !== 'secret') learnLore(o.lore, 'un rumor que seguiste');
   if(o.type === 'nothing') remember('dead_end', `Seguiste un rumor ("${l.text}") y no llevaba a ningún lado.`, {cat:'choice'});
   return o.result;
 }

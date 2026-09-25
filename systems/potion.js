@@ -35,7 +35,9 @@ function ownedIngredientsList(){ return itemsByCat('ingredient').map(it=>({pathw
 function eligibleIngredientPathways(){
   const p = STATE.pathway;
   if(p.chosenPathway){ if(p.sequence <= 0) return []; return [{key:p.chosenPathway, seq:p.sequence-1, weight:1}]; }
-  return Object.keys(PATHWAYS).filter(k=>(p.belief[k]||0) >= 10 || isIdentified(k)).map(k=>({key:k, seq:9, weight:Math.max(1, knowledgeOf(k))}));
+  // Con la fórmula en la mano sabés exactamente qué buscar; con la vía identificada, casi.
+  return Object.keys(PATHWAYS).filter(k=>(p.belief[k]||0) >= 10 || isIdentified(k))
+    .map(k=>({key:k, seq:9, weight:Math.max(1, knowledgeOf(k)) * (hasFormula(k, 9) ? 4 : 1) * (isIdentified(k) ? 2 : 1)}));
 }
 function grantIngredientFind(source, rare){
   const elig = eligibleIngredientPathways();
@@ -44,7 +46,7 @@ function grantIngredientFind(source, rare){
   const need = ingredientsNeededFor(chosen.key, chosen.seq);
   if(!need.length) return null;
   const missing = need.filter(n=>ownedQty(chosen.key, n) <= 0);
-  const name = pick(missing.length && chance(0.7) ? missing : need);
+  const name = pick(missing.length && chance(0.85) ? missing : need);
   const it = addIngredient(chosen.key, chosen.seq, name, rare ? rndInt(80,100) : rndInt(40,90), source);
   const label = isIdentified(chosen.key) ? `ligado a la vía ${PATHWAYS[chosen.key].name} (Sequence ${chosen.seq})` : 'que, sabés, pertenece al mundo que estás empezando a entender';
   logJournal('Ingrediente encontrado', `En ${source} encontrás ${name}: un ingrediente ${label}.`, {cat:'pathway', imp:1});
@@ -301,7 +303,7 @@ function finishDrink(){
   removeItem(it.uid);
   const prep = (FIRST_POTIONS[key]||{prepDifficulty:0.6}).prepDifficulty;
   const score = it.quality*0.5 + b.stab + c.sanity*0.2 - c.corruption*0.3;
-  let p = 0.25 + (score-40)/100 + prep*0.35 + diffMult('potion') + luckMod();
+  let p = 0.25 + (score-40)/100 + prep*0.35 + diffAdd('potion') + luckMod();
   if((it.flaws||[]).includes('toxic')) p = 0.03;
   if((it.flaws||[]).includes('unstable')) p -= 0.15;
   p = clamp(p, 0.03, 0.95);

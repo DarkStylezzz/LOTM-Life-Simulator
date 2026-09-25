@@ -164,6 +164,32 @@ const RUMOR_POOL = [
       {w:30, type:'npc', pathway:'visionary', role:'Médico de la mente', result:'Es bueno. Demasiado bueno: sabe lo que vas a decir antes de que lo digas.'},
       {w:30, type:'nothing', result:'Un buen médico con métodos modernos. Nada imposible.'}
     ]},
+  // --- rumores que sólo corren en ciudades concretas (city) ---
+  {id:'catacomb_mass', city:'trier', text:'Dicen que en las catacumbas de Trier se sigue celebrando una misa, todos los domingos, para feligreses que murieron hace siglos.', steps:2,
+    outcomes:[
+      {w:35, type:'pathway', pathway:'death', lore:'trier_below', result:'Llegás a tiempo para el final. Las velas son de sebo, el coro canta en una lengua de la Cuarta Época y nadie en los bancos respira. El sacerdote te mira sin ojos y te da la bendición igual.'},
+      {w:30, type:'danger', enemy:'catacombGhoul', sanity:[-6,-2], result:'No hay misa. Hay algo que imita el sonido de una misa para que bajen los curiosos.'},
+      {w:35, type:'nothing', result:'Un grupo de estudiantes de teología que baja a rezar donde nadie los moleste. Te ofrecen vino.'}
+    ]},
+  {id:'mine_voice', city:'constant', text:'Los mineros del turno noche juran que en el pozo cuatro una voz los llama por su nombre.', steps:2,
+    outcomes:[
+      {w:30, type:'pathway', pathway:'hermit', lore:'constant_gallery', result:'La voz es real, y no llama a cualquiera: repite nombres de mineros muertos hace cincuenta años, en orden, como quien pasa lista.'},
+      {w:20, type:'item', artifactKey:'miner_lamp', result:'Al final de la galería, apoyada en la roca, hay una lámpara encendida. Nadie la dejó ahí. Hace años que nadie baja.'},
+      {w:25, type:'danger', enemy:'mineThing', result:'La voz te llama a vos. Cuando te das vuelta, la pared se mueve.'},
+      {w:25, type:'nothing', result:'Una corriente de aire por una grieta y un capataz que se divierte asustando a los nuevos.'}
+    ]},
+  {id:'name_seller', city:'enmat', text:'En Enmat, dicen, hay alguien que vende nombres. No apodos: nombres, con la vida entera que viene con ellos.', steps:2,
+    outcomes:[
+      {w:45, type:'secret', lore:'enmat_names', result:'La posada existe, el libro de registros existe y el dueño te sirve una cerveza como si te hubiera estado esperando.'},
+      {w:30, type:'npc', pathway:'error', role:'Vendedor de nombres', result:'El que vende nombres es un hombre que cambia de cara cada vez que lo mirás de reojo. Dice que es "un oficio como cualquier otro".'},
+      {w:25, type:'nothing', result:'Un falsificador de pasaportes con muy buena prensa. Nada imposible.'}
+    ]},
+  {id:'temple_king', city:'balam', text:'Los nativos dicen que en el templo más alto de la selva un rey muerto recibe audiencias, una noche por año.', steps:3, rare:true,
+    outcomes:[
+      {w:35, type:'pathway', pathway:'death', lore:'balam_sovereign', result:'Llegás la noche indicada. El trono está vacío, pero hay una fila de nativos esperando turno. Cada uno habla con el trono, escucha, asiente y se va. Cuando llega tu turno, alguien te contesta.'},
+      {w:35, type:'danger', enemy:'deathPriest', result:'El rey no recibe a extranjeros. Su sacerdote se encarga de explicártelo.'},
+      {w:30, type:'nothing', result:'Una semana de selva, fiebre y mosquitos para encontrar un templo derrumbado y un mono que te roba el sombrero.'}
+    ]},
   {id:'fog_island', text:'Una isla que no figura en ningún mapa aparece, a veces, en la niebla del mar.', steps:3, port:true, rare:true,
     outcomes:[
       {w:35, type:'item', artifact:true, result:'Llegás. En la playa hay un cofre podrido y adentro, algo que todavía late.'},

@@ -30,7 +30,15 @@ function jobEligible(label){
   if(!j || j.salary <= 0) return false;
   if(c.edad < (j.ageMin || 16)) return false;
   if(educationRank() < (j.edu||0)) return false;
-  if(j.port && !currentCity().port) return false;
+  if(!jobExistsIn(label, currentCityKey())) return false;
+  return true;
+}
+// ¿Existe ese trabajo en esa ciudad? (puertos, minas, plantaciones...)
+function jobExistsIn(label, cityKey){
+  const j = JOBS[label]; const city = CITIES_DATA[cityKey];
+  if(!j || !city) return false;
+  if(j.port && !city.port) return false;
+  if(j.cities && !j.cities.includes(cityKey)) return false;
   return true;
 }
 function availableJobs(){ return Object.keys(JOBS).filter(jobEligible); }
@@ -371,7 +379,7 @@ function buyBlackMarket(i){
     else addItem({cat:'misc', name:o.name+' (dudoso)', desc:'Se parece a lo que buscabas. Demasiado.', rarity:'comun', provenance:'el mercado negro', risk:'Probablemente falso.'}, 1);
     text = real ? `Te entregan ${o.name}. Parece real.` : `Te entregan algo que se parece a ${o.name}. Recién en tu casa notás que es una imitación.`;
   } else {
-    addArtifact(pick(ARTIFACT_KEYS), 'el mercado negro');
+    addArtifact(randomArtifactKey(), 'el mercado negro');
     text = 'El vendedor te lo da envuelto en tela negra y no te mira mientras cobra.';
   }
   o.sold = true;

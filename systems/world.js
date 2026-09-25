@@ -100,15 +100,26 @@ function worldNpcRumor(city, kind, faction){
 }
 
 /* ------------------------------ mudarse de ciudad ------------------------------ */
+function moveCost(key){ const d = CITIES_DATA[key]; return d ? Math.round(120 * d.cost * (d.travel||1) * priceIndex()) : 0; }
 function moveToCity(key){
   if(timeBlocked()) return;
   const c = STATE.character;
   if(!CITIES_DATA[key] || key === currentCityKey()) return;
   if(c.edad < 18){ toast('Todavía no podés mudarte por tu cuenta.', 'neg'); return; }
-  const cost = Math.round(120 * CITIES_DATA[key].cost * priceIndex());
+  const cost = moveCost(key);
   if(c.cash < cost){ toast(`Mudarte cuesta alrededor de ${fmtMoney(cost)}.`, 'neg'); return; }
   if(!spendFreeTime(2, true)) return;
   applyEffects({cash:-cost, sanity:[-4,2]});
+  const text = relocate(key);
+  setResolution('Una ciudad nueva', text, []);
+  saveGame(true); renderAll();
+}
+// La mudanza en sí (sin costos de viaje: puede pagarla otro, como un traslado
+// de trabajo). opts.keepJob conserva el empleo si existe en la ciudad nueva.
+function relocate(key, opts){
+  opts = opts || {};
+  const c = STATE.character;
+  if(!CITIES_DATA[key] || key === currentCityKey()) return '';
   const from = c.ciudad;
   c.ciudad = CITIES_DATA[key].name;
   // Los que no vienen con vos quedan "lejos". Tu pareja y tus hijos chicos vienen.
@@ -120,8 +131,8 @@ function moveToCity(key){
     if(n.location === key && n.lifeState === 'lejos') n.lifeState = 'presente';
   });
   if(c.vivienda && c.vivienda.city && c.vivienda.city !== key){ c.properties = (c.properties||[]).concat([{valor:c.vivienda.valor, city:c.vivienda.city, since:calendarYear()}]); c.vivienda = null; }
-  if(isEmployed() && !(JOBS[c.profesion].port && !CITIES_DATA[key].port)) jobPerformance(-10);
-  else if(isEmployed()) c.profesion = 'Desempleado';
+  if(isEmployed() && jobExistsIn(c.profesion, key)){ if(!opts.keepJob) jobPerformance(-10); }
+  else if(isEmployed()){ logJournal('Sin trabajo', `En ${c.ciudad} no hay lugar para ${c.profesion.toLowerCase()}. Vas a tener que buscar otra cosa.`, {cat:'life', imp:1}); c.profesion = 'Desempleado'; }
   // Mudarte enfría el rastro que dejaste (un poco).
   STATE.world.attention = Math.round((STATE.world.attention||0) * 0.6);
   Object.keys(STATE.factions).forEach(f=>{ STATE.factions[f].suspicion = Math.round(STATE.factions[f].suspicion * 0.75); });
@@ -129,8 +140,8 @@ function moveToCity(key){
   logJournal('Mudanza', text, {cat:'life', imp:2});
   remember('moved_'+key, `Te mudaste a ${c.ciudad}.`, {cat:'place'});
   addMilestone('world', `Se muda a ${c.ciudad}`);
-  setResolution('Una ciudad nueva', text, []);
-  saveGame(true); renderAll();
+  const cs = currentCityState(); STATE.world.prosperity = cs.prosperity; STATE.world.security = cs.security;
+  return text;
 }
 
 /* ------------------------------ línea temporal (§30, §31) ------------------------------ */
@@ -203,7 +214,7 @@ function applyTimelineEffect(eff, def){
   if(eff.faction) for(const f in eff.faction){ if(eff.faction[f].strength) factionStrength(f, eff.faction[f].strength); }
   if(eff.mood) for(const f in eff.mood) factionMood(f, eff.mood[f]);
   if(eff.war !== undefined) STATE.world.war = eff.war;
-  if(eff.endsAfter){ scheduleConsequence({inMonths:eff.endsAfter, title:'La paz', text:'La guerra termina tan de repente como empezó. Nadie sabe bien quién ganó.', effect:{world:{prosperity:4, security:5}}}); STATE.world.war = true; }
+  if(eff.endsAfter){ scheduleConsequence({inMonths:eff.endsAfter, title:'La paz', text:'La guerra termina tan de repente como empezó. Nadie sabe bien quién ganó.', effect:{war:false, allCities:{prosperity:4, security:5}}}); STATE.world.war = true; }
   if(eff.mysticBoost) STATE.world.mysticBoost = (STATE.world.mysticBoost||0) + eff.mysticBoost;
   if(eff.bankHit && STATE.character.bank > 0 && chance(0.5)){ const lost = Math.round(STATE.character.bank*eff.bankHit); STATE.character.bank -= lost; logJournal('Tus ahorros', `El banco devuelve sólo una parte de tus ahorros. Perdés ${fmtMoney(lost)}.`, {cat:'life', imp:2}); }
   const here = (def.city || null) === currentCityKey() || eff.allCities;

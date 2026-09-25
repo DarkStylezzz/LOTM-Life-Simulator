@@ -2,12 +2,23 @@
 /* =========================================================================
    data/difficulty.js — dificultad y modo de historia (§31 del rework).
    La dificultad NO duplica lógica: es una tabla de multiplicadores globales
-   que el motor consulta con diffMult('clave'). El modo de historia decide si
-   la línea temporal canónica existe y si el jugador puede alterarla.
+   que el motor consulta con diffMult('clave') (y diffAdd('clave') para los
+   que se suman, con 0 por defecto). El modo de historia decide si la línea
+   temporal canónica existe y si el jugador puede alterarla.
+   Claves: mystic (exposición a lo oculto), death (riesgo de muerte),
+   corruption, sanityLoss, attention, reward (lo que pagan encargos, peleas,
+   hallazgos y ventas), potion (se suma a la chance de éxito de pociones y
+   rituales), falseClue, digestion, threat, highSeq, hints, enemyDmg (daño
+   que recibís en combate), flee (se suma a la chance de huir) y
+   secondChances (muertes evitables que no llegan, ver systems/endings.js).
    ========================================================================= */
 const DIFFICULTIES = {
+  easy:{
+    label:'Fácil', desc:'Para vivir la historia. Más pistas, heridas más leves, pociones más nobles y hasta tres segundas oportunidades cuando todo sale mal.',
+    mult:{ mystic:1.15, death:0.55, corruption:0.75, sanityLoss:0.75, attention:0.75, reward:1.25, potion:0.08, falseClue:0.6, digestion:1.25, threat:0.7, highSeq:0.85, hints:1.6, enemyDmg:0.75, flee:0.1, secondChances:3 }
+  },
   normal:{
-    label:'Normal', desc:'Más accesible. Hay pistas, margen de error y alguna segunda oportunidad.',
+    label:'Normal', desc:'La experiencia pensada. Hay pistas y margen de error, pero los errores se pagan.',
     mult:{ mystic:1, death:1, corruption:1, sanityLoss:1, attention:1, reward:1, potion:0, falseClue:1, digestion:1, threat:1, highSeq:1, hints:1 }
   },
   hard:{
@@ -27,6 +38,11 @@ const WORLD_MODES = {
 function difficultyDef(){
   const k = (typeof STATE!=='undefined' && STATE && STATE.settings) ? STATE.settings.difficulty : 'normal';
   return DIFFICULTIES[k] || DIFFICULTIES.normal;
+}
+// Claves que se suman (potion, flee, secondChances): 0 si la dificultad no la define.
+function diffAdd(key){
+  const m = difficultyDef().mult[key];
+  return m === undefined ? 0 : m;
 }
 function diffMult(key){
   const m = difficultyDef().mult[key];

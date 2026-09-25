@@ -28,7 +28,7 @@ function renderIntro(){
       <p class="small-note">Tu vida empieza al nacer. No elegís edad, ni oficio, ni camino: se van haciendo.</p>
       <div class="intro-nav"><label class="btn btn-ghost file-btn">Importar partida<input type="file" accept="application/json,.json" data-change="intro-import" class="sr-only"></label>${btn('Siguiente →','intro-next',{},{cls:'btn-primary'})}</div>`;
   } else if(creationStep === 1){
-    if(!cd.ciudad) cd.ciudad = CITIES_DATA[pick(CITY_KEYS)].name;
+    if(!cd.ciudad) cd.ciudad = CITIES_DATA[randomBirthCityKey()].name;
     if(!cd.clase) cd.clase = pick(CLASSES);
     const ck = cityKeyByName(cd.ciudad), city = CITIES_DATA[ck];
     body = `

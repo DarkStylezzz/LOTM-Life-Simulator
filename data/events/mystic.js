@@ -67,7 +67,7 @@ const EVENTS_MYSTIC = [
       return {title:'Una carta de tarot', text:'Encontrás una carta de tarot fuera de lugar, con un símbolo que no pertenece a ningún mazo comercial.'}; }},
   {id:'myst_strange_object', type:'mystic', rarity:'mystic', tags:['artifact'], weight:2, cooldown:60,
     hiddenRequirements:()=>STATE.flags.mysticExposure>10,
-    run:()=>{ const k = pick(ARTIFACT_KEYS); addArtifact(k, 'encontrado por casualidad');
+    run:()=>{ const k = randomArtifactKey(); addArtifact(k, 'encontrado por casualidad');
       return {title:'Un objeto extraño', text:'Encontrás ' + ARTIFACTS[k].foundText + ' No tenés idea de qué hacer con él todavía.'}; }},
   {id:'myst_dream', type:'mystic', rarity:'mystic', tags:['dream'], weight:3, cooldown:24,
     run:()=>{ applyEffects({clue:{pathway:'$random', reliability:'mixed', strength:[2,5], source:'un sueño'}}); return {title:'Un sueño distinto', text:'Tenés un sueño que se siente más real que cualquier otro — con una lógica propia, casi deliberada.'}; }},

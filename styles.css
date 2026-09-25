@@ -135,6 +135,9 @@ kbd{font-family:var(--font-ui); font-size:12px; border:1px solid var(--line); bo
 .opt-card input{position:absolute; left:12px; top:13px; width:auto; accent-color:var(--gold);}
 .opt-card.sel{border-color:var(--gold); background:rgba(173,138,69,0.07);}
 .opt-card.small{padding:8px 10px 8px 32px;}
+.opt-group.compact{margin-bottom:8px; gap:6px;}
+.opt-group.compact .opt-card{padding:8px 10px 8px 32px;}
+.opt-group.compact .opt-card input{left:10px; top:10px;}
 .opt-title{font-weight:600; font-size:14px;}
 .opt-desc{font-size:12.5px; color:var(--ink-dim);}
 .trait-roll-grid{display:flex; flex-direction:column; gap:10px; margin-top:4px;}

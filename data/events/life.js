@@ -30,7 +30,7 @@ const EVENTS_LIFE = [
   {id:'life_friend_chat', type:'social', rarity:'common', tags:['friend'], weight:3, cooldown:6,
     context:(ctx)=>{ const n = npcById('amigo'); if(!n || !n.alive || n.lifeState!=='presente' || !n.met) return null; ctx.npc = n; return ctx; },
     run:(ctx)=>{ adjustRel(ctx.npc, {trust:5, affection:3}); return {title:'Charla con ' + ctx.npc.name, text:'Se reencuentran y ponen al día sus vidas. La confianza crece.'}; }},
-  {id:'life_weekend_gig', type:'work', rarity:'common', tags:['money'], requirements:{ageMin:14}, weight:4, cooldown:6,
+  {id:'life_weekend_gig', type:'work', rarity:'common', tags:['money'], requirements:{ageMin:14, ageMax:66}, weight:4, cooldown:6,
     run:()=>{ applyEffects({cash:[30,140]}); return {title:'Changa de fin de semana', text:'Conseguís un trabajo suelto de un par de días. No es mucho, pero suma.'}; }},
   {id:'life_back_pain', type:'mundane', rarity:'common', tags:['health'], requirements:{ageMin:20}, weight:3, cooldown:8,
     run:()=>{ applyEffects({salud:[-10,-3]}); return {title:'Dolor de espalda', text:'Pasás varios días con el cuerpo resentido, sin una causa clara.'}; }},
@@ -198,7 +198,7 @@ const EVENTS_LIFE = [
   {id:'life_inheritance', type:'mundane', rarity:'rare', tags:['money','luck'], requirements:{ageMin:18}, weight:2, cooldown:999, repeatable:false, narrativeImportance:2,
     run:()=>{ const v = Math.round(rndInt(300,1800)*priceIndex()); applyEffects({cash:v});
       let extra = '';
-      if(chance(0.25)){ const k = pick(ARTIFACT_KEYS); addArtifact(k, 'la herencia de un pariente lejano'); extra = ' Entre sus cosas hay una caja que nadie quiso: adentro, '+ARTIFACTS[k].foundText; }
+      if(chance(0.25)){ const k = randomArtifactKey(); addArtifact(k, 'la herencia de un pariente lejano'); extra = ' Entre sus cosas hay una caja que nadie quiso: adentro, '+ARTIFACTS[k].foundText; }
       return {title:'Una herencia inesperada', text:`Un pariente lejano, al que viste dos veces en tu vida, te deja ${fmtMoney(v)} en su testamento.${extra}`}; }},
   {id:'life_old_friend_back', type:'social', rarity:'uncommon', tags:['friend'], requirements:{ageMin:20}, weight:3, cooldown:24,
     context:(ctx)=>{ const far = aliveNpcs().filter(n=>n.lifeState==='lejos' && n.met); if(!far.length) return null; ctx.npc = pick(far); return ctx; },

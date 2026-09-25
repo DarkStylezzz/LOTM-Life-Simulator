@@ -4,10 +4,9 @@
    Una partida vieja no se tira: se actualiza. migrateSave lleva cualquier
    save desde la v6 hasta SAVE_VERSION paso a paso, conservando todo lo
    vivido (memoria, journal, NPCs, dinero, vía, Sequence) y completando lo
-   nuevo con valores razonables. Lo único que NO se puede recuperar es una
-   decisión que quedó pendiente en la versión anterior: sus opciones eran
-   funciones y se perdían al guardar (el bug original). Se descarta con una
-   nota en el journal.
+   nuevo con valores razonables. Una decisión o un encargo que quedó abierto
+   en la versión anterior se reabre si la misma escena existe en esta (ver
+   reopenLegacyPending); si no, se descarta con una nota en el journal.
    ========================================================================= */
 function saveGame(silent){
   if(!STATE || !STATE.started) return false;
@@ -80,10 +79,24 @@ function migrateSave(data){
     data.version = 7;
   }
   if(data.version < 8) migrateV7toV8(data);
-  // Red de seguridad (cualquier versión): campos que se agregan con el tiempo.
+  // Red de seguridad (cualquier versión): campos que se agregan con el tiempo
+  // (por ejemplo, el estado de las ciudades nuevas).
   fillMissing(data, freshState());
+  repairSave(data);
   data.version = SAVE_VERSION;
   return data;
+}
+// Arreglos de errores de versiones anteriores que quedaron guardados en la partida.
+function repairSave(data){
+  const w = data.world || {};
+  // En Mundo libre, la "guerra corta" no terminaba nunca (y la inflación de
+  // guerra seguía corriendo). Si hay una guerra sin paz agendada, se agenda.
+  const peaceScheduled = (data.pendingConsequences||[]).some(pc=>pc && pc.effect && pc.effect.war === false);
+  if(w.war && data.settings && data.settings.world === 'libre' && !peaceScheduled){
+    data.pendingConsequences.push({id:'pc_peace_repair', dueMonth:(data.time.totalMonths||0) + 1 + Math.floor(Math.random()*12), tag:null,
+      title:'La paz', text:'La guerra termina tan de repente como empezó. Nadie sabe bien quién ganó.', effect:{war:false, allCities:{prosperity:4, security:5}},
+      memory:null, eventId:null, cond:null, ctx:null});
+  }
 }
 // Completa claves faltantes (sin pisar lo existente) a partir de un estado nuevo.
 function fillMissing(target, base){
@@ -92,6 +105,30 @@ function fillMissing(target, base){
     const b = base[k], t = target[k];
     if(b && typeof b === 'object' && !Array.isArray(b) && t && typeof t === 'object' && !Array.isArray(t)) fillMissing(t, b);
   }
+}
+// Una decisión o un encargo que quedó abierto en la versión anterior: la
+// versión anterior guardaba sólo los textos (las opciones eran funciones y se
+// perdían), pero si esa misma escena existe en esta versión —mismo encargo,
+// mismo título de decisión— se vuelve a abrir, con sus opciones de ahora.
+// Las prácticas de actuación y los rituales a medio hacer no se pueden
+// reconstruir (cambiaron por completo) y se pierden, con una nota.
+function reopenLegacyPending(ev, mission){
+  try{
+    if(mission && mission.missionId && MISSION_BY_ID[mission.missionId]){
+      const tpl = MISSION_BY_ID[mission.missionId];
+      STATE.pendingMission = { missionId:tpl.id, type:tpl.type, title:tpl.title, text:tpl.scene.text, risk:tpl.risk,
+        choices: tpl.scene.choices.map((c,idx)=>({idx, label:c.label, small:c.small||''})) };
+      return true;
+    }
+    if(ev && ev.kind === 'decision' && ev.title){
+      const def = EVENTS_ALL.find(d=>d.choices && typeof d.title === 'string' && d.title === ev.title);
+      if(!def) return false;
+      let ctx = {};
+      if(def.context){ ctx = def.context({}); if(!ctx) return false; }
+      return fireEvent(def, ctx) && !!STATE.pendingEvent;
+    }
+  }catch(e){ console.warn('No se pudo reabrir la escena anterior', e); STATE.pendingEvent = null; STATE.pendingMission = null; }
+  return false;
 }
 function migrateV7toV8(data){
   const prev = STATE;
@@ -204,10 +241,9 @@ function migrateV7toV8(data){
     data.milestones = (data.milestones||[]).map(m=>Object.assign({cy:(data.time.startYear + (m.year||1) - 1)}, m));
     // ---- lo pendiente ----
     data.pendingConsequences = (data.pendingConsequences||[]).map(pc=>Object.assign({id:uid('pc'), eventId:null, cond:null, ctx:null}, pc, {effect: pc.effect && typeof pc.effect === 'object' ? pc.effect : null}));
-    if(data.pendingEvent || data.pendingMission){
-      data.pendingEvent = null; data.pendingMission = null;
-      logJournal('Una decisión que quedó atrás', 'Había algo por decidir cuando la historia se interrumpió. El momento pasó. La vida siguió.', {cat:'life'});
-    }
+    // Lo que había quedado abierto se intenta reabrir al final (ver abajo).
+    const legacyEvent = data.pendingEvent, legacyMission = data.pendingMission;
+    data.pendingEvent = null; data.pendingMission = null;
     if(data.combat){
       const old = data.combat; data.combat = null;
       const key = Object.keys(ENEMIES).find(k=>ENEMIES[k].name === (old.enemy && old.enemy.name));
@@ -223,6 +259,8 @@ function migrateV7toV8(data){
     recomputeAnchors();
     if(p.chosenPathway && p.sequence <= 5) data.anchors.revealed = true;
     seasonStart();
+    if((legacyEvent || legacyMission) && !reopenLegacyPending(legacyEvent, legacyMission))
+      logJournal('Una decisión que quedó atrás', 'Había algo por decidir cuando la historia se interrumpió. El momento pasó. La vida siguió.', {cat:'life'});
     data.version = 8;
   } finally {
     STATE = prev;

@@ -260,18 +260,21 @@ function checkDeathAndCrisis(){
   if(c.edad >= mp.threshold && STATE.time.month === 1){
     // Una tirada por año (antes era por mes, con la misma curva escalada).
     const x = Math.max(0, (c.edad - mp.threshold) / mp.span);
-    const p = clamp(x*x*0.3 * diffMult('death'), 0, mp.cap) - fateSave();
+    // La dificultad casi no toca la vejez: en Fácil también se envejece.
+    const p = clamp(x*x*0.3 * Math.max(0.85, diffMult('death')), 0, mp.cap) - fateSave();
     if(chance(Math.min(0.9, Math.max(0, p)))) endGame('natural', 'Una vida completa', '', {cause:'vejez'});
   }
 }
-// La muñeca de porcelana (artefacto) se rompe en tu lugar, una vez.
+// Un artefacto que se rompe en tu lugar, una vez (la muñeca de porcelana).
+// Sellado en la caja no te protege.
 function tryDollSave(){
-  const doll = STATE.inventory.items.find(it=>it.cat==='artifact' && it.def==='doll');
-  if(!doll) return false;
-  removeItem(doll.uid);
+  const saver = STATE.inventory.items.find(it=>it.cat==='artifact' && !it.sealed && ARTIFACTS[it.def] && ARTIFACTS[it.def].effects.some(e=>e.kind==='save'));
+  if(!saver) return false;
+  const d = ARTIFACTS[saver.def], e = d.effects.find(x=>x.kind==='save');
+  removeItem(saver.uid);
   STATE.character.salud = 20;
-  logJournal('La muñeca', 'Ibas a morir. En el último instante escuchás, en tu casa, el ruido de porcelana haciéndose añicos. Respirás. La muñeca ya no está.', {cat:'mystery', imp:3});
-  remember('doll_saved', 'La muñeca sin ojos se rompió en tu lugar.', {cat:'event'});
+  logJournal(d.name, e.saveText || 'Ibas a morir. En el último instante escuchás, en tu casa, el ruido de porcelana haciéndose añicos. Respirás. La muñeca ya no está.', {cat:'mystery', imp:3});
+  remember(saver.def === 'doll' ? 'doll_saved' : 'artifact_saved_'+saver.def, saver.def === 'doll' ? 'La muñeca sin ojos se rompió en tu lugar.' : `${d.name} se rompió en tu lugar.`, {cat:'event'});
   STATE._importantMoment = true;
   return true;
 }
