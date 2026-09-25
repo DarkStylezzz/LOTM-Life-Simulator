@@ -109,10 +109,11 @@ kbd{font-family:var(--font-ui); font-size:12px; border:1px solid var(--line); bo
 .rarity-poco{border-color:var(--sanity-col); color:#a9d0ab;}
 .rarity-raro{border-color:var(--violet-bright); color:#c4b5ea;}
 .rarity-unico{border-color:var(--gold-bright); color:var(--gold-bright);}
-.tier{display:inline-block; width:12px; text-align:center; font-size:10px; color:var(--ink-faint); cursor:help;}
-.tier-objective{color:var(--gold-bright);}
-.tier-estimated{color:var(--violet-bright);}
-.tier-unknown{color:var(--ink-faint);}
+/* marcas de información: objetiva (llena), estimada (media), desconocida (vacía) */
+.tier{display:inline-block; width:8px; height:8px; border-radius:50%; border:1px solid var(--ink-faint); vertical-align:1px; margin-right:3px; cursor:help; flex-shrink:0;}
+.tier-objective{border-color:var(--gold-bright); background:var(--gold-bright);}
+.tier-estimated{border-color:var(--violet-bright); background:linear-gradient(90deg, var(--violet-bright) 50%, transparent 50%);}
+.tier-unknown{border-color:var(--ink-faint); background:transparent;}
 
 /* ---------- creación de personaje ---------- */
 #screen-intro{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px;}
@@ -439,7 +440,7 @@ details.sell-lore summary, details.betray summary{cursor:pointer; color:var(--in
 .seal-body{font-family:var(--font-body); font-size:18px; max-width:460px; line-height:1.6; margin-bottom:24px;}
 .seal-divine .seal-ring{border-color:#f5e6b8; box-shadow:0 0 80px rgba(245,230,184,0.45);}
 .seal-tarot .seal-ring{border-color:#9aa0a6; box-shadow:0 0 50px rgba(160,160,170,0.35);}
-#toast-container{position:fixed; top:12px; right:12px; z-index:200; display:flex; flex-direction:column; gap:6px; max-width:300px; pointer-events:none;}
+#toast-container{position:fixed; bottom:16px; right:16px; z-index:200; display:flex; flex-direction:column; gap:6px; max-width:320px; pointer-events:none;}
 @media (max-width:1023px){ #toast-container{left:12px; right:12px; max-width:none; top:auto; bottom:78px;} }
 .toast{background:var(--panel-raised); border:1px solid var(--line); border-left:3px solid var(--gold); padding:9px 12px; border-radius:2px; font-size:13px; animation:toastin .2s ease; transition:opacity .3s ease, transform .3s ease; pointer-events:auto;}
 .toast.out{opacity:0; transform:translateX(10px);}

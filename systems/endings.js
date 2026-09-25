@@ -96,12 +96,12 @@ function analyzeLife(category, meta){
   if(end > start) P.push('Murió con más de lo que tuvo al nacer.');
   else if(end < start) P.push('Murió con menos de lo que tuvo al nacer.');
   if(c.debt > 0) P.push(`Dejó deudas: ${fmtMoney(c.debt)} que alguien más tuvo que pagar.`);
-  facts.push({k:'Patrimonio', v: fmtMoney(Math.max(0, net))});
+  facts.push({k:'Patrimonio', v: net >= 0 ? fmtMoney(net) : `Deudas por ${fmtMoney(-net)}`});
   // 5. Relaciones.
   const top = STATE.npcs.filter(n=>n.met && !isFamilyNpc(n)).sort((x,y)=>bondScore(y)-bondScore(x))[0];
   if(top && bondScore(top) >= 55) P.push(`${top.name} fue, probablemente, la persona que mejor lo conoció fuera de su familia.`.replace('lo conoció', gx('lo conoció','la conoció','le conoció')));
   const betrayals = memoriesByCat('betrayal');
-  if(betrayals.length) P.push(betrayals.length === 1 ? `Nunca olvidó una traición: ${betrayals[0].text.charAt(0).toLowerCase()+betrayals[0].text.slice(1)}` : `Lo traicionaron más de una vez. No aprendió a desconfiar, o aprendió demasiado.`.replace('Lo traicionaron', gx('Lo traicionaron','La traicionaron','Le traicionaron')));
+  if(betrayals.length) P.push(betrayals.length === 1 ? `Nunca olvidó una traición. En su memoria quedó así: “${betrayals[0].text}”` : `Lo traicionaron más de una vez. No aprendió a desconfiar, o aprendió demasiado.`.replace('Lo traicionaron', gx('Lo traicionaron','La traicionaron','Le traicionaron')));
   const enemies = STATE.npcs.filter(n=>n.alive && n.met && (n.fear >= 60 || n.suspicion >= 70));
   if(enemies.length >= 2) P.push(`Dejó gente que le temía, o que sospechaba de ${him} hasta el final.`);
   // 6. Cordura y corrupción, en palabras.
@@ -128,7 +128,7 @@ function analyzeLife(category, meta){
   const hist = (STATE.world.timeline||[]).filter(e=>e.triggered && (e.altered || e.witnessed));
   hist.forEach(e=>{ const d = timelineDef(e); if(d) P.push(e.altered ? `Por algo que hizo, "${d.title}" no pasó como tenía que pasar.` : `Estuvo ahí cuando pasó "${d.title}".`); });
   const pacts = memoriesByCat('pact');
-  if(pacts.length) P.push(`Hizo pactos que no todos cumplieron: ${pacts[pacts.length-1].text.charAt(0).toLowerCase() + pacts[pacts.length-1].text.slice(1)}`);
+  if(pacts.length) P.push(`Hizo ${pacts.length === 1 ? 'un pacto' : 'pactos'} de los que no se habla. El último lo recordaba así: “${pacts[pacts.length-1].text}”`);
   if(c.stats.killed >= 3) P.push('Mató más de una vez. No siempre le pesó.');
   else if(c.stats.spared >= 2) P.push('Pudiendo matar, más de una vez eligió no hacerlo.');
   // Epitafio.
@@ -149,7 +149,8 @@ function buildLifeStages(){
   const J = STATE.journal || [], M = STATE.milestones || [];
   return LIFE_STAGES.map(st=>{
     const ms = M.filter(m=>m.edad >= st.from && m.edad <= st.to && m.kind !== 'end').map(m=>({age:m.edad, text:m.text, kind:m.kind}));
-    const js = J.filter(e=>e.age >= st.from && e.age <= st.to && (e.imp||0) >= 3 && !/^FIN/.test(e.title||'')).slice(-6).map(e=>({age:e.age, text:e.title, detail:e.text}));
+    // El diario está del más nuevo al más viejo: se invierte para contar en orden.
+    const js = J.filter(e=>e.age >= st.from && e.age <= st.to && (e.imp||0) >= 3 && !/^FIN/.test(e.title||'')).slice().reverse().slice(0,8).map(e=>({age:e.age, text:e.title, detail:e.text}));
     return {id:st.id, label:st.label, milestones:ms, moments:js};
   }).filter(s=>s.milestones.length || s.moments.length);
 }

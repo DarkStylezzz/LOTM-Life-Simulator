@@ -7,10 +7,10 @@
    ========================================================================= */
 const TABS = [
   {id:'vida', label:'Vida', divineLabel:'Trono', ic:'☀'},
-  {id:'personas', label:'Personas', divineLabel:'Los que recuerdan', ic:'☍'},
-  {id:'misticismo', label:'Misticismo', ic:'✦', visible:()=>mysticTabVisible()},
+  {id:'personas', label:'Personas', short:'Gente', divineLabel:'Los que recuerdan', divineShort:'Ellos', ic:'☍'},
+  {id:'misticismo', label:'Misticismo', short:'Místico', ic:'✦', visible:()=>mysticTabVisible()},
   {id:'mundo', label:'Mundo', ic:'⚜'},
-  {id:'inventario', label:'Inventario', ic:'⚱'},
+  {id:'inventario', label:'Inventario', short:'Objetos', ic:'⚱'},
   {id:'diario', label:'Diario', ic:'✎'}
 ];
 function mysticTabVisible(){
@@ -18,7 +18,10 @@ function mysticTabVisible(){
   return !!p.chosenPathway || Object.values(p.belief||{}).some(v=>v >= 8) || loreCount() >= 1 || (STATE.flags.mysticExposure||0) >= 12 || STATE.tarot.stage >= 1 || activeLeads().length > 0 || itemsByCat('artifact').length > 0;
 }
 function visibleTabs(){ return TABS.filter(t=>!t.visible || t.visible()); }
-function tabLabel(t){ return isDivine() && t.divineLabel ? t.divineLabel : t.label; }
+function tabLabel(t, short){
+  if(isDivine() && t.divineLabel) return short && t.divineShort ? t.divineShort : t.divineLabel;
+  return short && t.short ? t.short : t.label;
+}
 function tabBadge(id){
   if(id === 'misticismo'){
     const p = STATE.pathway;
@@ -91,12 +94,12 @@ function renderTab(id){
 function renderNav(){
   const tabs = visibleTabs();
   const items = (mode)=>tabs.map((t,i)=>{ const b = tabBadge(t.id); const cur = t.id === UI.tab;
-    return `<button class="${mode}-btn ${cur?'active':''}" data-act="tab" data-id="${t.id}" ${cur?'aria-current="page"':''} title="${attr(tabLabel(t))} (${i+1})"><span class="ic" aria-hidden="true">${t.ic}</span><span class="tl">${esc(tabLabel(t))}</span>${b ? `<span class="nav-badge" aria-label="novedad">${esc(b)}</span>` : ''}</button>`; }).join('');
+    return `<button class="${mode}-btn ${cur?'active':''}" data-act="tab" data-id="${t.id}" ${cur?'aria-current="page"':''} title="${attr(tabLabel(t))} (${i+1})" aria-label="${attr(tabLabel(t))}"><span class="ic" aria-hidden="true">${t.ic}</span><span class="tl" aria-hidden="true">${esc(tabLabel(t, mode==='tab'))}</span>${b ? `<span class="nav-badge">${esc(b)}</span>` : ''}</button>`; }).join('');
   const c = STATE.character;
   setHTML(byId('sidebar'), `<div class="side-brand"><div class="side-title">Lord of the Mysteries</div><div class="side-sub">${esc(c.nombre)} ${esc(c.apellido)}</div></div>
     <div class="side-nav">${items('side')}</div>
     <div class="side-foot">${btn('Opciones','open-settings',{},{cls:'btn-ghost'})}${btn('Atajos','open-help',{},{cls:'btn-ghost'})}</div>`);
-  setHTML(byId('tabbar'), items('tab') + `<button class="tab-btn" data-act="open-settings" title="Opciones"><span class="ic" aria-hidden="true">⚙</span><span class="tl">Opciones</span></button>`);
+  setHTML(byId('tabbar'), items('tab') + `<button class="tab-btn" data-act="open-settings" title="Opciones" aria-label="Opciones"><span class="ic" aria-hidden="true">⚙</span><span class="tl" aria-hidden="true">Más</span></button>`);
 }
 function renderTopbar(){
   const c = STATE.character, p = STATE.pathway;
@@ -167,12 +170,15 @@ onAct('open-settings', ()=>{
     <p class="small-note">El juego muestra lo que tu personaje sabe: datos objetivos (●), estimaciones (◐) y lo desconocido (○). Esta opción muestra todo con números.</p>
     <div class="rule"></div>
     <p class="small-note">Dificultad: <b>${esc(DIFFICULTIES[s.difficulty].label)}</b> · Historia: <b>${esc(WORLD_MODES[s.world].label)}</b></p>
-    <div class="btn-row">${btn('Exportar partida','export-save')}<label class="btn file-btn">Importar partida<input type="file" accept="application/json,.json" data-change="import-save" class="sr-only"></label></div>
-    <div class="btn-row">${btn('Nueva vida','new-life-confirm',{},{cls:'btn-danger'})}</div>`,
+    <p class="small-note">La partida se guarda sola después de cada acción, en este navegador.</p>
+    <div class="btn-row">${btn('Guardar ahora','save-now')}${btn('Exportar partida','export-save')}<label class="btn file-btn">Importar partida<input type="file" accept="application/json,.json" data-change="import-save" class="sr-only"></label></div>
+    <p class="small-note">Exportá la partida para guardarla fuera del navegador o llevarla a otro dispositivo. Importar reemplaza la actual.</p>
+    <div class="btn-row">${btn('Borrar esta vida y empezar otra','new-life-confirm',{},{cls:'btn-danger'})}</div>`,
     actions:[{label:'Cerrar', act:'modal-close', primary:true}]});
 }, {free:true});
 onAct('toggle-numbers', (d, el)=>{ STATE.settings.showNumbers = !!el.checked; saveGame(true); scheduleRender(); }, {free:true});
 onAct('export-save', ()=>exportSave(), {free:true});
+onAct('save-now', ()=>saveGame(false), {free:true});
 onAct('import-save', (d, el)=>{ const f = el.files && el.files[0]; if(f) importSave(f, ()=>{ closeModal(); UI.lastEventKey = null; showScreen(STATE.gameOver ? 'end' : 'game'); renderNow(); }); }, {free:true});
 onAct('new-life-confirm', ()=>{ closeModal(); confirmModal('Esta vida se va a perder para siempre. ¿Empezar otra?', ()=>{ deleteSave(); newLifeFlow(); }, {yes:'Empezar otra vida', danger:true}); }, {free:true});
 function showHelp(){

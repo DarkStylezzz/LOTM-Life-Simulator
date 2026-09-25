@@ -46,7 +46,7 @@ function renderCombat(){
         <div class="statuses">${statusChips(cb.player.statuses)}</div></div>
     </div>
     <p class="small-note">${esc(env.desc||'')}${cb.witnesses ? ' Hay testigos.' : ''}</p>
-    <ol class="combat-log" aria-live="polite">${log.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>
+    ${log.length ? `<ol class="combat-log" aria-live="polite">${log.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>` : ''}
     ${actsHtml}
   </article>`;
 }

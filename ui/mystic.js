@@ -49,7 +49,7 @@ function mysticPath(){
     <p class="card-text">${esc(sd.ability||'')}</p>
     ${statRow('digestion')}
     ${lvl >= 1 && r ? `<div class="role-box"><div class="eyebrow">${lvl >= 2 ? 'El Método de Actuación' : 'Una intuición'}</div><div class="role-name">${esc(r.role)}</div><p>${esc(r.principle)}</p></div>` : `<p class="small-note">${tierMark('unknown')} Sentís la poción adentro, todavía ajena. No sabés bien qué hacer con eso.</p>`}
-    ${lvl >= 2 ? `<p class="small-note">Tu forma de actuar: ${esc(actingStyleLabel())}.</p>` : ''}
+    ${lvl >= 2 && actingStyleLabel() ? `<p class="small-note">${esc(actingStyleLabel())}</p>` : ''}
   </section>`);
   // Actuar
   const canAct = canUseSeasonAction('acting') && canSpendFreeTime(1) && c.edad >= 13;

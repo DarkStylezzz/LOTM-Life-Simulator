@@ -159,7 +159,7 @@ scenario('cada escena de actuación de cada vía', ()=>{
   const n = run(ctx, `(function(){ let n = 0;
     for(const pw of Object.keys(PATHWAYS)){ for(let seq=9; seq>=1; seq--){
       STATE.pathway.chosenPathway = pw; STATE.pathway.sequence = seq; invalidatePathwayMods();
-      for(let i=0;i<3;i++){ seasonStart(); STATE.seasonActions.acting = 0; doActing(); if(STATE.pendingEvent && STATE.pendingEvent.kind==='acting'){ resolvePendingEvent(i % STATE.pendingEvent.choices.length); n++; } STATE.pendingEvent = null; STATE.combat = null; }
+      for(let i=0;i<3;i++){ STATE.gameOver = false; STATE.character.sanity = 100; STATE.character.salud = 100; STATE.character.corruption = 0; seasonStart(); STATE.seasonActions.acting = 0; doActing(); if(STATE.pendingEvent && STATE.pendingEvent.kind==='acting'){ resolvePendingEvent(i % STATE.pendingEvent.choices.length); n++; } STATE.pendingEvent = null; STATE.combat = null; }
     } }
     return n; })()`);
   assert(n >= 14*9*3*0.9, 'escenas de actuación que no abrieron: ' + n);
@@ -226,6 +226,27 @@ scenario('relaciones: cada interacción con distintas personas', ()=>{
     INTERACTIONS.forEach(it=>{ seasonStart(); resetSeasonActions(); if(!npc.alive) return; const av = availableInteractions(npc).find(x=>x.id===it.id); if(av && av.ok !== false && !av.disabled){ doInteraction(npc.id, it.id); n++; } STATE.pendingEvent = null; STATE.combat = null; });
   }); return n; })()`);
   assert(n > 20, 'pocas interacciones disponibles: ' + n);
+});
+
+scenario('agregar una vía nueva sólo con datos (PATHWAYS.nueva)', ()=>{
+  const ctx = fresh();
+  run(ctx, `registerPathway('wheel', {name:'Wheel of Fortune', theme:'Suerte, destino, azar',
+    sequences:[9,8,7,6,5,4,3,2,1,0].map(n=>({n, name:'Monje de la Rueda '+n, ability:'La suerte te mira de reojo.'})),
+    vague:['la suerte','las monedas que caen de canto'], rituals:{symbol:'una rueda de ocho rayos', anomalies:['Una moneda cae de canto.']},
+    ingredients:{9:['Una moneda de la suerte','Polvo de dado'], 8:['Trébol de siete hojas','Ojo de gato negro']},
+    formulas:{name:'Fórmula del Monje', ingredientCost:300, prepDifficulty:0.6},
+    abilities:[{seq:9, id:'wheel_luck', name:'Golpe de suerte', cost:{sp:2}, cooldown:2, combat:{dmg:1.4, negate:0.3}, passive:{fate:5}, desc:'La suerte empuja.'}],
+    actingRoles:{9:{role:'Monje', principle:'Un Monje acepta lo que la Rueda trae.', fit:['lucky']}, 8:{role:'Monje mayor', principle:'Acepta.', fit:[]}}
+  });`);
+  run(ctx, NEWLIFE + `STATE.character.edad = 25; STATE.character.cash = 99999;
+    addClue({pathway:'wheel', reliability:'real', strength:70, source:'x', confirm:true});
+    addFormula('wheel', 9, 'true', 'la Iglesia'); ingredientsNeededFor('wheel', 9).forEach(n=>addIngredient('wheel', 9, n, 90, 'x')); seasonStart();`);
+  assert(run(ctx, `isIdentified('wheel')`), 'la vía nueva no se identificó');
+  run(ctx, `startBrew('wheel', 9)`); resolveAll(ctx);
+  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.05; seasonStart(); startDrinkPotion(potionItems('wheel',9)[0].uid); for(let i=0;i<6 && STATE.pendingEvent;i++) resolvePendingEvent(0); Math.random = r0; })()`);
+  assert(run(ctx, `STATE.pathway.chosenPathway`) === 'wheel', 'no se pudo ser Beyonder de la vía nueva');
+  run(ctx, `seasonStart(); doActing(); if(STATE.pendingEvent) resolvePendingEvent(0); startCombat('mugger', {}); combatAction('ab:wheel_luck'); STATE.combat = null;`);
+  assert(run(ctx, `pathwayMods().fate`) === 5, 'los pasivos de la vía nueva no cuentan');
 });
 
 scenario('una vida larga en modo canónico y línea alternativa', ()=>{

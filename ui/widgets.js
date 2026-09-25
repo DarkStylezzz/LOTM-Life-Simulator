@@ -7,7 +7,7 @@
    "Mostrar números" existe para quien la quiera.
    ========================================================================= */
 const TIER_MARK = {objective:{sym:'●', label:'Dato objetivo'}, estimated:{sym:'◐', label:'Estimación'}, unknown:{sym:'○', label:'Desconocido'}};
-function tierMark(t){ const m = TIER_MARK[t] || TIER_MARK.estimated; return `<span class="tier tier-${t}" title="${m.label}" aria-label="${m.label}">${m.sym}</span>`; }
+function tierMark(t){ const m = TIER_MARK[t] || TIER_MARK.estimated; return `<span class="tier tier-${t}" title="${m.label}" role="img" aria-label="${m.label}"></span>`; }
 
 const STAT_PHRASES = {
   salud: [[80,'Excelente'],[60,'Buena'],[40,'Resentida'],[20,'Frágil'],[0,'Grave']],

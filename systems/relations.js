@@ -53,8 +53,8 @@ function relationshipLabel(npc){
   else if(affection >= 75) partes.push('te quiere de verdad');
   else if(affection >= 45) partes.push('te tiene cariño');
   else if(trust >= 60) partes.push('confía en vos');
-  else if(affection <= 12 && trust <= 15 && npc.met) partes.push('no te tiene simpatía');
-  else if(trust <= 15) partes.push('apenas te conoce');
+  else if(affection <= 10 && npc.met && ((npc.interactions||0) >= 3 || suspicion >= 25 || fear >= 20)) partes.push('no te tiene simpatía');
+  else if(trust <= 20 && affection <= 25) partes.push('apenas te conoce');
   else partes.push('te trata con cordialidad');
   if(suspicion >= 50) partes.push('sospecha algo de vos');
   else if(dependence >= 60) partes.push('depende de vos más de lo que admite');

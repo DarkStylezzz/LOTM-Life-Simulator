@@ -89,8 +89,32 @@ async function run(viewport, label){
   await browser.close();
   return {label, errors, end, stats, reloaded};
 }
+// Una partida guardada por la versión anterior (v7) tiene que abrirse y jugarse.
+async function runMigrated(){
+  const browser = await chromium.launch();
+  const page = await browser.newPage({viewport:{width:1280, height:800}});
+  const errors = [];
+  page.on('pageerror', e=>errors.push('pageerror: ' + e.message));
+  page.on('console', m=>{ if(m.type()==='error') errors.push('console: ' + m.text()); });
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, r=>r.fulfill({status:200, contentType:'text/css', body:''}));
+  const save = fs.readFileSync(path.join(__dirname, 'fixtures-v7-save.json'), 'utf8');
+  await page.addInitScript(s=>{ if(!sessionStorage.getItem('seeded')){ localStorage.setItem('lotm_life_sim_save_v1', s); sessionStorage.setItem('seeded','1'); } }, save);
+  await page.goto(URL);
+  await page.waitForSelector('#screen-game:not(.hidden)', {timeout:5000}).catch(()=>errors.push('la partida migrada no abrió la pantalla de juego'));
+  const info = await page.evaluate(()=>({v:STATE.version, name:STATE.character.nombre, age:STATE.character.edad}));
+  for(let i=0;i<30;i++){
+    await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>r())));
+    const blocked = await page.evaluate(()=>timeBlocked() || !!document.querySelector('.seal-overlay'));
+    if(await page.locator('[data-act="seal-dismiss"]').count()){ await page.locator('[data-act="seal-dismiss"]').click(); continue; }
+    if(blocked){ const n = await page.locator('#content .choice-btn:not([disabled])').count(); if(n) await page.locator('#content .choice-btn:not([disabled])').first().click(); continue; }
+    if(await page.locator('[data-act="advance"][data-mode="season"]').count()) await page.locator('[data-act="advance"][data-mode="season"]').click();
+  }
+  await browser.close();
+  return {label:'migrada', errors, end:info, stats:{scenes:0,tabs:0,actions:0,advances:30}, reloaded:false};
+}
 (async()=>{
   const results = [];
+  results.push(await runMigrated());
   results.push(await run({width:1440, height:900}, 'escritorio'));
   results.push(await run({width:390, height:844}, 'movil'));
   let bad = 0;
