@@ -68,6 +68,7 @@ Requieren Node 18+ (y Playwright para la de navegador).
 node tests/scenarios.js      # 16 escenarios dirigidos: Tarot Club, Sequence 0, finales, migración v7, cada habilidad y escena de actuación...
 node tests/simulate.js 40    # 40 vidas completas con un "jugador" automático: errores, bloqueos, estado serializable y balance
 node tests/simulate.js 10 --ui   # lo mismo, dibujando todas las pestañas con un DOM simulado
+node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor, en seis estados de vida
 node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil y una partida v7 migrada
 ```
 

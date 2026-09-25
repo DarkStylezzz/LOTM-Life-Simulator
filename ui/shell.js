@@ -96,6 +96,8 @@ function renderTab(id){
 /* ------------------------------ navegación ------------------------------ */
 function renderNav(){
   const tabs = visibleTabs();
+  // La primera vez que lo oculto roza la vida, aparece una sección nueva.
+  if(!STATE.flags.mysticTabSeen && tabs.some(t=>t.id==='misticismo')){ STATE.flags.mysticTabSeen = true; toast('Algo no encaja. Hay una sección nueva en tu vida: Misticismo.'); }
   const items = (mode)=>tabs.map((t,i)=>{ const b = tabBadge(t.id); const cur = t.id === UI.tab;
     return `<button class="${mode}-btn ${cur?'active':''}" data-act="tab" data-id="${t.id}" ${cur?'aria-current="page"':''} title="${attr(tabLabel(t))} (${i+1})" aria-label="${attr(tabLabel(t))}"><span class="ic" aria-hidden="true">${t.ic}</span><span class="tl" aria-hidden="true">${esc(tabLabel(t, mode==='tab'))}</span>${b ? `<span class="nav-badge">${esc(b)}</span>` : ''}</button>`; }).join('');
   const c = STATE.character;

@@ -119,16 +119,18 @@ function itemActions(it){
   const acts = [];
   const d = ITEM_DEFS[it.def];
   if(it.cat === 'artifact') return artifactActions(it);
-  if(d && d.read && (it.readCount||0) < 2) acts.push({id:'read', label: it.readCount ? 'Releer' : 'Leer', small:'1 tiempo libre.'});
+  const noTime = !canSpendFreeTime(1);
+  if(d && d.read && (it.readCount||0) < 2) acts.push({id:'read', label: it.readCount ? 'Releer' : 'Leer', small:'1 tiempo libre.', disabled: noTime || STATE.character.edad < 10, why: STATE.character.edad < 10 ? 'Todavía no lo entenderías.' : 'Sin tiempo libre.'});
   if(d && d.consumable) acts.push({id:'use', label:'Usar', small:d.uses});
-  if(it.def === 'tarot_card' && !it.studied) acts.push({id:'study_card', label:'Estudiar la carta', small:'1 tiempo libre.'});
+  if(it.def === 'tarot_card' && !it.studied) acts.push({id:'study_card', label:'Estudiar la carta', small:'1 tiempo libre.', disabled:noTime, why:'Sin tiempo libre.'});
   if(it.def === 'quest_notebook'){
-    acts.push({id:'study_notebook', label:'Leer el cuaderno', small:'Muy peligroso.', danger:true});
+    acts.push({id:'study_notebook', label:'Leer el cuaderno', small:'Muy peligroso. 1 tiempo libre.', danger:true, disabled:noTime, why:'Sin tiempo libre.'});
     acts.push({id:'deliver_notebook', label:'Entregarlo a la Iglesia', small:'Que lo guarde quien sabe.'});
   }
-  if(it.cat === 'potion' && it.seq === 9 && !STATE.pathway.chosenPathway) acts.push({id:'drink', label:'Beber', small:'No hay vuelta atrás.', danger:true});
-  if(it.cat === 'formula' && it.pathway && !it.verified && canVerifyFormulas()) acts.push({id:'verify', label:'Verificar la fórmula', small:'1 tiempo libre.'});
-  if(['book','document','weapon','misc','potion','characteristic','formula','ingredient'].includes(it.cat) && it.def !== 'quest_notebook') acts.push({id:'sell', label:'Vender', small: ['potion','characteristic','formula','ingredient'].includes(it.cat) ? 'Sólo en el mercado negro.' : ''});
+  if(it.cat === 'potion' && it.seq === 9 && !STATE.pathway.chosenPathway) acts.push({id:'drink', label:'Beber', small:'No hay vuelta atrás.', danger:true, disabled: STATE.character.edad < 16, why:'Sos muy chico: tu cuerpo no lo resistiría.'});
+  if(it.cat === 'formula' && it.pathway && !it.verified && canVerifyFormulas()) acts.push({id:'verify', label:'Verificar la fórmula', small:'1 tiempo libre.', disabled:noTime, why:'Sin tiempo libre.'});
+  const occult = ['potion','characteristic','formula','ingredient'].includes(it.cat);
+  if(['book','document','weapon','misc','potion','characteristic','formula','ingredient'].includes(it.cat) && it.def !== 'quest_notebook') acts.push({id:'sell', label:'Vender', small: occult ? 'Sólo en el mercado negro.' : '', disabled: occult && !knowsLore('black_market'), why:'No conocés a nadie que compre algo así.'});
   return acts;
 }
 function doItemAction(uidv, act){

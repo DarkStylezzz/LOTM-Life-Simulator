@@ -80,8 +80,9 @@ function artifactActions(it){
   if(!k.activation) acts.push({id:'examine', label:'Examinar', small:'Gratis. Mirarlo de cerca, sin tocarlo demasiado.'});
   if(!it.sealed){
     const pending = d.effects.length + d.drawbacks.length - k.effects.length - k.drawbacks.length;
-    if(pending > 0 || !k.origin) acts.push({id:'study', label:'Estudiar', small:'1 tiempo libre. Descubrir qué hace. Cuesta cordura.'});
-    if(d.effects.some(e=>e.kind!=='combat' && e.kind!=='save' && e.kind!=='ritual')) acts.push({id:'use', label:'Usar', small: k.activation ? d.activation : 'No sabés cómo se activa. Probar es peligroso.', danger:true});
+    const noTime = !canSpendFreeTime(1);
+    if(pending > 0 || !k.origin) acts.push({id:'study', label:'Estudiar', small:'1 tiempo libre. Descubrir qué hace. Cuesta cordura.', disabled: noTime || STATE.character.edad < 12, why: STATE.character.edad < 12 ? 'Sos muy chico para entenderlo.' : 'Sin tiempo libre.'});
+    if(d.effects.some(e=>e.kind!=='combat' && e.kind!=='save' && e.kind!=='ritual')) acts.push({id:'use', label:'Usar', small: k.activation ? d.activation : 'No sabés cómo se activa. Probar es peligroso.', danger:true, disabled:noTime, why:'Sin tiempo libre.'});
   }
   if(hasItem('tool_sealed_box')) acts.push(it.sealed ? {id:'unseal', label:'Sacarlo de la caja', small:'Vuelve a estar activo, para bien y para mal.'} : {id:'seal', label:'Guardarlo en la caja sellada', small:'Queda inerte: no te ayuda, pero tampoco te hace daño ni se nota.'});
   if(it.loan) acts.push({id:'return', label:'Devolverlo', small:`A ${factionShort(it.loan)}, antes de que lo reclamen.`});
