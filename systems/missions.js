@@ -48,7 +48,7 @@ function resolveMissionChoice(idx){
   const before = snapshotForChanges();
   const jBefore = STATE.journal.length ? STATE.journal[0] : null;
   STATE._collect = [];
-  try{ choice.resolve(); }catch(e){ console.error('Error resolviendo misión', tpl.id, e); }
+  try{ withRewards(()=>choice.resolve()); }catch(e){ console.error('Error resolviendo misión', tpl.id, e); }
   const collected = STATE._collect || [];
   delete STATE._collect;
   STATE.character.stats.missions = (STATE.character.stats.missions||0) + 1;
@@ -63,6 +63,16 @@ function resolveMissionChoice(idx){
 }
 
 /* ------------------------------ exploración ------------------------------ */
+// Qué objetos sellados pueden aparecer en un lugar: los de grado 0 sólo en
+// lugares de peligro alto; los que son "de" una ciudad, sólo ahí.
+function explorationArtifactPool(l){
+  const ck = currentCityKey();
+  return ARTIFACT_KEYS.filter(a=>{ const d = ARTIFACTS[a];
+    if(hasArtifact(a)) return false;
+    if(d.grade === 0 && !['Alta','Extrema'].includes(l.danger)) return false;
+    if(d.homeCity && d.homeCity !== ck) return false;
+    return true; });
+}
 function explorationLocations(){
   const ck = currentCityKey(), city = currentCity();
   return EXPLORATION_LOCATIONS.filter(l=>(!l.port || city.port) && (!l.cities || l.cities.includes(ck)));
@@ -93,7 +103,7 @@ function exploreLocation(id){
   // Pesos ajustados por quién explora y dónde.
   const w = Object.assign({}, l.outcomes);
   const cs = currentCityState();
-  const dangerMult = worldDangerMult() * diffMult('threat') * (1 - clamp(pm.exploreSafe||0, 0, 0.6)) * (cs && cs.security < 40 ? 1.3 : 1);
+  const dangerMult = worldDangerMult() * diffMult('threat') * (1 - clamp(pm.exploreSafe||0, 0, 0.6)) * (cs && cs.security < 40 ? 1.3 : 1) * (STATE.flags.spyglassUntil > STATE.time.totalMonths ? 0.6 : 1);
   if(w.combat) w.combat *= dangerMult;
   const findMult = 1 + (pm.exploreFind||0)*3 + luckMod()*2 + (STATE.flags.compassUntil > STATE.time.totalMonths ? 0.6 : 0);
   ['ingredient','clue','artifact','lore'].forEach(k=>{ if(w[k]) w[k] *= findMult; });
@@ -102,6 +112,8 @@ function exploreLocation(id){
   if(maxPathwayKnowledge() < 10 && !STATE.pathway.chosenPathway) w.mystic = (w.mystic||0) * 0.5;
   const outcome = wpick(Object.keys(w), k=>w[k]) || 'nothing';
   let text = '';
+  REWARD_SCOPE++;
+  try{
   switch(outcome){
     case 'combat': {
       const pool = l.pool || (chance(0.35 + (l.danger==='Alta'?0.3:0) + (STATE.world.threat||0)/200) ? 'mystic' : 'mundane');
@@ -125,12 +137,14 @@ function exploreLocation(id){
       text = 'Durante un segundo, el lugar entero parece contener la respiración. Después, nada.';
       break; }
     case 'artifact': {
-      const k = pick(ARTIFACT_KEYS.filter(a=>!hasArtifact(a)));
+      const k = pick(explorationArtifactPool(l));
       if(k){ addArtifact(k, l.name.toLowerCase()); text = `Encontrás ${ARTIFACTS[k].foundText}`; }
       else text = 'Encontrás un escondite vacío. Alguien llegó antes.';
       break; }
     case 'lore': {
-      const pool = lorePool(chance(0.5) ? 'forbidden' : 'secret').filter(x=>!knowsLore(x));
+      // Cada lugar guarda primero sus propios secretos.
+      const own = (l.lore||[]).filter(x=>LORE[x] && !knowsLore(x));
+      const pool = own.length ? own : lorePool(chance(0.5) ? 'forbidden' : 'secret').filter(x=>!knowsLore(x));
       if(pool.length){ learnLore(pick(pool), l.name.toLowerCase()); text = 'En una pared que nadie limpió en siglos hay algo escrito. Lo leés antes de pensar si deberías.'; }
       else text = 'Inscripciones viejas que ya conocés.';
       break; }
@@ -141,6 +155,7 @@ function exploreLocation(id){
     case 'mundane': text = wpick(EXPLORATION_MUNDANE, x=>x.w).run(); break;
     default: text = pick(['Recorrés el lugar de punta a punta sin encontrar nada memorable.', 'Volvés con los pies cansados y las manos vacías.', 'Nada. A veces el mundo no tiene nada para decirte.']);
   }
+  } finally { REWARD_SCOPE--; }
   if(l.id === 'travel' && chance(0.3)) applyEffects({reputation:[0,2]});
   logJournal('Exploración — '+l.name, text, {cat: outcome==='nothing'||outcome==='mundane' ? 'life' : 'mystery', imp: ['artifact','lore','ingredient'].includes(outcome) ? 2 : 1});
   setResolution(l.name, text, diffForDisplay(before));

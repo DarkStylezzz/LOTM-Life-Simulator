@@ -301,7 +301,7 @@ function finishDrink(){
   removeItem(it.uid);
   const prep = (FIRST_POTIONS[key]||{prepDifficulty:0.6}).prepDifficulty;
   const score = it.quality*0.5 + b.stab + c.sanity*0.2 - c.corruption*0.3;
-  let p = 0.25 + (score-40)/100 + prep*0.35 + diffMult('potion') + luckMod();
+  let p = 0.25 + (score-40)/100 + prep*0.35 + diffAdd('potion') + luckMod();
   if((it.flaws||[]).includes('toxic')) p = 0.03;
   if((it.flaws||[]).includes('unstable')) p -= 0.15;
   p = clamp(p, 0.03, 0.95);

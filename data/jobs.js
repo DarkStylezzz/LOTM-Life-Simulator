@@ -28,6 +28,13 @@ const JOBS = {
   'Artista de variedades':  {tier:1, salary:55,  edu:0, time:0,  risk:0.05, tags:['public','performance'], desc:'Chistes, canciones y trucos en teatros baratos.', align:{fool:[8,7], sun:[9]}},
   'Boxeador/a':             {tier:1, salary:58,  edu:0, time:0,  risk:0.6,  tags:['violence'], desc:'Peleas por dinero en galpones con humo.', align:{twilightGiant:[9,8], tyrant:[8], redPriest:[8]}},
   'Cazador/a':              {tier:1, salary:55,  edu:0, time:0,  risk:0.3,  tags:['hunt','outdoor'], desc:'Pieles, carne y rastros en los bosques de alrededor.', align:{redPriest:[9], moon:[8]}},
+  'Pintor/a':               {tier:1, salary:50,  edu:0, time:1,  risk:0,    tags:['art','performance'], desc:'Retratos por encargo, cuadros que nadie compra y alguna noche en que la tela se pinta sola.', align:{visionary:[9,8], fool:[7]}},
+  'Barquero/a':             {tier:1, salary:52,  edu:0, time:0,  risk:0.15, tags:['sea','street'], port:true, desc:'Cruzar gente y bultos de una orilla a la otra sin preguntar qué llevan.', align:{error:[9], tyrant:[9]}},
+  // Trabajos que sólo existen en ciertas ciudades (cities).
+  'Minero/a':               {tier:1, salary:66,  edu:0, time:0,  risk:0.45, tags:['manual','underground'], cities:['constant'], desc:'Bajar todos los días a donde no llega el sol. Algunos días, subir.', align:{twilightGiant:[9,8], darkness:[9]}},
+  'Guía de la selva':       {tier:1, salary:58,  edu:0, time:0,  risk:0.35, tags:['hunt','outdoor'], cities:['balam'], desc:'Llevar colonos, cazadores y locos por senderos que la selva cambia de lugar.', align:{redPriest:[9,8], death:[9], moon:[9]}},
+  'Capataz de plantación':  {tier:2, salary:92,  edu:0, time:-1, risk:0.2,  tags:['command','outdoor'], cities:['balam'], desc:'Hacer trabajar a otros bajo el sol del sur. Algunos te odian en silencio; otros, no tan en silencio.', align:{tyrant:[8], redPriest:[7]}},
+  'Mozo/a de café':         {tier:1, salary:54,  edu:0, time:0,  risk:0,    tags:['social','street'], cities:['trier'], desc:'Café, ajenjo y conversaciones de revolucionarios, poetas y espías que creen que no escuchás.', align:{visionary:[9], fool:[8]}},
   'Capataz':                {tier:2, salary:95,  edu:0, time:0,  risk:0.1,  tags:['manual','command'], desc:'Mandar sobre los que antes eran tus compañeros.', next:['Puesto directivo']},
   'Oficinista':             {tier:2, salary:115, edu:2, time:0,  risk:0,    tags:['intellectual'], desc:'Papeles, sellos y un escritorio propio.', next:['Comerciante','Periodista','Puesto directivo']},
   'Periodista':             {tier:2, salary:100, edu:2, time:0,  risk:0.05, tags:['intellectual','social','investigation'], desc:'Preguntar lo que otros no se animan.', align:{hermit:[9], whiteTower:[8], visionary:[9]}},

@@ -176,7 +176,9 @@ onAct('open-settings', ()=>{
     <label class="check-row"><input type="checkbox" data-change="toggle-numbers" ${s.showNumbers?'checked':''}> Mostrar números exactos</label>
     <p class="small-note">El juego muestra lo que tu personaje sabe: datos objetivos (●), estimaciones (◐) y lo desconocido (○). Esta opción muestra todo con números.</p>
     <div class="rule"></div>
-    <p class="small-note">Dificultad: <b>${esc(DIFFICULTIES[s.difficulty].label)}</b> · Historia: <b>${esc(WORLD_MODES[s.world].label)}</b></p>
+    <fieldset class="opt-group compact"><legend>Dificultad</legend>${Object.entries(DIFFICULTIES).map(([k,d])=>`<label class="opt-card ${s.difficulty===k?'sel':''}"><input type="radio" name="s-diff" value="${k}" ${s.difficulty===k?'checked':''} data-change="set-difficulty"><span class="opt-title">${esc(d.label)}</span><span class="opt-desc">${esc(d.desc)}</span></label>`).join('')}</fieldset>
+    <p class="small-note" id="s-diff-note">${esc(difficultyNote())}</p>
+    <p class="small-note">Historia del mundo: <b>${esc(WORLD_MODES[s.world].label)}</b> (se elige al nacer).</p>
     <p class="small-note">La partida se guarda sola después de cada acción, en este navegador.</p>
     <div class="btn-row">${btn('Guardar ahora','save-now')}${btn('Exportar partida','export-save')}<label class="btn file-btn">Importar partida<input type="file" accept="application/json,.json" data-change="import-save" class="sr-only"></label></div>
     <p class="small-note">Exportá la partida para guardarla fuera del navegador o llevarla a otro dispositivo. Importar reemplaza la actual.</p>
@@ -184,6 +186,24 @@ onAct('open-settings', ()=>{
     actions:[{label:'Cerrar', act:'modal-close', primary:true}]});
 }, {free:true});
 onAct('toggle-numbers', (d, el)=>{ STATE.settings.showNumbers = !!el.checked; saveGame(true); scheduleRender(); }, {free:true});
+function difficultyNote(){
+  let t = 'Se puede cambiar en cualquier momento. Lo que ya pasó, pasó.';
+  if(diffAdd('secondChances')){
+    const n = secondChancesLeft();
+    t += n ? ` Te ${n===1?'queda':'quedan'} ${n} segunda${n===1?'':'s'} oportunidad${n===1?'':'es'}.` : ' Ya no te quedan segundas oportunidades.';
+  }
+  return t;
+}
+onAct('set-difficulty', (d, el)=>{
+  if(!DIFFICULTIES[el.value] || el.value === STATE.settings.difficulty) return;
+  STATE.settings.difficulty = el.value;
+  invalidatePathwayMods();
+  saveGame(true);
+  const box = el.closest('fieldset');
+  if(box) $$('.opt-card', box).forEach(card=>{ const i = $('input', card); card.classList.toggle('sel', !!(i && i.checked)); });
+  const note = byId('s-diff-note'); if(note) note.textContent = difficultyNote();
+  scheduleRender();
+}, {free:true});
 onAct('export-save', ()=>exportSave(), {free:true});
 onAct('save-now', ()=>saveGame(false), {free:true});
 onAct('import-save', (d, el)=>{ const f = el.files && el.files[0]; if(f) importSave(f, ()=>{ closeModal(); UI.lastEventKey = null; showScreen(STATE.gameOver ? 'end' : 'game'); renderNow(); }); }, {free:true});

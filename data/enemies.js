@@ -52,6 +52,33 @@ const ENEMIES = {
             reward:{cash:0, clue:20, characteristic:0.3}, env:['ruins'],
             desc:'La tierra misma se levanta y tiene hambre. Esto no debería existir en ningún mapa.'},
 
+  // ---------------- lugares propios de cada ciudad ----------------
+  catacombGhoul:{name:'Lo que vive en las catacumbas', archetype:'creature', tier:'mystic', w:0, hp:[36,50], dmg:[7,14], defense:3, sanityDmg:[6,12], corruptionDmg:[1,4], fleeChance:0.35, seq:null,
+            reward:{cash:[0,20], clue:10, clueBias:['death','darkness']}, env:['sewer','cemetery','ruins'],
+            desc:'Camina en cuatro patas sobre los huesos ordenados por tamaño. Cuando te ve, se para en dos.'},
+  mineThing:{name:'Lo que había en la galería', archetype:'creature', tier:'mystic', w:0, hp:[48,64], dmg:[9,16], defense:6, sanityDmg:[5,11], corruptionDmg:[1,4], fleeChance:0.3, seq:null,
+            reward:{cash:0, clue:11, clueBias:['twilightGiant','whiteTower','hermit']}, env:['sewer','ruins'],
+            desc:'La roca se mueve. No: algo con la textura de la roca se mueve, y respira.'},
+  jungleSpirit:{name:'Espíritu de la selva', archetype:'creature', tier:'mystic', w:0, hp:[34,48], dmg:[6,13], defense:2, sanityDmg:[7,14], corruptionDmg:[2,5], fleeChance:0.4, seq:null,
+            reward:{cash:0, clue:10, clueBias:['moon','redPriest']}, env:['forest'],
+            desc:'Los guías lo llaman por un nombre que no te traducen. Tiene la voz de alguien que conocés.'},
+  deathPriest:{name:'Sacerdote de un imperio muerto', archetype:'smart', tier:'mystic', w:0, hp:[44,58], dmg:[8,15], defense:4, sanityDmg:[6,12], corruptionDmg:[2,6], fleeChance:0.3, seq:[7,8], pathway:'death',
+            talk:0.1, reward:{cash:[10,40], clue:12, characteristic:0.35}, env:['ruins','cemetery','night'],
+            desc:'Lleva una máscara de hueso pintada. Le reza a un soberano que su imperio perdió hace mil años, y el soberano, a veces, contesta.'},
+
+  // ---------------- lo que acecha a los que subieron alto (Sequence 6 o menos) ----------------
+  demigodHunter:{name:'Alguien que te estudió durante años', archetype:'smart', tier:'mystic', w:3, hp:[90,120], dmg:[15,26], defense:8, sanityDmg:[8,16], corruptionDmg:[2,6], fleeChance:0.2, seq:[4,5], pathway:'$random',
+            talk:0.15, reward:{cash:[0,80], clue:18, characteristic:0.6}, env:['street','night','alley','home'],
+            req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence <= 6,
+            desc:'Sabe tu nombre, tu vía y tu Sequence. Sabe a qué hora volvés a casa. Vos no sabés nada de él, y eso es exactamente lo que planeó.'},
+  fallenSaint:{name:'Un Santo que perdió el control', archetype:'creature', tier:'mystic', w:2, hp:[120,160], dmg:[18,30], defense:9, sanityDmg:[14,24], corruptionDmg:[5,10], fleeChance:0.22, seq:4, pathway:'$random',
+            reward:{cash:0, clue:22, characteristic:0.7}, env:['ruins','night','fog','street'],
+            req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence <= 5,
+            desc:'Fue alguien venerado. Todavía lleva algo de esa luz encima, pero la luz ahora tiene dientes y una ciudad entera por delante.'},
+  angelShadow:{name:'La sombra de un Ángel', archetype:'creature', tier:'mystic', w:0, hp:[180,240], dmg:[24,40], defense:12, sanityDmg:[18,30], corruptionDmg:[6,12], fleeChance:0.15, seq:[1,2], pathway:null,
+            reward:{cash:0, clue:30, characteristic:0.4}, env:['ruins','fog','night'],
+            desc:'No es el Ángel: es lo que su presencia dejó marcado en el mundo cuando pasó. Con eso alcanza para que el aire se vuelva de vidrio.'},
+
   // ---------------- agentes de facciones (aparecen por la amenaza acumulada) ----------------
   nighthawkAgent:{name:'Agente de negro', archetype:'smart', tier:'mystic', w:0, hp:[45,60], dmg:[8,15], defense:5, sanityDmg:[3,8], corruptionDmg:[0,2], fleeChance:0.28, seq:[7,8], pathway:'darkness', faction:'nighthawks',
             talk:0.25, reward:{cash:[0,20], clue:8, characteristic:0.3}, env:['night','alley','street'],
@@ -70,8 +97,14 @@ const ENEMY_KEYS = Object.keys(ENEMIES);
 // Pools de encuentros por contexto.
 const ENCOUNTER_POOLS = {
   mundane:['mugger','drunk','thugs'],
-  mystic:['nightStalker','lesserSpirit','cultist','rivalBeyonder','lostBeyonder','wraith','seaBeast'],
-  forsaken:['forsakenHorror','lostBeyonder','nightStalker','lesserSpirit']
+  mystic:['nightStalker','lesserSpirit','cultist','rivalBeyonder','lostBeyonder','wraith','seaBeast','demigodHunter','fallenSaint'],
+  forsaken:['forsakenHorror','lostBeyonder','nightStalker','lesserSpirit','fallenSaint'],
+  // Lugares de las ciudades nuevas (ver data/exploration.js).
+  trier:['catacombGhoul','wraith','lostBeyonder','nightStalker'],
+  mines:['mineThing','lostBeyonder','nightStalker'],
+  balam:['jungleSpirit','deathPriest','wraith','lostBeyonder'],
+  // Para los que ya no son del todo personas.
+  high:['demigodHunter','fallenSaint','rivalBeyonder']
 };
 // Compatibilidad con el sistema anterior (misiones que pedían ENEMY_POOL.mystic.find(...)).
 const ENEMY_POOL = {

@@ -16,22 +16,33 @@ const ctx = loadGame({scripts:scriptList().filter(s=>!s.startsWith('ui/') && s !
 
 run(ctx, `
 var __errs = [];
+var __fired = {};
 // Los errores que el motor atrapa y sólo loguea también cuentan.
 console.error = function(){ __errs.push('console.error: ' + Array.from(arguments).map(a=>a && a.stack ? a.stack.split('\\n').slice(0,3).join(' | ') : String(a)).join(' ')); };
 function __err(where, e){ __errs.push(where + ': ' + (e && e.stack ? e.stack.split('\\n').slice(0,4).join(' | ') : e)); }
 // Estados de partida variados.
 function __setup(kind){
-  creationData = {nombre:'Ana', apellido:'Vane', genero:pick(['Hombre','Mujer','']), ciudad:CITIES_DATA[pick(CITY_KEYS)].name, clase:pick(CLASSES), rasgos:rollRandomTraits(3), difficulty:pick(['normal','hard','nightmare']), world:pick(['libre','canon','alternate'])};
+  creationData = {nombre:'Ana', apellido:'Vane', genero:pick(['Hombre','Mujer','']), ciudad:CITIES_DATA[pick(CITY_KEYS)].name, clase:pick(CLASSES), rasgos:rollRandomTraits(3), difficulty:pick(['easy','normal','hard','nightmare']), world:pick(['libre','canon','alternate'])};
   startNewGame();
   const c = STATE.character, p = STATE.pathway;
-  c.edad = kind === 'nino' ? 9 : kind === 'teen' ? 15 : kind === 'viejo' ? 70 : 32;
+  c.edad = kind === 'bebe' ? 1 : kind === 'nino' ? 9 : kind === 'teen' ? 15 : kind === 'viejo' || kind === 'mayor' ? 70 : kind === 'soltero' ? 45 : 32;
   c.cash = 5000; c.bank = 2000;
-  if(kind !== 'nino' && kind !== 'teen'){ setJob('Oficinista'); c.estadoCivil = 'Casado/a'; const s = createNpc({id:'conyuge', role:'Esposa', met:true, trust:70, affection:70, relType:'family', gender:'f', age:30}); createNpc({id:'hijo1', role:'Hijo', met:true, trust:60, affection:70, relType:'family', age:8}); }
+  if(!['bebe','nino','teen','soltero','mayor'].includes(kind)){ setJob('Oficinista'); c.estadoCivil = 'Casado/a'; const s = createNpc({id:'conyuge', role:'Esposa', met:true, trust:70, affection:70, relType:'family', gender:'f', age:30}); createNpc({id:'hijo1', role:'Hijo', met:true, trust:60, affection:70, relType:'family', age:8}); }
+  if(kind === 'soltero'){ setJob('Oficinista'); c.estadoCivil = 'Divorciado/a'; c.vivienda = {valor:3000, city:currentCityKey()}; }
+  if(kind === 'mayor'){
+    // Una vejez con de todo: hijos grandes (uno en problemas), nietos, casa, un amigo viejo, una organización.
+    c.estadoCivil = 'Viudo/a'; c.grandchildren = 2; c.vivienda = {valor:3000, city:currentCityKey()};
+    createNpc({id:'hijo1', role:'Hijo', met:true, trust:70, affection:70, relType:'family', age:40});
+    createNpc({id:'hijo2', role:'Hija', met:true, trust:60, affection:60, relType:'family', gender:'f', age:22});
+    createNpc({met:true, relType:'friend', trust:70, affection:70, age:62});
+    ['s_street','s_list','s_building','s_meetings','acting_method'].forEach(id=>learnLore(id,'fuzz'));
+  }
   if(kind === 'beyonder' || kind === 'viejo'){ p.chosenPathway = pick(Object.keys(PATHWAYS)); p.sequence = kind === 'viejo' ? 5 : rndInt(6,9); identifyPathway(p.chosenPathway); p.actingMethod = 2; STATE.flags.beyonderSince = 0; invalidatePathwayMods(); c.spirituality = 60; }
   if(kind === 'perseguido'){ factionMeet('mi9'); markHunted('mi9', 'fuzz'); STATE.world.attention = 70; }
   STATE.flags.mysticExposure = 60; STATE.tarot.stage = 4;
   ['s_street','black_market','tarot_fool','e_creator','f_outer'].forEach(id=>learnLore(id,'fuzz'));
   FACTION_KEYS.forEach(k=>{ factionMeet(k); F(k).access = 3; F(k).merit = 30; F(k).trust = 30; });
+  if(kind === 'mayor' || kind === 'viejo'){ F('church').relationship = 'miembro'; F('church').joined = true; }
   createMysticContact({pathway:'death'}); createNpc({met:true, trust:40, affection:40});
   addArtifact(pick(ARTIFACT_KEYS), 'fuzz'); addItem('quest_notebook',1,'fuzz');
   seasonStart(); STATE.pendingSeals = [];
@@ -55,7 +66,19 @@ function __fuzzEvents(kind){
     const nChoices = def.choices ? def.choices.length : 1;
     for(let i=0;i<nChoices;i++){
       __clear();
+      const homeCity = STATE.character.ciudad, homeAge = STATE.character.edad, homeSeq = STATE.pathway.sequence;
       try{
+        // Los eventos de una ciudad se prueban mudándose ahí un momento.
+        if(def.requirements && def.requirements.city) STATE.character.ciudad = CITIES_DATA[def.requirements.city].name;
+        // Los adultos se estiran a la edad y la Sequence que pide el evento
+        // (así se prueban también los de la vejez y los de las Sequences altas).
+        const r = def.requirements || {};
+        if(!['bebe','nino','teen'].includes(kind)){
+          if(r.ageMin !== undefined && STATE.character.edad < r.ageMin) STATE.character.edad = r.ageMin;
+          if(r.ageMax !== undefined && STATE.character.edad > r.ageMax) STATE.character.edad = Math.max(18, r.ageMax);
+          if(STATE.pathway.chosenPathway && r.seqMax !== undefined && STATE.pathway.sequence > r.seqMax && !/^div_/.test(def.id)){ STATE.pathway.sequence = r.seqMax; invalidatePathwayMods(); }
+          if(STATE.pathway.chosenPathway && r.seqMin !== undefined && STATE.pathway.sequence < r.seqMin){ STATE.pathway.sequence = r.seqMin; invalidatePathwayMods(); }
+        }
         // Respetar los requisitos declarados (los de cadena los garantiza quien los dispara).
         if(!def.chainOnly && !requirementsOk(def.requirements)) continue;
         if(!def.chainOnly && def.hiddenRequirements && !def.hiddenRequirements({})) continue;
@@ -68,14 +91,16 @@ function __fuzzEvents(kind){
         if(def.choices){
           const ok = fireEvent(def, c);
           if(!ok || !STATE.pendingEvent) continue;
+          __fired[def.id] = true;
           const vis = STATE.pendingEvent.choices.findIndex(x=>x.orig === i);
           if(vis < 0){ STATE.pendingEvent = null; continue; }
           resolvePendingEvent(vis);
-        } else fireEvent(def, c);
+        } else { fireEvent(def, c); __fired[def.id] = true; }
         __drain();
         __serializable('evento ' + def.id);
         if(divine){ STATE.pathway.sequence = 5; STATE.divinity.ascended = false; invalidatePathwayMods(); }
       }catch(e){ __err('evento ' + def.id + ' [' + kind + '] opción ' + i, e); }
+      finally{ STATE.character.ciudad = homeCity; STATE.character.edad = homeAge; if(STATE.pathway.chosenPathway && !/^div_/.test(def.id)){ STATE.pathway.sequence = homeSeq; invalidatePathwayMods(); } }
     }
   });
 }
@@ -120,7 +145,7 @@ function __fuzzMonths(kind){
 }
 `);
 
-const kinds = ['nino','teen','adulto','beyonder','viejo','perseguido'];
+const kinds = ['bebe','nino','teen','adulto','soltero','beyonder','viejo','mayor','perseguido'];
 for(let r=0;r<REPS;r++){
   for(const k of kinds){
     run(ctx, `__setup('${k}'); __fuzzEvents('${k}'); __fuzzMissions('${k}'); __fuzzNpcActions('${k}'); __fuzzWorld('${k}'); __fuzzRumors('${k}'); __fuzzMonths('${k}');`);
@@ -130,5 +155,7 @@ const errs = run(ctx, '__errs');
 const uniq = [...new Set(errs.map(e=>e.replace(/\[[a-z]+\] /,'')))];
 const counts = run(ctx, `({eventos:EVENTS_ALL.length, misiones:MISSION_TEMPLATES.length, accionesNPC:NPC_ACTIONS.length, mundo:WORLD_EVENTS.length, rumores:RUMOR_POOL.length})`);
 console.log('Contenido recorrido:', JSON.stringify(counts), '×', kinds.length, 'estados ×', REPS);
+const never = run(ctx, `EVENTS_ALL.filter(d=>!__fired[d.id]).map(d=>d.id)`);
+console.log(`Eventos disparados al menos una vez: ${counts.eventos - never.length} de ${counts.eventos}` + (never.length ? ` (nunca: ${never.join(', ')})` : ''));
 console.log(uniq.length ? `Errores (${uniq.length} distintos):\n  ` + uniq.slice(0,40).join('\n  ') : 'Sin errores.');
 if(uniq.length) process.exitCode = 1;

@@ -35,8 +35,8 @@ function worldCity(){
   out.push(news.length ? `<ul class="news">${news.map(e=>`<li><span class="dim">${e.cy||e.year}</span> ${esc(e.text)}</li>`).join('')}</ul>` : emptyState('Nada fuera de lo común. Por ahora.'));
   if(STATE.character.edad >= 18 && !isDivine()){
     out.push(sec('Mudarse'));
-    out.push(`<div class="action-grid">${CITY_KEYS.filter(x=>x!==k).map(x=>{ const cd = CITIES_DATA[x]; const cost = Math.round(120*cd.cost*priceIndex());
-      return actionButton({label:cd.name, small:`${cd.desc.split('.')[0]}. Mudarse cuesta ~${fmtMoney(cost)} y casi toda una temporada.`, disabled: STATE.character.cash < cost, why:'No te alcanza.'}, 'move', {k:x}); }).join('')}</div>`);
+    out.push(`<div class="action-grid">${CITY_KEYS.filter(x=>x!==k).map(x=>{ const cd = CITIES_DATA[x]; const cost = moveCost(x);
+      return actionButton({label:cd.name + (cd.foreign ? ` (${cd.foreign})` : ''), small:`${cd.desc.split(':')[0].split('.')[0]}. Mudarse cuesta ~${fmtMoney(cost)} y casi toda una temporada.`, disabled: STATE.character.cash < cost, why:'No te alcanza.'}, 'move', {k:x}); }).join('')}</div>`);
   }
   if(!isDivine() && canDisappear()){
     out.push(sec('Desaparecer'));

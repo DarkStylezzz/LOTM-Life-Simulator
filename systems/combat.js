@@ -180,7 +180,7 @@ function combatAction(action){
     peace = true;
   } else if(action === 'flee'){
     const env = COMBAT_ENVS[cb.env] || {};
-    const p = clamp(e.fleeChance + (env.flee||0) + cb.distance*0.12 + (pathwayMods().fleeBonus||0) + luckMod(), 0.05, 0.95);
+    const p = clamp(e.fleeChance + (env.flee||0) + cb.distance*0.12 + (pathwayMods().fleeBonus||0) + luckMod() + diffAdd('flee'), 0.05, 0.95);
     fled = chance(p);
     log.push(fled ? 'Lográs escapar entre la confusión.' : 'Intentás escapar, pero no lo lográs.');
   } else if(action.startsWith('ab:')){
@@ -190,7 +190,7 @@ function combatAction(action){
   } else if(action.startsWith('item:')){
     const ch = useConsumable(action.slice(5)); log.push('Usás un objeto.' + (ch && ch.length ? ' ' + ch.map(x=>x.msg).join(', ') + '.' : ''));
   } else if(action.startsWith('art:')){
-    const r = useArtifactInCombat(action.slice(4)); if(r){ incoming *= r.incoming||1; negate = negate || r.skip; }
+    const r = useArtifactInCombat(action.slice(4)); if(r){ incoming *= r.incoming||1; negate = negate || r.skip; if(r.fled) fled = true; }
   }
   // La información sobre el rival avanza sola con el correr de la pelea.
   if(cb.round >= 2 && cb.info.stage === 0 && e.tier==='mystic') cb.info.stage = 1;
@@ -283,6 +283,7 @@ function enemyTurn(incoming, negate){
     let raw = rndInt(e.dmg[0], e.dmg[1]) * mult * incoming * statusMult(e.statuses, 'dmgMult') * statusMult(cb.player.statuses, 'dmgTaken');
     if(e.analyzedPlayer) raw *= 1.2;
     if(e.tier==='mystic' && artifactActiveEffect('ward')) raw *= 0.5;
+    raw *= diffMult('enemyDmg');
     const d = Math.max(0, Math.round(raw) - Math.floor(c.spirituality/40));
     if(d > 0){ applyEffects({salud:-d}); cb.player.dmgTaken += d; }
     return d;
@@ -392,8 +393,8 @@ function endCombat(result){
   if(cb.opts.onWin) STATE.flags[cb.opts.onWin] = STATE.time.totalMonths;
   const rw = e.reward || {};
   const eff = {};
-  const cash = rw.cash ? (Array.isArray(rw.cash) ? rndInt(rw.cash[0], rw.cash[1]) : rw.cash) : 0;
-  const bonus = cb.opts.bonusCash ? rndInt(cb.opts.bonusCash[0], cb.opts.bonusCash[1]) : 0;
+  const cash = Math.round((rw.cash ? (Array.isArray(rw.cash) ? rndInt(rw.cash[0], rw.cash[1]) : rw.cash) : 0) * rewardMult());
+  const bonus = Math.round((cb.opts.bonusCash ? rndInt(cb.opts.bonusCash[0], cb.opts.bonusCash[1]) : 0) * rewardMult());
   if(cash + bonus > 0) eff.cash = cash + bonus;
   if(rw.clue) eff.clue = {pathway: e.pathway || (rw.clueBias ? pick(rw.clueBias) : '$random'), reliability:'real', strength:[Math.round(rw.clue/3), Math.round(rw.clue/2)], source:e.name};
   const ch = applyEffects(eff);

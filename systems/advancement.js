@@ -134,7 +134,10 @@ function ritualScore(){
   const r = STATE.ritual || {acc:0}; const p = STATE.pathway, c = STATE.character;
   const potion = r.potion ? itemByUid(r.potion) : null;
   const locBonus = {casa:0, faccion:6, niebla:10, ruinas:-2}[r.place] || 0;
-  const artifactBonus = inventoryItems().some(it=>it.cat==='artifact' && it.def==='candle' && !it.sealed && (it.known||{}).effects && it.known.effects.includes('ritual')) ? 3 : 0;
+  // Un artefacto cuyo efecto de ritual conocés (la vela negra, por ejemplo).
+  const artifactBonus = Math.max(0, ...inventoryItems().filter(it=>it.cat==='artifact' && !it.sealed && ARTIFACTS[it.def]).map(it=>{
+    const e = ARTIFACTS[it.def].effects.find(x=>x.kind==='ritual');
+    return e && (it.known||{}).effects && it.known.effects.includes(e.id) ? (e.mech.ritualScore || 3) : 0; }));
   let s = 40
     + clamp(r.acc, -10, 12) * 2.2                  // ritualAccuracy
     + (p.ritualPrepBonus||0) * 60                  // ritualPreparation
@@ -165,7 +168,7 @@ function resolveAdvancement(){
   // puntaje del ritual. Un ritual muy bien hecho puede superar a una
   // Sequence difícil; uno mal hecho, no.
   const highSeqPenalty = seq <= 5 ? (diffMult('highSeq') - 1) * 0.15 : 0;
-  const pSucc = clamp(diff.baseSuccess + (score - 50)/85 + diffMult('potion') - highSeqPenalty, 0.03, 0.93);
+  const pSucc = clamp(diff.baseSuccess + (score - 50)/85 + diffAdd('potion') - highSeqPenalty, 0.03, 0.93);
   const pw = PATHWAYS[key];
   if(chance(pSucc)){
     p.sequence = seq - 1; p.digestion = 0;

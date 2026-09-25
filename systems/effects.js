@@ -23,6 +23,12 @@ function resolveNpcRef(ref, ctx){
   return npcById(ref);
 }
 
+// Recompensas (§31): lo que pagan un encargo, una pelea, un hallazgo o una
+// venta se ajusta por la dificultad. El sueldo y las deudas no.
+var REWARD_SCOPE = 0;
+function withRewards(fn){ REWARD_SCOPE++; try{ return fn(); } finally { REWARD_SCOPE--; } }
+function rewardMult(){ return diffMult('reward'); }
+
 // Multiplicadores que afectan pérdidas/ganancias de stats: rasgos,
 // dificultad, síntomas, habilidades pasivas y anclas.
 function effectModifiers(){
@@ -70,7 +76,7 @@ function applyEffects(eff, ctx){
     if(d){ const before = c.reputation; c.reputation = clamp(c.reputation + d, -100, 100); pushChange(changes, 'reputation', c.reputation - before); }
   }
   if(eff.cash !== undefined){
-    let d = val(eff.cash); if(d>0) d = Math.round(d*m.cash);
+    let d = val(eff.cash); if(d>0) d = Math.round(d*m.cash*(REWARD_SCOPE > 0 ? rewardMult() : 1));
     if(d){ c.cash = Math.round(c.cash + d); pushChange(changes, 'cash', d); }
   }
   if(eff.bank !== undefined){ const d = val(eff.bank); if(d){ c.bank = Math.round(c.bank + d); pushChange(changes, 'bank', d); } }
@@ -139,6 +145,8 @@ function applyEffects(eff, ctx){
   if(eff.schedule){ (Array.isArray(eff.schedule)?eff.schedule:[eff.schedule]).forEach(s=>scheduleConsequence(Object.assign({}, s, {ctx}))); }
   if(eff.journal){ logJournal(eff.journal.title, eff.journal.text, {cat:eff.journal.cat, imp:eff.journal.imp}); }
   if(eff.world){ cityAdjust(currentCityKey(), eff.world); }
+  if(eff.allCities){ CITY_KEYS.forEach(k=>cityAdjust(k, eff.allCities)); }
+  if(eff.war !== undefined){ STATE.world.war = !!eff.war; }
   return changes;
 }
 

@@ -311,5 +311,148 @@ scenario('migración: una partida del juego anterior (v7) se juega en la v8', ()
   assert(run(ctx, `!!STATE.journal.length`), 'journal vacío');
 });
 
+scenario('modo fácil: segundas oportunidades, recompensas y cambio de dificultad', ()=>{
+  const EASY = NEWLIFE.replace("difficulty:'normal'", "difficulty:'easy'");
+  const ctx = fresh();
+  run(ctx, EASY + `STATE.character.edad = 25;`);
+  assert(run(ctx, `STATE.settings.difficulty`) === 'easy', 'no quedó en Fácil');
+  assert(run(ctx, `secondChancesLeft()`) === 3, 'Fácil debería dar tres segundas oportunidades');
+  // 1) Una pelea perdida: sobrevive, herido.
+  run(ctx, `startCombat('mugger', {}); const e = STATE.combat.enemy; e.hp = e.maxHp = 999; e.dmg = [80,80]; e.next = 'attack'; e.talk = 0; STATE.combat.distance = 0; STATE.character.salud = 5; combatAction('attack');`);
+  assert(run(ctx, `!STATE.gameOver && !STATE.combat`), 'la pelea debería terminar sin terminar la vida');
+  assert(run(ctx, `STATE.character.salud >= 12 && STATE.character.wounds.some(w=>w.id==='grave')`), 'debería sobrevivir con una herida grave');
+  assert(run(ctx, `secondChancesLeft()`) === 2, 'no se descontó la segunda oportunidad');
+  assert(run(ctx, `STATE.lastResolution && STATE.lastResolution.title`) === 'Todavía no', 'no se mostró lo que pasó');
+  // 2) Salud en cero, fuera de combate; y una poción mortal.
+  run(ctx, `STATE.character.salud = 0; checkDeathAndCrisis();`);
+  assert(run(ctx, `!STATE.gameOver && STATE.character.salud > 0`), 'la salud en cero no usó la segunda oportunidad');
+  run(ctx, `endGame('negative', 'La poción', 'x', {cause:'pocion'})`);
+  assert(run(ctx, `!STATE.gameOver && secondChancesLeft() === 0`), 'la tercera segunda oportunidad no se usó');
+  // 3) Sin segundas oportunidades, la muerte llega, y la biografía lo cuenta.
+  run(ctx, `endGame('negative', 'Muerte violenta', 'x', {cause:'combate'})`);
+  assert(run(ctx, `STATE.gameOver`), 'sin segundas oportunidades debería morir');
+  assert(run(ctx, `STATE.endingData.paragraphs.some(p=>/Volvió de la muerte 3 veces/.test(p))`), 'la biografía no cuenta las veces que volvió');
+  // 4) La vejez no se salva, y en Normal no hay segundas oportunidades.
+  const ctx2 = fresh();
+  run(ctx2, NEWLIFE + `STATE.character.edad = 30;`);
+  assert(run(ctx2, `secondChancesLeft()`) === 0, 'Normal no tiene segundas oportunidades');
+  run(ctx2, `endGame('negative', 'Muerte violenta', 'x', {cause:'combate'})`);
+  assert(run(ctx2, `STATE.gameOver`), 'en Normal la muerte llega');
+  const ctx3 = fresh();
+  run(ctx3, EASY + `STATE.character.edad = 90; endGame('natural', 'Una vida completa', '', {cause:'vejez'})`);
+  assert(run(ctx3, `STATE.gameOver`), 'la vejez no se salva');
+  // 5) Recompensas: el mismo encargo paga más en Fácil que en Difícil (sueldos aparte).
+  const pay = (diff)=>{ const c = fresh();
+    run(c, `creationData = {nombre:'Ana', apellido:'Vane', genero:'Mujer', ciudad:'Backlund', clase:'Media', rasgos:[], difficulty:'${diff}', world:'libre'}; startNewGame(); STATE.character.edad = 25;`);
+    return run(c, `(function(){ let t = 0; for(let i=0;i<200;i++){ STATE.character.salud = 100; const before = STATE.character.cash; STATE.pendingMission = {missionId:'mundane_move', choices:[]}; resolveMissionChoice(0); t += STATE.character.cash - before; } return t; })()`); };
+  const easy = pay('easy'), hard = pay('hard');
+  assert(easy > hard * 1.25, `las recompensas no dependen de la dificultad (fácil ${easy}, difícil ${hard})`);
+  // 6) Cambiar la dificultad a mitad de la vida.
+  const ctx4 = fresh();
+  run(ctx4, NEWLIFE + `STATE.character.edad = 30; STATE.settings.difficulty = 'easy';`);
+  assert(run(ctx4, `diffMult('enemyDmg') < 1 && diffAdd('potion') > 0 && secondChancesLeft() === 3`), 'el cambio a Fácil no tuvo efecto');
+});
+
+scenario('migración v7: una decisión o un encargo abiertos se reabren', ()=>{
+  const f = path.join(__dirname, 'fixtures-v7-save.json');
+  const base = JSON.parse(fs.readFileSync(f, 'utf8'));
+  // a) Una decisión que existe en esta versión (mismo título).
+  const withEvent = Object.assign({}, base, {pendingEvent:{kind:'decision', title:'Un hombre que no encaja', text:'...', choices:[{idx:0, label:'Seguirlo a distancia'}]}, pendingMission:null});
+  let storage = makeStorage(); storage.setItem('lotm_life_sim_save_v1', JSON.stringify(withEvent));
+  let ctx = fresh(storage);
+  assert(run(ctx, `loadGame()`), 'la migración falló');
+  assert(run(ctx, `STATE.pendingEvent && STATE.pendingEvent.defId`) === 'stranger_follow', 'la decisión no se reabrió');
+  run(ctx, `resolvePendingEvent(0)`);
+  assert(run(ctx, `!STATE.pendingEvent || STATE.pendingEvent.defId !== 'stranger_follow'`), 'la decisión reabierta no se pudo resolver');
+  // b) Un encargo que existe en esta versión.
+  const withMission = Object.assign({}, base, {pendingEvent:null, pendingMission:{missionId:'mundane_move', type:'Mundane', title:'Mudanza de un vecino', text:'...', choices:[{idx:0, label:'x'}]}});
+  storage = makeStorage(); storage.setItem('lotm_life_sim_save_v1', JSON.stringify(withMission));
+  ctx = fresh(storage);
+  assert(run(ctx, `loadGame()`), 'la migración falló');
+  assert(run(ctx, `STATE.pendingMission && STATE.pendingMission.missionId`) === 'mundane_move', 'el encargo no se reabrió');
+  assert(run(ctx, `STATE.pendingMission.choices.length === MISSION_BY_ID.mundane_move.scene.choices.length`), 'el encargo no usa las opciones de ahora');
+  run(ctx, `resolveMissionChoice(0)`);
+  assert(run(ctx, `!STATE.pendingMission`), 'el encargo reabierto no se pudo resolver');
+  // c) Una escena que ya no existe: se descarta con una nota.
+  const withGhost = Object.assign({}, base, {pendingEvent:{kind:'acting', title:'Una escena que ya no existe', choices:[{idx:0, label:'A'}]}, pendingMission:null});
+  storage = makeStorage(); storage.setItem('lotm_life_sim_save_v1', JSON.stringify(withGhost));
+  ctx = fresh(storage);
+  assert(run(ctx, `loadGame()`), 'la migración falló');
+  assert(run(ctx, `!STATE.pendingEvent && STATE.journal.some(e=>e.title==='Una decisión que quedó atrás')`), 'la escena perdida no dejó su nota');
+});
+
+scenario('ciudades nuevas: nombres, oficios, mudanzas, lugares y rumores', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE.replace("ciudad:'Backlund'", "ciudad:'Trier'") + `STATE.character.edad = 20;`);
+  assert(run(ctx, `currentCityKey()`) === 'trier', 'no nació en Trier');
+  const intis = run(ctx, `(function(){ let k = 0; for(let i=0;i<20;i++){ const n = createNpc({}); const first = n.name.split(' ')[0]; if(NAME_STYLES.intis.m.includes(first) || NAME_STYLES.intis.f.includes(first)) k++; } return k; })()`);
+  assert(intis >= 10, `la gente de Trier no tiene nombres de Intis (${intis}/20)`);
+  assert(run(ctx, `explorationLocations().some(l=>l.id==='trier_below') && !explorationLocations().some(l=>l.id==='balam_temples')`), 'los lugares no dependen de la ciudad');
+  assert(run(ctx, `jobEligible('Mozo/a de café') && !jobEligible('Minero/a')`), 'los oficios no dependen de la ciudad');
+  assert(run(ctx, `moveCost('balam') > moveCost('pritz') * 1.8`), 'cruzar el océano debería costar más');
+  run(ctx, `relocate('constant'); setJob('Minero/a');`);
+  assert(run(ctx, `currentCityKey() === 'constant' && jobEligible('Minero/a')`), 'en Constant hay minas');
+  run(ctx, `relocate('bayam');`);
+  assert(run(ctx, `STATE.character.profesion`) === 'Desempleado', 'un minero en Bayam no puede seguir en la mina');
+  // Rumores de ciudad: sólo corren donde corresponden.
+  run(ctx, `relocate('balam'); STATE.leads = [];`);
+  const rumors = run(ctx, `(function(){ const seen = {}; for(let i=0;i<300;i++){ STATE.leads = []; const l = addRumor(); if(l) seen[l.rumor] = true; } return Object.keys(seen); })()`);
+  assert(!rumors.includes('catacomb_mass') && !rumors.includes('mine_voice'), 'corren rumores de otras ciudades: ' + rumors.join(','));
+  assert(rumors.includes('temple_king'), 'el rumor de Balam no aparece nunca');
+  // Ciudades nuevas en una partida vieja: el estado se completa solo.
+  const storage = makeStorage();
+  const old = fresh(storage);
+  run(old, NEWLIFE + `STATE.character.edad = 30; delete STATE.world.cities.trier; delete STATE.world.cities.balam; saveGame(true);`);
+  const ctx2 = fresh(storage);
+  assert(run(ctx2, `loadGame() && !!STATE.world.cities.trier && !!STATE.world.cities.balam`), 'una partida vieja no recibe las ciudades nuevas');
+});
+
+scenario('artefactos nuevos: examinar, estudiar, usar, pelear y guardarlos', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 35; STATE.character.cash = 5000; createNpc({met:true, trust:40, affection:40}); createNpc({id:'hijo1', role:'Hijo', relType:'family', met:true, age:10}); addItem('tool_sealed_box', 1, 'x');`);
+  const keys = ['bone_idol','music_box','miner_lamp','spectacles','fountain_pen','key','tooth_rosary','spyglass','iron_crown'];
+  for(const k of keys){
+    run(ctx, `(function(){ STATE.gameOver = false; STATE.character.salud = 100; STATE.character.sanity = 90; STATE.pendingEvent = null; STATE.combat = null;
+      const it = addArtifact('${k}', 'prueba');
+      for(let i=0;i<4;i++){ seasonStart(); artifactAction(it.uid, i===0 ? 'examine' : 'study'); }
+      const d = ARTIFACTS['${k}'];
+      if(artifactUsable(d)){ seasonStart(); const k0 = artifactKnown(it); k0.drawbacks = d.drawbacks.map(x=>x.id); STATE.flags.secondChancesUsed = 0; artifactAction(it.uid, 'use'); }
+      if(STATE.combat){ STATE.combat = null; }
+      if(itemByUid(it.uid) && d.effects.some(e=>e.kind==='combat')){ startCombat('nightStalker', {}); combatAction('art:' + it.uid); STATE.combat = null; }
+      for(let m=0;m<24;m++) artifactMonthly();
+      if(itemByUid(it.uid)){ artifactAction(it.uid, 'seal'); artifactAction(it.uid, 'unseal'); }
+    })()`);
+    assert(run(ctx, `!STATE.gameOver || STATE.endingData.meta.cause === 'artefacto'`), 'el artefacto ' + k + ' terminó la vida de una forma rara');
+    run(ctx, `STATE.gameOver = false;`);
+  }
+  // La llave abre una puerta en plena pelea.
+  run(ctx, `(function(){ const it = artifactByKey('key') || addArtifact('key', 'x'); startCombat('mugger', {}); STATE.combat.enemy.hp = 999; combatAction('art:' + it.uid); })()`);
+  assert(run(ctx, `!STATE.combat`), 'la llave no abrió una salida');
+  // Lo que se rompe en tu lugar (la muñeca): sellada no protege.
+  run(ctx, `(function(){ const d = addArtifact('doll', 'x'); d.sealed = true; STATE.character.salud = 0; STATE.flags.secondChancesUsed = 0; })()`);
+  assert(run(ctx, `tryDollSave()`) === false, 'la muñeca sellada no debería salvar');
+  run(ctx, `artifactByKey('doll').sealed = false;`);
+  assert(run(ctx, `tryDollSave() && !artifactByKey('doll')`), 'la muñeca no se rompió en tu lugar');
+  // La vela conocida ayuda al ritual.
+  const before = run(ctx, `(function(){ STATE.ritual = {acc:0, place:'casa'}; STATE.pathway.chosenPathway = 'moon'; STATE.pathway.sequence = 8; return ritualScore(); })()`);
+  const after = run(ctx, `(function(){ const c = addArtifact('candle', 'x'); c.known.effects.push('ritual'); return ritualScore(); })()`);
+  assert(after > before, `la vela conocida no mejora el ritual (${before} → ${after})`);
+});
+
+scenario('mundo libre: la guerra corta termina, y las partidas trabadas en guerra se reparan', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 30;`);
+  run(ctx, `applyTimelineEffect(RANDOM_HISTORY.find(t=>t.id==='rh_short_war').effect, {title:'Una guerra corta'});`);
+  assert(run(ctx, `STATE.world.war`), 'la guerra no empezó');
+  run(ctx, `(function(){ for(let i=0;i<26;i++){ STATE.time.totalMonths++; processPendingConsequences(); } })()`);
+  assert(run(ctx, `!STATE.world.war`), 'la guerra corta no terminó nunca');
+  // Una partida guardada en plena guerra eterna (el error anterior) se repara al cargar.
+  const storage = makeStorage();
+  const old = fresh(storage);
+  run(old, NEWLIFE + `STATE.character.edad = 30; STATE.world.war = true; STATE.pendingConsequences = []; saveGame(true);`);
+  const ctx2 = fresh(storage);
+  assert(run(ctx2, `loadGame() && STATE.pendingConsequences.some(pc=>pc.effect && pc.effect.war === false)`), 'no se agendó la paz');
+});
+
 console.log(`\n${passed} escenarios OK, ${failed} con fallas.`);
 if(failed) process.exitCode = 1;

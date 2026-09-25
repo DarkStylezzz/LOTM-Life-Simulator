@@ -16,9 +16,57 @@ const LIFE_STAGES = [
   {id:'vejez', label:'Vejez', from:60, to:999}
 ];
 
+/* ------------------------------ segundas oportunidades ------------------------------ */
+// En Fácil (§31), algunas muertes evitables no llegan: el personaje sobrevive
+// de milagro, y el milagro deja marca. No salvan de la vejez, de una decisión
+// propia (desaparecer) ni del intento de sentarse en un trono (Sequence 0).
+const SECOND_CHANCE = {
+  combate:{ text:'Todo se vuelve negro. Despertás días después en la cama de un hospital de caridad. Alguien te encontró a tiempo y no dejó su nombre.',
+    apply:()=>{ addWound('grave'); applyEffects({cash:-Math.round(rndInt(20,60)*priceIndex()), sanity:[-6,-2]}); } },
+  salud:{ text:'Tu corazón se detiene. Durante un minuto entero no hay nada. Después, sin que ningún médico sepa explicar por qué, vuelve a latir.',
+    apply:()=>{ addWound('grave'); applyEffects({sanity:[-5,-2]}); } },
+  control:{ text:'Estás cayendo hacia algo que no tiene fondo, y algo te agarra: un nombre, una voz, el recuerdo de alguien que te espera. Volvés. No entero.',
+    apply:()=>{ const cond = randomCondition('control'); if(cond) addCondition(cond); applyEffects({corruption:[4,9]}); STATE.character.sanity = Math.max(STATE.character.sanity, 30); } },
+  locura:{ text:'Semanas en un sanatorio, mirando una pared que se mueve. Una mañana, sin razón, la niebla se levanta. Te dan el alta con una receta y una mirada de lástima.',
+    apply:()=>{ const cond = randomCondition('control'); if(cond && chance(0.6)) addCondition(cond); applyEffects({reputation:[-6,-2]}); STATE.character.sanity = Math.max(STATE.character.sanity, 32); } },
+  artefacto:{ text:'El objeto te suelta en el último segundo, como si hubiera cambiado de idea. Te deja algo a cambio. No sabés qué, todavía.',
+    apply:()=>{ applyEffects({salud:[-25,-12], sanity:[-12,-6], corruption:[3,8]}); } },
+  pocion:{ text:'Tu cuerpo expulsa la poción antes de que termine su trabajo. Un mes de fiebre, de sueños que no son tuyos. Sobrevivís.',
+    apply:()=>{ const cond = randomCondition('potion'); if(cond) addCondition(cond); applyEffects({corruption:[4,10], sanity:[-10,-5]}); } },
+  niebla:{ text:'La niebla no te devuelve con la expedición: te devuelve sola, semanas después, en una playa. No recordás nada del viaje. Tu ropa huele a un mar que no existe.',
+    apply:()=>{ applyEffects({sanity:[-22,-12], salud:[-15,-5]}); } },
+  prueba:{ text:'No pasás la prueba. Alguien, del otro lado, decide que no vale la pena terminarte. Te despertás en tu cama con el recuerdo exacto de haber muerto.',
+    apply:()=>{ applyEffects({sanity:[-24,-14], salud:[-15,-5]}); tarotObserve(-10, 'fallaste la prueba'); } }
+};
+function secondChancesLeft(){
+  const max = diffAdd('secondChances');
+  return Math.max(0, max - (STATE.flags.secondChancesUsed||0));
+}
+function trySecondChance(category, title, meta){
+  const sc = category === 'negative' && meta && SECOND_CHANCE[meta.cause];
+  if(!sc || secondChancesLeft() <= 0) return false;
+  const c = STATE.character;
+  STATE.flags.secondChancesUsed = (STATE.flags.secondChancesUsed||0) + 1;
+  STATE.combat = null; STATE.pendingEvent = null; STATE.pendingMission = null; STATE.ritual = null; STATE.brew = null;
+  const before = snapshotForChanges();
+  c.salud = Math.max(c.salud, rndInt(18,28));
+  sc.apply();
+  c.salud = Math.max(c.salud, 12);
+  if(c.sanity <= 0) c.sanity = 25;
+  const n = STATE.flags.secondChancesUsed;
+  remember('second_chance_'+n, `Estuviste muerto, o casi: ${title.toLowerCase()}. Volviste.`, {cat:'trauma'});
+  addMilestone('loss', `Sobrevive a lo que debió matarlo (${title.toLowerCase()})`.replace('matarlo', gx('matarlo','matarla','matarle')));
+  logJournal('Todavía no', sc.text, {cat:'life', imp:3});
+  setResolution('Todavía no', sc.text + (secondChancesLeft() === 0 ? ' Algo te dice que la próxima vez no va a haber milagro.' : ''), diffForDisplay(before));
+  STATE._importantMoment = true;
+  saveGame(true); renderAll();
+  return true;
+}
+
 function endGame(category, title, text, meta){
   if(STATE.gameOver) return;
   meta = meta || {};
+  if(trySecondChance(category, title, meta)) return;
   const c = STATE.character;
   STATE.combat = null; STATE.pendingEvent = null; STATE.pendingMission = null; STATE.ritual = null; STATE.brew = null;
   recomputeAnchors();
@@ -124,6 +172,12 @@ function analyzeLife(category, meta){
     if(a.people.length >= 2) P.push(`Lo que lo mantuvo humano tuvo nombres: ${a.people.map(id=>npcById(id)).filter(Boolean).slice(0,3).map(n=>n.name).join(', ')}.`.replace('lo mantuvo', gx('lo mantuvo','la mantuvo','le mantuvo')));
     else P.push('Al final, casi no quedaba nadie que lo recordara como había sido.'.replace('lo recordara', gx('lo recordara','la recordara','le recordara')));
   }
+  // El testamento.
+  const will = STATE.flags.will;
+  if(will === 'equal') P.push('Dejó todo repartido en partes iguales, para que nadie se peleara. Se pelearon igual, pero menos.');
+  else if(will && will.startsWith('favorite:')){ const h = npcById(will.slice(9)); if(h) P.push(`Le dejó casi todo a ${h.name}. Los demás tardaron años en entender por qué, y algunos no lo entendieron nunca.`); }
+  else if(will === 'charity') P.push('Una parte de lo que tenía fue a parar a la sala del fondo del hospital de caridad. Durante años, una placa chiquita llevó su nombre.');
+  else if(will === 'strange') P.push('Dejó una cláusula sellada en su testamento, para una sola persona. Quien la abrió nunca contó qué decía.');
   // Lo que quedó entre sus cosas (y quién lo encontró).
   const strange = itemsByCat('artifact').filter(it=>!it.loan)[0] || itemsByCat('characteristic')[0] || inventoryItems().find(it=>['quest_notebook','tarot_card','book_untitled','book_grimoire'].includes(it.def));
   if(strange && category !== 'divine'){
@@ -135,6 +189,11 @@ function analyzeLife(category, meta){
   hist.forEach(e=>{ const d = timelineDef(e); if(d) P.push(e.altered ? `Por algo que hizo, "${d.title}" no pasó como tenía que pasar.` : `Estuvo ahí cuando pasó "${d.title}".`); });
   const pacts = memoriesByCat('pact');
   if(pacts.length) P.push(`Hizo ${pacts.length === 1 ? 'un pacto' : 'pactos'} de los que no se habla. El último lo recordaba así: “${pacts[pacts.length-1].text}”`);
+  const saved = STATE.flags.secondChancesUsed || 0;
+  if(saved){
+    const coda = category === 'negative' ? ' La última vez ya no volvió.' : category === 'natural' ? ' Al final, la muerte vino sin apuro, como viene para cualquiera.' : '';
+    P.push((saved === 1 ? 'Una vez estuvo del otro lado y volvió. Nunca contó qué había visto.' : `Volvió de la muerte ${saved} veces.`) + coda);
+  }
   if(c.stats.killed >= 3) P.push('Mató más de una vez. No siempre le pesó.');
   else if(c.stats.spared >= 2) P.push('Pudiendo matar, más de una vez eligió no hacerlo.');
   // Epitafio.

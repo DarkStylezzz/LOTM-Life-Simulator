@@ -30,7 +30,15 @@ function jobEligible(label){
   if(!j || j.salary <= 0) return false;
   if(c.edad < (j.ageMin || 16)) return false;
   if(educationRank() < (j.edu||0)) return false;
-  if(j.port && !currentCity().port) return false;
+  if(!jobExistsIn(label, currentCityKey())) return false;
+  return true;
+}
+// ¿Existe ese trabajo en esa ciudad? (puertos, minas, plantaciones...)
+function jobExistsIn(label, cityKey){
+  const j = JOBS[label]; const city = CITIES_DATA[cityKey];
+  if(!j || !city) return false;
+  if(j.port && !city.port) return false;
+  if(j.cities && !j.cities.includes(cityKey)) return false;
   return true;
 }
 function availableJobs(){ return Object.keys(JOBS).filter(jobEligible); }

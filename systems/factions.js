@@ -277,7 +277,7 @@ function factionRequest(k, what){
   } else if(what==='artifact'){
     const key = pick(ARTIFACT_KEYS.filter(a=>ARTIFACTS[a].grade>=2));
     addArtifact(key, factionName(k)+' (en préstamo)', {loan:k});
-    text = `Te prestan ${ARTIFACTS[key].name}. "Lo devolvés entero. Vos también."`;
+    text = `Te prestan ${artName(ARTIFACTS[key])}. "Lo devolvés entero. Vos también."`;
   }
   logJournal(factionName(k), text, {cat:'faction', imp:2});
   setResolution(r.label, text, []);

@@ -131,7 +131,7 @@ function doResearch(methodId, targetId, focus){
 function addRumor(id){
   let tpl = id ? RUMOR_BY_ID[id] : null;
   if(!tpl){
-    const pool = RUMOR_POOL.filter(r=>(!r.port || currentCity().port) && !STATE.leads.some(l=>l.rumor===r.id && !l.done) && (!r.rare || chance(0.3)));
+    const pool = RUMOR_POOL.filter(r=>(!r.port || currentCity().port) && (!r.city || r.city === currentCityKey()) && !STATE.leads.some(l=>l.rumor===r.id && !l.done) && (!r.rare || chance(0.3)));
     if(!pool.length) return null;
     tpl = pick(pool);
   }
@@ -262,7 +262,8 @@ function resolveLead(l){
       if(o.faction === 'aurora') applyEffects({corruption:[1,3]});
       break;
     case 'item':
-      if(o.artifact) addArtifact(pick(ARTIFACT_KEYS), 'el final de un rumor');
+      if(o.artifactKey && !hasArtifact(o.artifactKey)) addArtifact(o.artifactKey, 'el final de un rumor');
+      else if(o.artifact || o.artifactKey){ const pool = ARTIFACT_KEYS.filter(a=>!hasArtifact(a) && ARTIFACTS[a].grade > 0); addArtifact(pick(pool.length ? pool : ARTIFACT_KEYS), 'el final de un rumor'); }
       else addItem(pick(o.items), 1, 'el final de un rumor');
       break;
     case 'secret':
@@ -282,6 +283,8 @@ function resolveLead(l){
       addClue({pathway:o.pathway, reliability:'false', strength:[5,9], source:'un rumor'});
       break;
   }
+  // Cualquier final puede enseñar además un secreto propio (los de las ciudades).
+  if(o.lore && o.type !== 'secret') learnLore(o.lore, 'un rumor que seguiste');
   if(o.type === 'nothing') remember('dead_end', `Seguiste un rumor ("${l.text}") y no llevaba a ningún lado.`, {cat:'choice'});
   return o.result;
 }

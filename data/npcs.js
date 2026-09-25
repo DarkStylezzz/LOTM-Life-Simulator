@@ -14,11 +14,29 @@ const FAMILY_FEMALE_NAMES = ['Rosalind','Margaret','Eleanor','Charlotte','Beatri
 const NEIGHBOR_SURNAMES = ['Marrow','Hale','Whitlock','Pryce','Ashford','Doyle','Sutton','Blackwood'];
 const RANDOM_SURNAMES = ['Moretti','Marrow','Hale','Whitlock','Pryce','Ashford','Doyle','Sutton','Blackwood','Reinhardt','Kotzebue','Selborne','Ashcombe','Faulkner','Grenwood','Harlow','Thorne','Castellan','Merrow','Vance',
   'Colbert','Hensley','Garrick','Lindqvist','Morrow','Pennington','Quill','Radcliffe','Stanton','Tolliver','Wexford','Yardley'];
-function randomSurname(){ return pick(RANDOM_SURNAMES); }
+// Nombres de Intis (Trier): la gente que conocés allá suena distinto.
+const NAME_STYLES = {
+  intis:{
+    m:['Gaston','Émile','Lucien','Armand','Philippe','Marcel','Henri','Julien','Octave','Bastien','Anatole','Léon','Florian','Rémi','Théophile','Aristide','Maurice','Achille'],
+    f:['Colette','Madeleine','Célestine','Odette','Juliette','Margaux','Élodie','Sabine','Isaure','Noémie','Brigitte','Clémence','Hélène','Adèle','Mireille','Solange','Lucienne'],
+    s:['Duval','Lefèvre','Moreau','Girard','Fontaine','Rousseau','Delacroix','Marchand','Bonnet','Laurent','Chevalier','Garnier','Perrin','Mercier','Renaud','Vasseur','Dupré','Lemaire']
+  }
+};
+// En una ciudad con nombres propios, la mayoría de la gente nueva los lleva.
+function nameStyle(){
+  try{
+    if(typeof STATE === 'undefined' || !STATE || !STATE.character || typeof currentCityKey !== 'function') return null;
+    const st = CITIES_DATA[currentCityKey()] && CITIES_DATA[currentCityKey()].names;
+    return st && NAME_STYLES[st] && chance(0.8) ? NAME_STYLES[st] : null;
+  }catch(e){ return null; }
+}
+function randomSurname(){ const st = nameStyle(); return pick(st ? st.s : RANDOM_SURNAMES); }
 function randomFirstName(gender){
-  if(gender==='m' || gender==='Hombre') return pick(FAMILY_MALE_NAMES);
-  if(gender==='f' || gender==='Mujer') return pick(FAMILY_FEMALE_NAMES);
-  return pick(chance(0.5) ? FAMILY_MALE_NAMES : FAMILY_FEMALE_NAMES);
+  const st = nameStyle();
+  const M = st ? st.m : FAMILY_MALE_NAMES, W = st ? st.f : FAMILY_FEMALE_NAMES;
+  if(gender==='m' || gender==='Hombre') return pick(M);
+  if(gender==='f' || gender==='Mujer') return pick(W);
+  return pick(chance(0.5) ? M : W);
 }
 function randomFirstNameForGender(genero){ return randomFirstName(genero); }
 

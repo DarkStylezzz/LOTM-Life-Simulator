@@ -232,7 +232,7 @@ const MISSION_TEMPLATES = [
          applyEffects({cash:-200});
          if(chance((STATE.pathway.chosenPathway ? 0.1 : 0.16) * diffMult('death') - fateSave())){
            const c = STATE.character;
-           endGame('negative', 'Tragado por la niebla', `${c.nombre} ${c.apellido} se suma a una expedición al Fog Sea. No vuelve.`);
+           endGame('negative', 'Tragado por la niebla', `${c.nombre} ${c.apellido} se suma a una expedición al Fog Sea. No vuelve.`, {cause:'niebla'});
            return;
          }
          applyAndToast({clue:{pathway:'$chosenOrRandom', reliability:'real', strength:[15,30], source:'el Fog Sea'}, sanity:[-20,-10], reputation:[3,8]});
@@ -272,7 +272,7 @@ const MISSION_TEMPLATES = [
        {label:'Aceptar la prueba', small:'Extremadamente peligroso. Recompensa como ninguna otra.', resolve:()=>{
          const c = STATE.character;
          if(chance(0.25 * diffMult('death') - fateSave())){
-           endGame('negative', 'La prueba', `${c.nombre} ${c.apellido} acepta la prueba del Tarot Club. La prueba resulta ser exactamente eso: una prueba, y no la pasa.`);
+           endGame('negative', 'La prueba', `${c.nombre} ${c.apellido} acepta la prueba del Tarot Club. La prueba resulta ser exactamente eso: una prueba, y no la pasa.`, {cause:'prueba'});
            return;
          }
          factionAdjust('tarotClub', {secretRep:30, trust:10});
@@ -448,5 +448,330 @@ const MISSION_TEMPLATES = [
      ]
    }}
 ];
+
+/* ------------------ MÁS ENCARGOS (la vida adulta, las ciudades, las Sequences altas) ------------------ */
+MISSION_TEMPLATES.push(
+  // ---- mundanos ----
+  {id:'mundane_tutor', type:'Mundane', title:'Clases particulares', risk:'Baja', repeatable:true,
+   req:()=>STATE.character.edad>=18 && educationRank()>=2,
+   scene:{
+     text:'Una familia acomodada busca a alguien que le enseñe a su hijo a leer latín y a no dormirse en clase. Pagan puntual. El chico, dicen, "es especial".',
+     choices:[
+       {label:'Aceptar y hacerlo bien', small:'Paciencia y un sueldo extra.', resolve:()=>{
+         applyAndToast({cash:[50,110], sanity:[-2,1]});
+         if(chance(0.2)){ applyAndToast({clue:{pathway:['visionary','hermit'], reliability:'mixed', strength:[2,5], source:'un alumno que sueña demasiado'}});
+           logJournal('Clases particulares', 'El chico es especial, sí: te cuenta, como quien cuenta el clima, lo que soñaste anoche. Le pedís que no se lo cuente a nadie más. Te mira como si fueras vos el que no entiende.', {cat:'mystery'}); return; }
+         logJournal('Clases particulares', 'Tres meses de declinaciones y paciencia. El chico aprueba el examen. La madre te regala una botella de vino que vale más que tu sueldo.');
+       }},
+       {label:'Hacer lo mínimo', small:'Cobrás igual.', resolve:()=>{
+         applyAndToast({cash:[30,60], reputation:-1});
+         logJournal('Clases particulares', 'El chico no aprende nada y vos tampoco te esforzás. La familia no te recomienda a nadie.');
+       }},
+       {label:'Rechazar', small:'', resolve:()=>logJournal('Clases particulares', 'Decís que no tenés tiempo. Es verdad a medias.')}
+     ]
+   }},
+  {id:'mundane_night_shift', type:'Mundane', title:'Un turno de noche en el hospital', risk:'Baja-Moderada', repeatable:true,
+   req:()=>STATE.character.edad>=18,
+   scene:{
+     text:'Al hospital de caridad le falta gente para el turno de noche. Pagan poco y mal, pero pagan. Nadie quiere cubrir la sala del fondo.',
+     choices:[
+       {label:'Cubrir la sala del fondo', small:'La que nadie quiere.', resolve:()=>{
+         applyAndToast({cash:[25,55], reputation:[1,2]});
+         if(chance(0.3)){ applyAndToast({sanity:[-6,-2], exposure:2, clue:{pathway:['death','moon'], reliability:'mixed', strength:[2,5], source:'la sala del fondo del hospital'}});
+           logJournal('Un turno de noche', 'A las tres de la mañana, un paciente que murió a la tarde se sienta en la cama, te pide un vaso de agua y se vuelve a acostar. Le das el agua. No le contás a nadie.', {cat:'mystery', imp:1}); return; }
+         logJournal('Un turno de noche', 'Una noche larga de toses, rezos y manos que se aferran a la tuya. Dos pacientes no llegan a la mañana. Uno te da las gracias antes de irse.');
+       }},
+       {label:'Cubrir la guardia común', small:'Tranquilo, dentro de lo posible.', resolve:()=>{
+         applyAndToast({cash:[20,40]});
+         logJournal('Un turno de noche', 'Vendajes, sopa aguada y un médico que duerme sentado. A la mañana cobrás y te vas a dormir vos.');
+       }}
+     ]
+   }},
+  {id:'mundane_debt_collection', type:'Mundane', title:'Cobrar una deuda ajena', risk:'Moderada', repeatable:true,
+   req:()=>STATE.character.edad>=18,
+   scene:{
+     text:'Un prestamista del barrio te ofrece un porcentaje si le cobrás a un deudor que "se hace el distraído". Cuando vas, el deudor tiene tres hijos y una mesa vacía.',
+     choices:[
+       {label:'Cobrar igual', small:'Es tu trabajo.', resolve:()=>{
+         applyAndToast({cash:[50,110], reputation:[-4,-1]});
+         remember('collected_debt', 'Le sacaste a una familia pobre lo poco que tenía, por encargo.', {cat:'choice'});
+         logJournal('Cobrar una deuda ajena', 'El hombre paga con lo que tenía para el mes. Los chicos te miran desde la puerta. El prestamista te da tu parte y una palmada en la espalda.');
+       }},
+       {label:'Poner la diferencia de tu bolsillo', small:'El prestamista no tiene por qué enterarse.', resolve:()=>{
+         applyAndToast({cash:[-60,-20], sanity:[2,5], reputation:[1,3]});
+         const n = createNpc({met:true, relType:'acquaintance', ageMin:28, ageMax:50}); adjustRel(n, {trust:[10,16], loyalty:[6,10], dependence:[3,6]});
+         logJournal('Cobrar una deuda ajena', `Le decís al prestamista que ${n.name} pagó. Pagaste vos. ${n.name} no sabe cómo agradecerte, y no se olvida.`);
+       }},
+       {label:'Amenazar al prestamista', small:'Que busque a otro.', resolve:()=>{
+         if(chance(0.4)){ logJournal('Cobrar una deuda ajena', 'El prestamista manda a sus muchachos a explicarte cómo funciona el barrio.'); startCombat('thugs', {env:'alley', source:'el prestamista'}); return; }
+         applyAndToast({reputation:[1,3]});
+         logJournal('Cobrar una deuda ajena', 'El prestamista se ríe, pero no vuelve a mandar a nadie a esa casa. Por ahora.');
+       }}
+     ]
+   }},
+  // ---- investigación ----
+  {id:'investigation_missing_child', type:'Investigation', title:'Un chico que no volvió', risk:'Moderada-Alta', repeatable:true,
+   req:()=>STATE.character.edad>=18,
+   scene:{
+     text:'El hijo de una vecina no volvió de la escuela hace tres días. La policía "está en eso". La madre te pide ayuda porque "vos siempre sabés cosas".',
+     choices:[
+       {label:'Buscarlo toda la noche', small:'Cada hora cuenta.', resolve:()=>{
+         const r = Math.random() + luckMod();
+         if(r < 0.25 && (STATE.flags.mysticExposure||0) >= 15){ logJournal('Un chico que no volvió', 'Lo encontrás. No está solo.', {cat:'combat'}); startCombat(pick(['wraith','lostBeyonder','nightStalker']), {env:'night', source:'la búsqueda', onWin:'found_child'}); return; }
+         if(r < 0.7){ applyAndToast({reputation:[4,8], sanity:[2,4]}); remember('found_child', 'Encontraste a un chico perdido y lo devolviste a su casa.', {cat:'achievement'});
+           logJournal('Un chico que no volvió', 'Lo encontrás al amanecer, dormido en un vagón abandonado del ferrocarril, con hambre y con miedo. Su madre te abraza tan fuerte que te duele.', {cat:'relation', imp:2}); return; }
+         applyAndToast({sanity:[-8,-3]});
+         addHiddenTruth('El chico de la vecina no se perdió: alguien se lo llevó. Nunca se supo quién, pero la misma semana desaparecieron otros dos en la ciudad.');
+         logJournal('Un chico que no volvió', 'Buscás hasta que no te dan las piernas. No aparece. Esa semana desaparecen dos chicos más en la ciudad, y la policía deja de dar explicaciones.', {cat:'relation', imp:2});
+       }},
+       {label:'Preguntar en los lugares que la policía no pisa', small:'Otros ojos, otras respuestas.', resolve:()=>{
+         applyAndToast({exposure:2, clue:{pathway:'$random', reliability:'mixed', strength:[2,5], source:'la búsqueda de un chico'}});
+         if(chance(0.5)){ applyAndToast({reputation:[2,5]}); logJournal('Un chico que no volvió', 'Una vendedora de flores lo vio subir a un carro con un hombre de guantes blancos. Con esa descripción, la policía lo encuentra en dos días, vivo.', {cat:'relation', imp:1}); return; }
+         logJournal('Un chico que no volvió', 'Te cuentan cosas que preferirías no haber escuchado sobre lo que pasa con los chicos que nadie reclama. Del hijo de tu vecina, nada.', {cat:'mystery'});
+       }}
+     ]
+   }},
+  // ---- místicos ----
+  {id:'mystical_haunted_house', type:'Mystical', title:'La casa que nadie alquila', risk:'Moderada', repeatable:true,
+   req:()=>STATE.flags.mysticExposure>=10 && STATE.character.edad>=16,
+   scene:{
+     text:'Un casero desesperado te ofrece tres meses de alquiler gratis si pasás una semana en la casa que nadie le quiere alquilar. Los últimos inquilinos se fueron sin llevarse los muebles.',
+     choices:[
+       {label:'Pasar la semana entera', small:'Tres meses gratis no se rechazan.', resolve:()=>{
+         markMysticAct();
+         if(chance(0.3)){ logJournal('La casa que nadie alquila', 'La cuarta noche, lo que vive ahí se cansa de esperar a que te vayas.', {cat:'combat'}); startCombat('wraith', {env:'home', source:'la casa', bonusCash:[60,120]}); return; }
+         applyAndToast({cash:[80,160], sanity:[-10,-4], exposure:3, clue:{pathway:['death','darkness'], reliability:'real', strength:[3,7], source:'una casa encantada'}});
+         logJournal('La casa que nadie alquila', 'Pasos en el piso de arriba, una mecedora que se mueve, una voz que dice tu nombre al revés. Aguantás. El casero cumple. Vos no volvés a dormir con la luz apagada durante un mes.', {cat:'mystery', imp:1});
+       }},
+       {label:'Averiguar primero qué pasó ahí', small:'Si sabés quién es, tal vez puedas hablarle.', resolve:()=>{
+         applyAndToast({exposure:2, clue:{pathway:'death', reliability:'real', strength:[2,5], source:'la historia de una casa'}});
+         if(chance(0.6)){ applyAndToast({cash:[60,120], sanity:[1,4]}); remember('ghost_rest', 'Le diste descanso a un muerto que no sabía que estaba muerto.', {cat:'achievement'});
+           logJournal('La casa que nadie alquila', 'En los diarios viejos de la biblioteca encontrás su nombre: una costurera que murió esperando a un hijo que volvía de la guerra. Le leés en voz alta la lista de los que volvieron. Su hijo estaba. La casa queda en silencio.', {cat:'mystery', imp:2}); return; }
+         applyAndToast({sanity:[-5,-2]});
+         logJournal('La casa que nadie alquila', 'Encontrás demasiadas historias y ninguna encaja. La casa sigue igual. El casero, también.', {cat:'mystery'});
+       }},
+       {label:'Rechazar', small:'', resolve:()=>logJournal('La casa que nadie alquila', 'Le decís que no. El casero suspira: ya se lo esperaba.')}
+     ]
+   }},
+  {id:'mystical_seance', type:'Mystical', title:'Una sesión espiritista', risk:'Moderada', repeatable:true,
+   req:()=>STATE.flags.mysticExposure>=8 && STATE.character.edad>=16,
+   scene:{
+     text:'Una señora de la alta sociedad organiza una sesión espiritista en su salón y necesita "alguien con sensibilidad" para completar el círculo. Paga el taxi y la cena.',
+     choices:[
+       {label:'Tomarlo en serio', small:'Abrirte de verdad.', resolve:()=>{
+         markMysticAct();
+         const real = STATE.character.spirituality >= 35 || chance(0.25);
+         if(real){ applyAndToast({sanity:[-9,-3], exposure:4, spirituality:[2,5], clue:{pathway:['death','visionary','fool'], reliability:'real', strength:[4,8], source:'una sesión espiritista'}});
+           logJournal('Una sesión espiritista', 'Nadie mueve la mesa: se mueve sola. Y lo que habla no es el marido muerto de la anfitriona. Habla de vos, en primera persona, como si fuera vos dentro de veinte años.', {cat:'mystery', imp:2}); return; }
+         applyAndToast({cash:[10,30], reputation:[1,3]});
+         logJournal('Una sesión espiritista', 'Humo, cortinas y un médium que golpea la mesa con la rodilla. La anfitriona llora de emoción. Vos cenás muy bien.');
+       }},
+       {label:'Seguir el juego sin involucrarte', small:'Por la cena.', resolve:()=>{
+         applyAndToast({cash:[10,25], reputation:[1,2]});
+         logJournal('Una sesión espiritista', 'Tomás las manos que te toca tomar y mirás el techo. Buena cena, mejor vino. Un invitado te pasa su tarjeta: "Si alguna vez quiere algo más serio..."');
+         if(chance(0.4)) addRumor();
+       }}
+     ]
+   }},
+  // ---- ciudades ----
+  {id:'city_trier_survey', type:'Exploration', title:'Cartografiar las catacumbas', risk:'Alta', repeatable:true,
+   req:()=>currentCityKey()==='trier' && STATE.character.edad>=16,
+   scene:{
+     text:'La oficina de obras públicas de Trier paga bien a quien acompañe a sus agrimensores bajo tierra: hay que actualizar los planos de las catacumbas "antes de que se derrumbe otra calle".',
+     choices:[
+       {label:'Bajar con los agrimensores', small:'Paga bien. Muy bien.', resolve:()=>{
+         markMysticAct();
+         if(chance(0.3)){ logJournal('Cartografiar las catacumbas', 'En el tercer nivel, uno de los agrimensores deja de responder. Lo que responde en su lugar no es él.', {cat:'combat'}); startCombat('catacombGhoul', {env:'sewer', source:'las catacumbas', allies:true, bonusCash:[80,150]}); return; }
+         applyAndToast({cash:[90,180], exposure:3, sanity:[-6,-2]});
+         if(chance(0.5)) learnLore('trier_below', 'los planos de las catacumbas');
+         if(chance(0.3)) grantIngredientFind('las catacumbas de Trier', true);
+         logJournal('Cartografiar las catacumbas', 'Los planos terminan en el cuarto nivel. Debajo hay un quinto que no figura en ninguno: una calle con faroles y números en las puertas. El jefe de agrimensores lo dibuja y después arranca la hoja.', {cat:'mystery', imp:1});
+       }},
+       {label:'Quedarte arriba, con las cuerdas', small:'Menos plata, más aire.', resolve:()=>{
+         applyAndToast({cash:[30,60]});
+         logJournal('Cartografiar las catacumbas', 'Doce horas sosteniendo cuerdas y escuchando, por el agujero, el eco de voces que no son las de los agrimensores. Todos suben. Casi todos con la misma cara con la que bajaron.');
+       }}
+     ]
+   }},
+  {id:'city_constant_gallery', type:'Exploration', title:'La galería tapiada', risk:'Alta', repeatable:false,
+   req:()=>currentCityKey()==='constant' && STATE.character.edad>=18,
+   scene:{
+     text:'Un ingeniero joven de la compañía minera quiere reabrir en secreto la galería que tapiaron hace treinta años. Necesita a alguien que no tenga miedo y no tenga amigos en el sindicato.',
+     choices:[
+       {label:'Entrar con él', small:'Lo que haya ahí, lo vas a ver primero.', resolve:()=>{
+         markMysticAct();
+         learnLore('constant_gallery', 'la galería tapiada');
+         if(chance(0.45)){ logJournal('La galería tapiada', 'Detrás del muro no hay oscuridad: hay algo que estaba esperando que alguien lo abriera.', {cat:'combat'}); startCombat('mineThing', {env:'ruins', source:'la galería', bonusCash:[60,140]}); return; }
+         applyAndToast({cash:[60,140], sanity:[-10,-4], exposure:4, clue:{pathway:['twilightGiant','hermit','whiteTower'], reliability:'real', strength:[6,11], source:'la galería tapiada'}});
+         if(!hasArtifact('miner_lamp') && chance(0.4)) addArtifact('miner_lamp', 'el piso de la galería tapiada');
+         logJournal('La galería tapiada', 'Una sala tallada en la roca, con escalones para piernas mucho más largas que las tuyas y un trono vacío del tamaño de una casa. El ingeniero llora. Vos tomás notas con las manos temblando.', {cat:'mystery', imp:2});
+         remember('constant_gallery_opened', 'Entraste a la galería tapiada de Constant.', {cat:'place'});
+       }},
+       {label:'Denunciarlo a la compañía', small:'Hay puertas que se cierran por algo.', resolve:()=>{
+         applyAndToast({cash:[20,50]});
+         addHiddenTruth('El ingeniero que quería reabrir la galería de Constant fue trasladado a una mina de otra provincia. Murió ahí en un derrumbe, un año después.');
+         logJournal('La galería tapiada', 'La compañía te agradece la lealtad con un sobre. Al ingeniero no lo volvés a ver.');
+       }},
+       {label:'Decirle que no', small:'', resolve:()=>logJournal('La galería tapiada', 'Le decís que no. Él dice que va a buscar a otro. No sabés si lo encontró.')}
+     ]
+   }},
+  {id:'city_enmat_barge', type:'Escort', title:'Una barcaza río arriba', risk:'Moderada', repeatable:true,
+   req:()=>currentCityKey()==='enmat' && STATE.character.edad>=16,
+   scene:{
+     text:'Un contrabandista necesita a alguien que acompañe una barcaza río arriba, de noche, y que no se ponga nervioso si la patrulla de la Iglesia de las Tormentas hace señas con el farol.',
+     choices:[
+       {label:'Acompañar la barcaza', small:'Plata rápida. Río oscuro.', resolve:()=>{
+         applyAndToast({cash:[70,150]});
+         const r = Math.random();
+         if(r < 0.2){ logJournal('Una barcaza río arriba', 'A mitad de camino, otra barcaza sin luces se les pega al costado. No son de la patrulla.', {cat:'combat'}); startCombat('thugs', {env:'docks', source:'el río'}); return; }
+         if(r < 0.4){ factionAdjust('storm', {suspicion:[4,9]}, true); logJournal('Una barcaza río arriba', 'La patrulla los para. El contrabandista paga. Los Castigadores anotan tu cara igual.', {cat:'faction'}); return; }
+         logJournal('Una barcaza río arriba', 'Niebla, remos envueltos en trapo y un cargamento que golpea suavemente desde adentro de las cajas. Llegan sin problemas. No preguntás.');
+       }},
+       {label:'Rechazar', small:'', resolve:()=>logJournal('Una barcaza río arriba', 'Le decís que no. Esa noche, desde la ventana, ves una barcaza sin luces que sube el río.')}
+     ]
+   }},
+  {id:'city_balam_archaeologist', type:'Exploration', title:'El arqueólogo de Backlund', risk:'Alta', repeatable:false,
+   req:()=>currentCityKey()==='balam' && STATE.character.edad>=18,
+   scene:{
+     text:'Un arqueólogo recién llegado de Backlund, de bigote encerado y botas nuevas, busca quien lo guíe a "los templos que los nativos no quieren mostrar". Paga en libras de verdad.',
+     choices:[
+       {label:'Guiarlo hasta el templo del norte', small:'Donde nadie quiere ir.', resolve:()=>{
+         markMysticAct();
+         if(chance(0.35)){ logJournal('El arqueólogo de Backlund', 'El templo tiene un guardián. El arqueólogo corre. Vos no llegás a correr.', {cat:'combat'}); startCombat('deathPriest', {env:'ruins', source:'el templo del norte', bonusCash:[80,160]}); return; }
+         applyAndToast({cash:[100,200], exposure:4, sanity:[-8,-3], clue:{pathway:'death', reliability:'real', strength:[5,10], source:'un templo de Balam'}});
+         if(chance(0.5)) learnLore('balam_sovereign', 'el templo del norte');
+         if(!hasArtifact('bone_idol') && chance(0.3)) addArtifact('bone_idol', 'el altar del templo del norte');
+         logJournal('El arqueólogo de Backlund', 'El arqueólogo copia inscripciones durante tres días, febril de alegría. La última noche lo encontrás sentado frente al trono vacío, hablando solo. Le contestan. Lo sacás de ahí a la fuerza.', {cat:'mystery', imp:2});
+         addHiddenTruth('El arqueólogo que guiaste por Balam publicó sus inscripciones en Backlund. Un año después, la Iglesia retiró todos los ejemplares y el arqueólogo "se jubiló".');
+       }},
+       {label:'Llevarlo a unas ruinas seguras', small:'Que se lleve una foto linda.', resolve:()=>{
+         applyAndToast({cash:[60,110], reputation:[1,2]});
+         logJournal('El arqueólogo de Backlund', 'Le mostrás unas ruinas menores, ya saqueadas, y le contás tres leyendas inventadas. Queda encantado. Te paga el doble.');
+       }}
+     ]
+   }},
+  // ---- Beyonders con experiencia ----
+  {id:'beyonder_apprentice', type:'Beyonder', title:'Alguien que quiere aprender', risk:'Moderada', repeatable:false,
+   req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence<=7 && STATE.character.edad>=25,
+   scene:{
+     text:'Alguien joven te sigue desde hace semanas. Por fin se anima: sabe lo que sos (no cómo) y quiere que le enseñes. Tiene una fórmula a medias y ninguna idea de lo que cuesta.',
+     choices:[
+       {label:'Tomarlo como aprendiz', small:'Enseñar también es actuar un papel.', resolve:()=>{
+         const n = createNpc({met:true, relType:'contact', role:'Aprendiz', ageMin:17, ageMax:24, tier:'recurrente', trust:30, affection:20, allowHidden:false});
+         n.knows.beyonder = true; adjustRel(n, {trust:[10,15], respect:[10,15], loyalty:[8,12], dependence:[6,10]});
+         applyAndToast({digestion:[2,5], sanity:[-3,0]}); nudgeActingMethod(0.2, 'enseñando');
+         remember('took_apprentice', `Tomaste a ${n.name} como aprendiz.`, {cat:'person', npc:n.id});
+         scheduleConsequence({inMonths:[18,48], title:'Lo que aprendió '+n.name, text:`${n.name} bebe su primera poción. Te manda una carta sin firma: "Gracias. Ahora entiendo lo que no me dijiste." No sabés si es un agradecimiento o un reproche.`,
+           effect:{rel:{npc:n.id, trust:5, respect:6}}, memory:{tag:'apprentice_beyonder', text:`${n.name}, tu aprendiz, se volvió Beyonder.`, cat:'person', npc:n.id}, cond:{npcAlive:n.id}});
+         logJournal('Alguien que quiere aprender', `Aceptás a ${n.name}. Le enseñás lo que te hubiera gustado que alguien te enseñara a vos, y te callás lo que todavía no está listo para oír.`, {cat:'pathway', imp:2});
+       }},
+       {label:'Asustarlo para que se aleje', small:'Por su bien.', resolve:()=>{
+         applyAndToast({sanity:[-2,0]});
+         addHiddenTruth('El joven que quiso ser tu aprendiz encontró a otro maestro. Uno de la Orden de la Aurora.');
+         logJournal('Alguien que quiere aprender', 'Le mostrás un poco. Lo suficiente para que salga corriendo. Corre. Te quedás con la duda de adónde.', {cat:'pathway'});
+       }},
+       {label:'Entregarlo a una Iglesia', small:'Que lo cuiden los que saben.', resolve:()=>{
+         const f = memberFactions().find(k=>['church','nighthawks','storm','machinery'].includes(k)) || 'church';
+         factionMeet(f); factionAdjust(f, {merit:3, trust:[2,5]});
+         logJournal('Alguien que quiere aprender', `Lo llevás ante ${factionName(f)}. Lo reciben con amabilidad y una puerta que se cierra detrás de él. Te agradecen "la responsabilidad".`, {cat:'faction'});
+       }}
+     ]
+   }},
+  {id:'beyonder_rogue_hunt', type:'Hunting', title:'Cazar a un renegado', risk:'Extrema', repeatable:true,
+   req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence<=6,
+   scene:{
+     text:'Un Beyonder renegado está matando gente en el puerto para quedarse con sus Características. Nadie lo reclama y nadie lo caza. Todavía.',
+     choices:[
+       {label:'Cazarlo', small:'Una Característica, o tu vida.', resolve:()=>{
+         const seq = clamp(STATE.pathway.sequence + rndInt(-1,1), 4, 8);
+         logJournal('Cazar a un renegado', 'Lo encontrás donde dijeron. Él también te estaba buscando.', {cat:'combat'});
+         startCombat('rivalBeyonder', {env:pick(['docks','alley','night']), source:'caza', bonusCash:[40,120], overrides:{seq}});
+       }},
+       {label:'Avisarle a quien corresponda', small:'Que se encarguen los que cobran por esto.', resolve:()=>{
+         const f = pick(['nighthawks','storm','mi9']); factionMeet(f); factionAdjust(f, {trust:[2,4], merit:2});
+         logJournal('Cazar a un renegado', `Pasás el dato a ${factionName(f)}. Una semana después, el puerto vuelve a la calma. Nadie te agradece en voz alta.`, {cat:'faction'});
+       }}
+     ]
+   }},
+  {id:'demigod_mediation', type:'Faction', title:'Una mesa entre enemigos', risk:'Alta', repeatable:true,
+   req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence<=5,
+   scene:{
+     text:'Dos organizaciones que se odian te piden lo mismo: que te sientes entre ellas. Alguien de tu Sequence, dicen, "es respetado por los dos lados". Nadie dice "temido", pero todos lo piensan.',
+     choices:[
+       {label:'Mediar con honestidad', small:'Que ganen los dos un poco.', resolve:()=>{
+         const [a, b] = sample(['church','storm','machinery','mi9','psychology'], 2);
+         [a,b].forEach(f=>{ factionMeet(f); factionAdjust(f, {trust:[3,6], publicRep:[2,4]}); });
+         applyAndToast({reputation:[2,5], sanity:[-4,-1]});
+         logJournal('Una mesa entre enemigos', `Tres noches de té frío entre ${factionShort(a)} y ${factionShort(b)}. Nadie queda contento, que es la única forma de que un acuerdo dure.`, {cat:'faction', imp:2});
+       }},
+       {label:'Inclinar la mesa hacia quien más te conviene', small:'El poder también se administra.', resolve:()=>{
+         const [a, b] = sample(['church','storm','machinery','mi9','psychology'], 2);
+         factionMeet(a); factionMeet(b); factionAdjust(a, {trust:[6,10], merit:4}); factionAdjust(b, {trust:[-10,-6], suspicion:[6,12]}, true);
+         applyAndToast({corruption:[1,3]}); remember('rigged_mediation', `Inclinaste una mediación a favor de ${factionName(a)}.`, {cat:'betrayal', faction:b});
+         logJournal('Una mesa entre enemigos', `${cap(factionShort(a))} sale ganando. ${cap(factionShort(b))} tarda un mes en darse cuenta de por qué.`, {cat:'faction', imp:2});
+       }},
+       {label:'No sentarte', small:'No es tu guerra.', resolve:()=>logJournal('Una mesa entre enemigos', 'Te negás. Las dos partes se ofenden, cada una a su manera.', {cat:'faction'})}
+     ]
+   }},
+  {id:'demigod_seal', type:'Ritual', title:'Lo que la ciudad no debe ver', risk:'Extrema', repeatable:false,
+   req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence<=4,
+   scene:{
+     text:'Algo pasó por la ciudad anoche. No fue un Beyonder: fue la sombra de algo mucho más alto, y quedó marcada en el aire del barrio viejo como una quemadura. Si nadie la sella, mañana la ve todo el mundo.',
+     choices:[
+       {label:'Enfrentarla', small:'Sos de los pocos que pueden.', resolve:()=>{
+         logJournal('Lo que la ciudad no debe ver', 'Entrás al barrio viejo. El aire es de vidrio.', {cat:'combat', imp:3});
+         startCombat('angelShadow', {env:'ruins', source:'la sombra de un Ángel', onWin:'sealed_angel_shadow'});
+       }},
+       {label:'Sellarla con un ritual, a tu costa', small:'Sin pelea. Con precio.', resolve:()=>{
+         applyAndToast({humanity:-4, sanity:[-14,-6], corruption:[2,5], clue:{pathway:'$chosen', reliability:'real', strength:[8,14], source:'la sombra que sellaste'}});
+         remember('sealed_angel_shadow', 'Sellaste con tu propia espiritualidad la sombra de un Ángel.', {cat:'achievement'});
+         addMilestone('achievement', 'Sella la sombra de un Ángel');
+         logJournal('Lo que la ciudad no debe ver', 'Toda la noche de pie, en el centro del barrio vacío, cosiendo el aire con lo que sos. A la mañana, nadie ve nada. Vos tampoco ves igual que antes.', {cat:'pathway', imp:3});
+       }},
+       {label:'Irte de la ciudad unos días', small:'Que la sellen otros.', resolve:()=>{
+         applyAndToast({reputation:[-3,-1]});
+         addHiddenTruth('La sombra que dejaste sin sellar enloqueció a once personas del barrio viejo antes de que los Nighthawks llegaran.');
+         logJournal('Lo que la ciudad no debe ver', 'Te vas. Cuando volvés, el barrio viejo tiene un hospital nuevo y once camas ocupadas por gente que no habla.', {cat:'pathway', imp:2});
+       }}
+     ]
+   }},
+  // ---- la segunda mitad de la vida ----
+  {id:'elder_last_favor', type:'Mundane', title:'Un último favor', risk:'Baja', repeatable:false,
+   req:()=>STATE.character.edad>=58,
+   scene:{
+     text:'Un conocido de toda la vida, muy enfermo, te pide un último favor: que le lleves una carta a su hija, con la que no habla hace veinte años. No sabe si ella va a querer abrirla.',
+     choices:[
+       {label:'Llevarla en persona', small:'Hay cosas que no se mandan por correo.', resolve:()=>{
+         applyAndToast({sanity:[3,7], reputation:[1,3]});
+         remember('delivered_last_letter', 'Llevaste la última carta de un amigo a su hija.', {cat:'favor_given'});
+         logJournal('Un último favor', 'La hija lee la carta en la puerta, sin invitarte a pasar. Después te hace pasar. Toman té en silencio. Al otro día, viaja a ver a su padre. Llega a tiempo.', {cat:'relation', imp:2});
+       }},
+       {label:'Mandarla por correo', small:'Las piernas ya no son las de antes.', resolve:()=>{
+         applyAndToast({sanity:[0,2]});
+         logJournal('Un último favor', 'La mandás certificada. Nunca sabés si llegó. Tu amigo muere un mes después, preguntando por el cartero.', {cat:'relation', imp:1});
+       }}
+     ]
+   }},
+  {id:'elder_pass_on', type:'Pathway', title:'Lo que sabés, antes de que se pierda', risk:'Baja', repeatable:false,
+   req:()=>STATE.character.edad>=55 && (!!STATE.pathway.chosenPathway || loreCount()>=6),
+   scene:{
+     text:'Te das cuenta de que sabés cosas que nadie más sabe, y de que un día te vas a morir con ellas adentro. Hay alguien joven que podría cargarlas. O podrías quemar los cuadernos.',
+     choices:[
+       {label:'Enseñarle todo a alguien joven', small:'Que no se pierda.', resolve:()=>{
+         const heir = childrenNpcs().find(k=>k.alive && npcAge(k)>=16) || aliveNpcs().filter(n=>n.met && npcAge(n) < STATE.character.edad-20).sort((a,b)=>bondScore(b)-bondScore(a))[0];
+         if(heir){ heir.knows.beyonder = heir.knows.beyonder || !!STATE.pathway.chosenPathway; heir.mystic = Math.max(heir.mystic||0, 50); adjustRel(heir, {trust:[6,10], respect:[8,12]});
+           remember('legacy_student', `Le enseñaste a ${heir.name} todo lo que sabías del mundo oculto.`, {cat:'person', npc:heir.id});
+           logJournal('Lo que sabés, antes de que se pierda', `Durante un año, una tarde por semana, ${heir.name} escucha. No todo lo cree. Todo lo anota.`, {cat:'pathway', imp:2}); }
+         else logJournal('Lo que sabés, antes de que se pierda', 'Buscás a quién enseñarle y no encontrás a nadie. Lo escribís todo en un cuaderno y lo escondés donde alguien, algún día, lo va a encontrar.', {cat:'pathway', imp:2});
+         applyAndToast({sanity:[3,6]});
+       }},
+       {label:'Quemar los cuadernos', small:'Hay cosas que es mejor que mueran con uno.', resolve:()=>{
+         applyAndToast({sanity:[2,5], corruption:[-3,-1]});
+         remember('burned_notes', 'Quemaste todo lo que sabías del mundo oculto.', {cat:'choice'});
+         logJournal('Lo que sabés, antes de que se pierda', 'Una tarde de otoño, en la estufa, página por página. Algunas hojas tardan en arder más de lo que deberían. Esperás a que ardan todas.', {cat:'pathway', imp:2});
+       }}
+     ]
+   }}
+);
 const MISSION_BY_ID = {};
 MISSION_TEMPLATES.forEach(m=>{ MISSION_BY_ID[m.id] = m; });

@@ -80,6 +80,17 @@ const LORE = {
     text:'El Tarot Club lo convoca alguien que se hace llamar El Loco, desde un palacio sobre una niebla gris. Nadie le vio la cara. Algunos creen que no la tiene.'},
   conservation_law: {cat:'secret', title:'Ley de conservación', tradeValue:3,
     text:'Las Características Beyonder no se crean ni se destruyen: sólo cambian de manos. Cada poder que existe, alguien lo perdió.'},
+  // Secretos de las ciudades (se aprenden viviendo o explorando ahí).
+  roselle_diary: {cat:'secret', title:'Los diarios del Emperador', tradeValue:3,
+    text:'El Emperador Roselle, que gobernó Intis antes de la República, escribió sus diarios en un idioma que nadie más conoce. Quienes pagan fortunas por una página dicen que habla de cartas, de vías... y de que él no era de este mundo.'},
+  trier_below: {cat:'secret', title:'La otra Trier', tradeValue:2,
+    text:'Debajo de Trier hay una ciudad de la Cuarta Época, entera: calles, casas, plazas. Y algo que todavía camina por ellas como si nadie le hubiera avisado.'},
+  constant_gallery: {cat:'secret', title:'La galería tapiada', tradeValue:2,
+    text:'En una galería de las minas de Constant, cerrada hace décadas, los mineros encontraron algo tallado en la roca viva. La compañía tapió la entrada al día siguiente y pagó el silencio de todos. Casi todos.'},
+  enmat_names: {cat:'secret', title:'La posada de los nombres', tradeValue:2,
+    text:'En Enmat hay una posada donde se puede comprar un nombre nuevo, con papeles y todo. Algunos de los que la usaron no eran del todo personas.'},
+  balam_sovereign: {cat:'secret', title:'El soberano del sur', tradeValue:3, dangerous:true,
+    text:'El imperio cuyas ruinas se come la selva de Balam no adoraba a la Muerte como a un final, sino como a un rey. Y los reyes, dicen los nativos, no abdican: esperan.'},
   convergence_law: {cat:'secret', title:'Ley de convergencia', tradeValue:4, dangerous:true,
     text:'Las Características de una misma vía se atraen entre sí. Quien acumula poder atrae poder... y a quienes lo buscan.'},
 

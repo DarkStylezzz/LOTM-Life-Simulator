@@ -58,7 +58,7 @@ const RANDOM_HISTORY = [
   {id:'rh_fire', importance:2, title:'El gran incendio de {city}', text:'Un incendio consume media docena de manzanas en {city}. Algunos dicen que el fuego se movía contra el viento.',
     effect:{cityVar:{prosperity:-5, security:-5}}},
   {id:'rh_short_war', importance:3, title:'Una guerra corta', text:'Loen entra en una guerra "breve" que dura dos años. Nadie vuelve igual.',
-    effect:{allCities:{prosperity:-8, security:-8}, war:true}, endsAfter:24},
+    effect:{allCities:{prosperity:-8, security:-8}, war:true, endsAfter:24}},
   {id:'rh_new_church', importance:1, title:'Una fe nueva en {city}', text:'Un predicador carismático llena plazas enteras en {city}. Las iglesias ortodoxas lo miran con recelo.',
     effect:{cityVar:{security:-2}, mood:{church:'investigando'}}},
   {id:'rh_boom', importance:1, title:'Prosperidad en {city}', text:'Llega el ferrocarril, abren fábricas, sube el salario: {city} vive su mejor década.',
