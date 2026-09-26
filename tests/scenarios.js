@@ -57,6 +57,19 @@ scenario('guardar y recargar con una decisión pendiente', ()=>{
   assert(run(ctx2, `!STATE.pendingEvent || STATE.pendingEvent.defId !== ${JSON.stringify(JSON.parse(pe).defId)}`), 'el evento no se resolvió después de recargar');
 });
 
+scenario('Tarot Club sin buscarlo: los ecos y la invitación llegan solos', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 30; STATE.pathway.chosenPathway='sun'; STATE.pathway.sequence=8; STATE.flags.beyonderSince=0; invalidatePathwayMods(); STATE.tarot.stage = 0;`);
+  // Un Beyonder que nunca oyó nada termina sabiendo que el club existe.
+  for(let i=0;i<600 && run(ctx, `STATE.tarot.stage`) < 3;i++) run(ctx, `STATE.pendingEvent = null; tarotTick();`);
+  assert(run(ctx, `STATE.tarot.stage`) >= 3, 'los ecos del club no llegaron');
+  assert(run(ctx, `STATE.journal.some(j=>TAROT_ECHOES.some(e=>e.title===j.title))`), 'los ecos no quedaron en el diario');
+  // Lista para la invitación: llega desde el tick, sin depender del sorteo de eventos raros.
+  run(ctx, `STATE.pendingEvent = null; STATE.tarot.stage = 4; STATE.tarot.observed = 50; STATE.character.corruption = 0; STATE.character.sanity = 80;`);
+  for(let i=0;i<600 && !run(ctx, `!!(STATE.pendingEvent && STATE.pendingEvent.defId === 'tarot_invitation')`);i++) run(ctx, `tarotTick();`);
+  assert(run(ctx, `STATE.pendingEvent && STATE.pendingEvent.defId`) === 'tarot_invitation', 'la invitación no llegó sola');
+});
+
 scenario('el camino completo al Tarot Club', ()=>{
   const ctx = fresh();
   run(ctx, NEWLIFE + `STATE.character.edad = 30; STATE.pathway.chosenPathway='sun'; STATE.pathway.sequence=8; STATE.flags.beyonderSince=0; invalidatePathwayMods();`);

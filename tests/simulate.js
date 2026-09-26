@@ -9,6 +9,7 @@
                                 [--diff=easy|normal|hard|nightmare] [--style=mixto|dedicado|tranquilo]
      --ui     carga también la interfaz (ui/*.js + main.js) con el DOM simulado
      --diff   fija la dificultad (por defecto, una al azar entre normal, difícil y pesadilla)
+     --events cuántos eventos pasaron en alguna vida, y cuáles nunca
      --style  cómo juega el "jugador": mixto (un poco de todo), dedicado (vive
               para el mundo oculto: investiga, actúa, explora y avanza apenas
               puede) o tranquilo (una vida común: trabajo, familia, amigos)
@@ -269,7 +270,7 @@ function __liveOne(i, maxMonths){
     cash: c.cash + c.bank - c.debt, job:c.profesion, tarot:STATE.tarot.stage, divine: !!(STATE.divinity&&STATE.divinity.ascended), div: STATE.divinity && STATE.divinity.stage,
     journal: STATE.journal.length, steps, reloads, ms: Date.now()-t0, diff: STATE.settings.difficulty, world: STATE.settings.world,
     attention: Math.round(STATE.world.attention), corruption: c.corruption, sanity: c.sanity, factions: memberFactions().join('/'), combats: c.stats.combatsWon + c.stats.combatsFled,
-    seqAge, funnel, rituals: __rituals.slice(), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey() };
+    seqAge, funnel, rituals: __rituals.slice(), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey(), fired: Object.keys(STATE.eventHistory) };
 }
 `);
 
@@ -300,6 +301,14 @@ if(args.includes('--funnel')){
   const rit = {}; results.forEach(r=>(r.rituals||[]).forEach(x=>{ const o = rit[x.s] = rit[x.s] || {n:0, ok:0}; o.n++; if(x.ok) o.ok++; }));
   const rk = Object.keys(rit).sort((a,b)=>b-a);
   if(rk.length) console.log('Rituales (Sequence de origen: intentos → éxitos):', rk.map(s=>`${s}→${s-1}: ${rit[s].n}→${rit[s].ok} (${Math.round(rit[s].ok/rit[s].n*100)}%)`).join(' · '));
+}
+if(args.includes('--events')){
+  // Cobertura natural: en cuántas vidas pasó cada evento (y cuáles no pasaron nunca).
+  const seen = {}; results.forEach(r=>(r.fired||[]).forEach(id=>{ seen[id] = (seen[id]||0)+1; }));
+  const all = run(ctx, 'EVENTS_ALL.filter(d=>!d.chainOnly).map(d=>d.id)');
+  const never = all.filter(id=>!seen[id]);
+  console.log(`Eventos (sin los de cadena): ${all.length - never.length} de ${all.length} pasaron en alguna vida`);
+  if(never.length) console.log('  nunca:', never.join(', '));
 }
 const savedLives = results.filter(r=>r.saved > 0).length;
 if(savedLives) console.log(`Segundas oportunidades usadas: ${results.reduce((a,r)=>a+r.saved,0)} en ${savedLives} vidas`);
