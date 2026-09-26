@@ -21,7 +21,10 @@ function actingMethodLevel(){ return STATE.pathway.actingMethod || 0; }
 // Avanza la comprensión del Método (intuición en 1, comprensión en 2).
 function nudgeActingMethod(amount, source){
   const p = STATE.pathway;
-  if(!p.chosenPathway || p.actingMethod >= 2) return;
+  if(p.actingMethod >= 2) return;
+  // Antes de la primera poción se puede aprender algo (el diario de alguien
+  // de la familia, por ejemplo): queda guardado para cuando haga falta.
+  if(!p.chosenPathway){ p.actingMethodProgress = Math.min(1.9, (p.actingMethodProgress||0) + amount); return; }
   const before = p.actingMethod;
   p.actingMethodProgress = (p.actingMethodProgress||0) + amount;
   if(p.actingMethodProgress >= 2){ p.actingMethod = 2; learnLore('acting_method', source); return; }

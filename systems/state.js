@@ -52,7 +52,7 @@ function freshState(){
     started:false, gameOver:false, nextId:1,
     settings:{ difficulty:'normal', world:'libre', showNumbers:false },
     character:{
-      nombre:'', apellido:'', edad:0, genero:'', ciudad:'', birthCity:'', clase:'', profesion:'Desempleado', educacion:'Sin escolarizar',
+      nombre:'', apellido:'', edad:0, genero:'', ciudad:'', birthCity:'', birthYear:0, clase:'', profesion:'Desempleado', educacion:'Sin escolarizar',
       rasgos:[], salud:90, sanity:88, corruption:0, spirituality:8, reputation:0,
       cash:0, bank:0, debt:0, incomeBonus:0,
       estadoCivil:'Soltero/a', vivienda:null,
@@ -106,6 +106,8 @@ function freshState(){
     tarot:{ stage:0, observed:0, card:null, meetings:0, lastMeeting:-99, honorific:false, declined:0, lastDecline:-99, heard:[], evals:0, shared:[], lastFormula:-99, lastPrayer:-99 },
     ritual:null, brew:null, pendingSeals:[],
     divinity:{ stage:0, ascended:false, uniqueness:false, characteristics:0, prayersAnswered:0, domainActs:0 },
+    // El linaje (systems/lineage.js): las vidas anteriores de la familia.
+    lineage:{ lives:[] },
     endingData:null
   };
 }

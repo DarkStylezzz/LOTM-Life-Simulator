@@ -31,8 +31,25 @@ function renderPeople(){
     out.push(`<div class="npc-list">${list.map(npcRow).join('')}</div>`);
   });
   if(!groups.length) out.push(emptyState('Todavía no conocés a nadie. Ya va a pasar.'));
+  out.push(lineagePeopleSection());
   return out.join('');
 }
+// Tu linaje: quiénes vinieron antes y, desde los sesenta, cerrar esta vida.
+function lineagePeopleSection(){
+  const lives = lineageData().lives;
+  const c = STATE.character;
+  const out = [];
+  if(lives.length) out.push(sec('Tu linaje', generationLabel(lives.length + 1)) + ancestorsList(lives));
+  if(c.edad >= CLOSE_LIFE_MIN_AGE && !isDivine()){
+    const av = closeLifeAvailable(), heirs = lineageHeirs().length;
+    if(!lives.length) out.push(sec('Tu linaje'));
+    out.push(`<div class="action-grid compact">${actionButton({label:'Cerrar esta vida', small: heirs ? 'Te retirás del mundo y la historia sigue con alguien de tu familia.' : 'Te retirás del mundo. La historia termina acá.', disabled:!av.ok, why:av.why}, 'close-life')}</div>`);
+  }
+  return out.join('');
+}
+onAct('close-life', ()=>confirmModal(lineageHeirs().length
+  ? 'Te retirás del mundo: la biografía se escribe y podés elegir con quién de tu familia sigue la historia.'
+  : 'Te retirás del mundo: la biografía se escribe y esta historia termina. No tenés hijos que la sigan.', ()=>closeLife(), {yes:'Cerrar esta vida', title:'Cerrar esta vida'}));
 function npcRow(n){
   const age = n.alive ? npcAgeText(n) : (n.deathYear ? `murió en ${n.deathYear}` : 'murió');
   const hidden = npcHiddenLine(n);

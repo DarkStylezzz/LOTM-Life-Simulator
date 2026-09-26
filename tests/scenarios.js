@@ -559,5 +559,59 @@ scenario('combate: los cazadores, la dificultad y el rival de una pista', ()=>{
   assert(d.hard[0] > d.normal[0] && d.nightmare[0] > d.hard[0] && d.hard[1] < d.normal[1] && d.nightmare[1] < d.hard[1], 'la dificultad no cambia el combate: ' + JSON.stringify(d));
 });
 
+scenario('el linaje: morir, elegir heredero y seguir con la herencia', ()=>{
+  const storage = makeStorage();
+  const ctx = fresh(storage);
+  run(ctx, NEWLIFE + `(function(){
+    const c = STATE.character; c.edad = 58; c.cash = 3000; c.bank = 9000; c.debt = 0; c.reputation = 40;
+    const p = STATE.pathway; p.chosenPathway = 'moon'; p.sequence = 7; p.actingMethod = 2; identifyPathway('moon'); invalidatePathwayMods();
+    c.vivienda = {tipo:'Casa', valor:5000, city:currentCityKey()}; c.properties = [{valor:3000, city:currentCityKey(), since:calendarYear()}];
+    const spouse = createNpc({gender:'m', relType:'acquaintance', age:57, met:true, trust:60, affection:70}); marryPartner(spouse, true); c.cash = 3000; c.bank = 9000;
+    const a = birthChild(); a.ageOffset = -30; a.flags.married = true; a.flags.kids = 2; a.knows.beyonder = true; a.profession = 'Médico';
+    const b = birthChild(); b.ageOffset = -46;
+    addArtifact('mirror', 'x'); addItem('book_grimoire', 1, 'x'); addFormula('moon', 6, 'true', 'x');
+    const loan = addArtifact('music_box', 'x'); if(loan) loan.loan = 'church';
+    STATE.flags.will = 'equal';
+    endGame('natural', 'Una vida completa', 'Muere en su cama.', {cause:'vejez'});
+  })()`);
+  assert(run(ctx, `STATE.gameOver`), 'la vida no terminó');
+  const heirs = run(ctx, `lineageHeirs().map(n=>({id:n.id, age:npcAge(n)}))`);
+  assert(heirs.length === 2 && heirs[0].age === 28 && heirs[1].age === 12, 'herederos: ' + JSON.stringify(heirs));
+  const plan = run(ctx, `inheritancePlan(lineageHeirs()[0])`);
+  // 12.000 netos: 40% para la viuda, el resto entre dos.
+  assert(plan.money === 3600 && plan.house && plan.props === 1 && plan.characteristic && plan.characteristic.seq === 7, 'plan de herencia: ' + JSON.stringify(plan));
+  const before = run(ctx, `({year: calendarYear(), timeline: STATE.world.timeline.length, spouseAge: npcAge(spouseNpc()), sibling: lineageHeirs()[1].name})`);
+  assert(run(ctx, `succeedAs(lineageHeirs()[0].id)`), 'no se pudo seguir con el heredero');
+  const st = run(ctx, `(function(){ const c = STATE.character; return {over:STATE.gameOver, started:STATE.started, name:c.nombre, sur:c.apellido, age:c.edad, g:c.genero, job:c.profesion, civil:c.estadoCivil,
+    money:c.cash + c.bank, house:!!c.vivienda, props:(c.properties||[]).length, year:calendarYear(), timeline:STATE.world.timeline.length, lives:STATE.lineage.lives.length,
+    parent: (npcById('madre')||{}).alive === false && (npcById('madre')||{}).name, other: npcById('padre') && npcById('padre').alive && npcAge(npcById('padre')), sibling: npcById('hermano1') && npcById('hermano1').name,
+    spouse: !!spouseNpc(), kids: childrenNpcs().length, seq: STATE.pathway.sequence, clue: STATE.pathway.clues.some(x=>x.truth==='moon' && x.reliability==='real'),
+    ch: itemsByCat('characteristic').some(it=>it.pathway==='moon' && it.seq===7), mirror: itemsByCat('artifact').some(it=>it.def==='mirror'), loan: itemsByCat('artifact').some(it=>it.loan),
+    diary: inventoryItems().some(it=>it.def==='book_family_diary' && it.read && it.read.clue && it.read.clue.pathway==='moon'), formula: hasFormula('moon', 6), journal: STATE.journal[0] && STATE.journal[0].title}; })()`);
+  assert(!st.over && st.started && st.sur === 'Vane' && st.age === 28, 'el heredero no quedó bien armado: ' + JSON.stringify(st));
+  assert(st.year === before.year && st.timeline === before.timeline && st.lives === 1, 'el mundo no siguió igual: ' + JSON.stringify({st, before}));
+  assert(st.parent && st.other === before.spouseAge && st.sibling === before.sibling, 'la familia no se reacomodó: ' + JSON.stringify(st));
+  assert(st.money === 3600 && st.house && st.props === 1 && st.job === 'Médico/a', 'la herencia no llegó: ' + JSON.stringify(st));
+  assert(st.spouse && st.kids === 2 && st.civil === 'Casado/a', 'la familia propia del heredero no aparece: ' + JSON.stringify(st));
+  assert(st.seq === null && st.clue && st.ch && st.mirror && !st.loan && st.diary && st.formula && st.journal === 'El legado', 'el baúl, el diario o lo que sabía no llegaron: ' + JSON.stringify(st));
+  // Leer el diario enseña algo de la vía (y del Método de Actuación).
+  run(ctx, `seasonStart(); readItem(inventoryItems().find(it=>it.def==='book_family_diary').uid);`);
+  assert(run(ctx, `STATE.pathway.actingMethodProgress > 0 || STATE.pathway.actingMethod > 0`), 'el diario no enseñó nada del Método');
+  // Guardar y recargar.
+  run(ctx, `saveGame(true)`);
+  const ctx2 = fresh(storage);
+  assert(run(ctx2, `loadGame() && STATE.lineage.lives.length === 1 && STATE.character.edad === 28 && !!npcById('hermano1')`), 'la partida del heredero no se recarga');
+  // Una tercera generación: la segunda también puede cerrar su vida y dejarla.
+  run(ctx, `(function(){ STATE.character.edad = 64; STATE.pendingEvent = null; STATE.combat = null; STATE.pendingMission = null; })()`);
+  assert(run(ctx, `closeLifeAvailable().ok`), 'no se puede cerrar la vida a los 64');
+  run(ctx, `closeLife()`);
+  assert(run(ctx, `STATE.gameOver && STATE.endingData.meta.cause === 'retiro' && lineageHeirs().length > 0`), 'cerrar la vida no dejó herederos');
+  assert(run(ctx, `inheritancePlan(lineageHeirs()[0]).characteristic === null`), 'quien se retira deja su Característica');
+  assert(run(ctx, `succeedAs(lineageHeirs()[0].id) && STATE.lineage.lives.length === 2 && [npcById('padre'), npcById('madre')].some(n=>n && n.lifeState === 'lejos') && !!npcById('abuela')`), 'la tercera generación no quedó bien');
+  // A los 30 no se puede cerrar una vida.
+  run(ctx, `STATE.character.edad = 30;`);
+  assert(!run(ctx, `closeLifeAvailable().ok`), 'se puede cerrar una vida a los 30');
+});
+
 console.log(`\n${passed} escenarios OK, ${failed} con fallas.`);
 if(failed) process.exitCode = 1;

@@ -94,6 +94,9 @@ function analyzeLife(category, meta){
   const P = [];
   const facts = [];
   const him = gx('él','ella','elle');
+  // Quien cierra su vida no muere: se retira del mundo (systems/lineage.js).
+  const gone = !!(meta && meta.cause === 'retiro');
+  const died = gone ? 'Se retiró' : 'Murió';
   // Muerte natural: la escena final depende de quién queda.
   const kids = childrenNpcs();
   const aliveKids = kids.filter(n=>n.alive);
@@ -135,14 +138,14 @@ function analyzeLife(category, meta){
   facts.push({k:'Familia', v: kids.length ? `${kids.length} hijo(s)` + (c.grandchildren ? `, ${c.grandchildren} nieto(s)` : '') : (spouse ? 'Pareja, sin hijos' : 'Sin familia propia')});
   // 3. Reputación y trabajo.
   const rep = c.reputation;
-  P.push(rep >= 60 ? `Su nombre se decía con respeto en ${c.ciudad}.` : rep >= 25 ? 'Era alguien conocido y bien considerado en su barrio.' : rep >= -10 ? 'Pasó por el mundo sin hacer demasiado ruido.' : rep >= -40 ? 'Su nombre tenía mala fama, y algo de eso era merecido.' : 'Muchos se alegraron, en voz baja, al saber que había muerto.');
+  P.push(rep >= 60 ? `Su nombre se decía con respeto en ${c.ciudad}.` : rep >= 25 ? 'Era alguien conocido y bien considerado en su barrio.' : rep >= -10 ? 'Pasó por el mundo sin hacer demasiado ruido.' : rep >= -40 ? 'Su nombre tenía mala fama, y algo de eso era merecido.' : (gone ? 'Muchos se alegraron, en voz baja, al saber que se había ido.' : 'Muchos se alegraron, en voz baja, al saber que había muerto.'));
   if(c.profesion && c.profesion !== 'Desempleado') facts.push({k:'Profesión', v:c.profesion});
   // 4. Dinero.
   const net = c.cash + c.bank - c.debt + (c.vivienda ? housePrice() : 0);
   const start = {Baja:0, Media:1, Alta:2}[STATE.flags.startClass || c.clase] ?? 1;
   const end = net >= 20000 ? 2 : net >= 2500 ? 1 : 0;
-  if(end > start) P.push('Murió con más de lo que tuvo al nacer.');
-  else if(end < start) P.push('Murió con menos de lo que tuvo al nacer.');
+  if(end > start) P.push(`${died} con más de lo que tuvo al nacer.`);
+  else if(end < start) P.push(`${died} con menos de lo que tuvo al nacer.`);
   if(c.debt > 0) P.push(`Dejó deudas: ${fmtMoney(c.debt)} que alguien más tuvo que pagar.`);
   facts.push({k:'Patrimonio', v: net >= 0 ? fmtMoney(net) : `Deudas por ${fmtMoney(-net)}`});
   // 5. Relaciones.
@@ -161,7 +164,7 @@ function analyzeLife(category, meta){
   const members = FACTION_KEYS.filter(k=>F(k).relationship==='miembro' || F(k).joined);
   members.forEach(k=>{ const f = F(k), d = FACTIONS_DATA[k]; P.push(`Perteneció a ${factionName(k)}${f.rank ? `, donde llegó a ${d.ranks[f.rank]}` : ''}.`); });
   const hunted = huntingFactions();
-  if(hunted.length) P.push(`${cap(factionShort(hunted[0]))} lo buscaba todavía cuando murió.`.replace(' lo buscaba', gx(' lo buscaba',' la buscaba',' le buscaba')));
+  if(hunted.length) P.push(`${cap(factionShort(hunted[0]))} lo buscaba todavía cuando ${gone ? 'se retiró' : 'murió'}.`.replace(' lo buscaba', gx(' lo buscaba',' la buscaba',' le buscaba')));
   if(STATE.tarot.stage >= 6) P.push(`En la niebla gris, se sentaba a la mesa de bronce como "${STATE.tarot.card}".`);
   // 8. Secretos.
   const forb = (STATE.lore.forbidden||[]).length + (STATE.lore.entity||[]).length;
@@ -191,7 +194,7 @@ function analyzeLife(category, meta){
   if(pacts.length) P.push(`Hizo ${pacts.length === 1 ? 'un pacto' : 'pactos'} de los que no se habla. El último lo recordaba así: “${pacts[pacts.length-1].text}”`);
   const saved = STATE.flags.secondChancesUsed || 0;
   if(saved){
-    const coda = category === 'negative' ? ' La última vez ya no volvió.' : category === 'natural' ? ' Al final, la muerte vino sin apuro, como viene para cualquiera.' : '';
+    const coda = category === 'negative' ? ' La última vez ya no volvió.' : gone ? ' Al final, se fue por su cuenta.' : category === 'natural' ? ' Al final, la muerte vino sin apuro, como viene para cualquiera.' : '';
     P.push((saved === 1 ? 'Una vez estuvo del otro lado y volvió. Nunca contó qué había visto.' : `Volvió de la muerte ${saved} veces.`) + coda);
   }
   if(c.stats.killed >= 3) P.push('Mató más de una vez. No siempre le pesó.');

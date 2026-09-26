@@ -53,17 +53,19 @@ function readItem(uidv){
   if(timeBlocked()) return;
   const it = itemByUid(uidv); if(!it) return;
   const d = ITEM_DEFS[it.def];
-  if(!d || !d.read){ toast('No hay nada más que sacarle a esto leyendo.', 'neg'); return; }
+  // Un ejemplar puede traer su propia lectura (el diario de familia, por ejemplo).
+  const r = it.read || (d && d.read);
+  if(!r){ toast('No hay nada más que sacarle a esto leyendo.', 'neg'); return; }
   if(STATE.character.edad < 10){ toast('Todavía no entendés lo que dice.', 'neg'); return; }
   if(it.readCount >= 2){ toast('Ya lo leíste hasta el cansancio. No hay más.', 'neg'); return; }
   if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }
   it.readCount = (it.readCount||0) + 1; markMysticAct();
   const before = snapshotForChanges();
-  const r = d.read;
   if(r.clue) applyEffects({clue: Object.assign({}, r.clue, {strength: it.readCount>1 ? [1,3] : r.clue.strength})});
   if(r.sanity) applyEffects({sanity:r.sanity});
   if(r.attention) raiseAttention(r.attention);
   if(r.lore && chance(r.lore.chance)){ const pool = lorePool(r.lore.cat).filter(id=>!knowsLore(id)); if(pool.length) learnLore(pick(pool), it.name); }
+  if(r.acting && it.readCount === 1) nudgeActingMethod(r.acting, it.name);
   const text = it.readCount > 1 ? `Releés ${it.name.toLowerCase()}. Encontrás un par de cosas que se te habían pasado.` : `Leés ${it.name.toLowerCase()} con atención, de noche, a la luz de una vela.`;
   logJournal('Lectura', text, {cat:'mystery'});
   setResolution('Lectura', text, diffForDisplay(before));
@@ -120,7 +122,7 @@ function itemActions(it){
   const d = ITEM_DEFS[it.def];
   if(it.cat === 'artifact') return artifactActions(it);
   const noTime = !canSpendFreeTime(1);
-  if(d && d.read && (it.readCount||0) < 2) acts.push({id:'read', label: it.readCount ? 'Releer' : 'Leer', small:'1 tiempo libre.', disabled: noTime || STATE.character.edad < 10, why: STATE.character.edad < 10 ? 'Todavía no lo entenderías.' : 'Sin tiempo libre.'});
+  if((it.read || (d && d.read)) && (it.readCount||0) < 2) acts.push({id:'read', label: it.readCount ? 'Releer' : 'Leer', small:'1 tiempo libre.', disabled: noTime || STATE.character.edad < 10, why: STATE.character.edad < 10 ? 'Todavía no lo entenderías.' : 'Sin tiempo libre.'});
   if(d && d.consumable) acts.push({id:'use', label:'Usar', small:d.uses});
   if(it.def === 'tarot_card' && !it.studied) acts.push({id:'study_card', label:'Estudiar la carta', small:'1 tiempo libre.', disabled:noTime, why:'Sin tiempo libre.'});
   if(it.def === 'quest_notebook'){
