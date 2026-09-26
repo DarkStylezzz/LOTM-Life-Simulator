@@ -10,6 +10,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 
 - **Dificultad:** *Fácil* (para vivir la historia: más pistas, heridas más leves, pociones más nobles y hasta tres segundas oportunidades cuando una muerte evitable llega), *Normal*, *Difícil* o *Pesadilla*. Se elige al nacer y se puede cambiar en cualquier momento desde **Opciones**.
 - **Avanzar el tiempo:** un mes, hasta fin de la temporada, o *hasta que pase algo*. El tiempo se detiene solo ante cualquier decisión, combate, ritual, muerte o revelación.
+- **Linaje:** cuando una vida termina, la historia puede seguir con un hijo o una hija. Desde los 60 años también podés cerrar tu vida cuando quieras (**Personas → Tu linaje → Cerrar esta vida**).
 - **Tiempo libre:** cada temporada tenés un poco (depende de tu edad, tu trabajo, tu familia). Investigar, actuar tu papel, explorar, colaborar con una organización o pasar tiempo con alguien lo consumen. No hay grind: no se puede hacer todo.
 - **Teclado:** `1`–`6` cambian de sección (o eligen una opción si hay una escena abierta), `M` un mes, `T` fin de temporada, `I` hasta algo importante, `?` ayuda, `Esc` cierra ventanas.
 
@@ -33,6 +34,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 | Tarot Club | Rumores → pruebas que no sabés que son pruebas → invitación → reuniones. Un Beyonder termina oyendo hablar del club aunque no lo busque, y cuando el Loco decide invitarte, la invitación llega. |
 | Mundo | Nueve ciudades vivas —Backlund, Tingen, Bayam, Pritz Harbor, un pueblo sin nombre, Trier (Intis), Constant, Enmat Harbor y Balam Oriental—, cada una con su economía, sus facciones, sus oficios, sus lugares para explorar, sus rumores, sus eventos y (en Trier) sus nombres. Historia del mundo libre, canon o alternativa, y la atención del mundo oculto. |
 | La segunda mitad de la vida | Padres que cuidar, hijos en problemas, amigos que se mueren primero, traslados, inversiones, testamento, nietos, confesiones… y, para los Beyonders, no envejecer al ritmo de los demás. De la Sequence 6 hacia arriba: la convergencia, los que te estudian, alguien que te reza, el tiempo que pasa distinto, algo más grande que te mira. |
+| Linaje | Al final de una vida, si tenés hijos vivos, podés seguir como cualquiera de ellos, con su edad, su trabajo y su propia familia. El mundo sigue igual: el mismo año, la misma ciudad, las mismas organizaciones y la historia del mundo. El heredero recibe su parte de la herencia según el testamento (quien queda viudo se queda con una parte y, si lo pediste, otra va a la caridad), la casa y las propiedades, el baúl de la familia (libros, fórmulas, ingredientes y artefactos: lo prestado vuelve a su dueño y la carta del Tarot no se hereda), tu diario (que enseña algo de lo que sabías, incluido el Método de Actuación) y, si eras Beyonder, tu Característica, salvo que se la haya llevado quien te mató, la Iglesia o la niebla. Lo que sabías no se hereda, salvo que el heredero supiera lo que eras. El apellido pesa: la gente y las organizaciones que te conocían miran distinto a tu familia. Tus antepasados, con sus biografías, quedan en **Personas → Tu linaje**. Desde los 60 años podés cerrar tu vida sin morir: te retirás del mundo y la historia pasa a tu familia. |
 | Economía e inventario | Sueldo, gastos, banco, deuda con cuotas, vivienda, propiedades, inflación. Inventario por categorías con procedencia, usos y riesgos. |
 | Artefactos sellados | Veinte objetos con grado, efectos, contras, activación, comportamiento oculto, origen y a veces dueño anterior o ciudad de origen. |
 | Anclas | Ocultas hasta la Sequence 5; sostienen la cordura y la humanidad. |
@@ -71,7 +73,7 @@ tests/          pruebas sin navegador y en navegador
 Requieren Node 18+ (y Playwright para la de navegador).
 
 ```
-node tests/scenarios.js      # 26 escenarios dirigidos: el ascenso, el combate, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
+node tests/scenarios.js      # 27 escenarios dirigidos: el ascenso, el combate, el linaje, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
 node tests/simulate.js 40    # 40 vidas completas con un "jugador" automático: errores, bloqueos, estado serializable y balance
 node tests/simulate.js 10 --ui   # lo mismo, dibujando todas las pestañas con un DOM simulado
 node tests/simulate.js 40 --diff=easy --style=dedicado --funnel
@@ -80,15 +82,17 @@ node tests/simulate.js 40 --diff=easy --style=dedicado --funnel
                              # rituales se intentan y cuántos salen bien, y en qué Sequence se muere peleando)
 node tests/simulate.js 40 --style=mixto --combat
                              # cuánto se pelea y cuánto se muere: por etapa, enemigo, origen y salud al empezar
+node tests/simulate.js 30 --lineage
+                             # cuando una vida termina, sigue con un heredero (hasta cuatro generaciones)
 node tests/simulate.js 40 --events
                              # qué eventos pasaron en alguna vida jugada "de verdad" y cuáles nunca
 node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor,
                              # en nueve estados de vida, y avisa qué eventos no pudo disparar nunca
-node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil y una partida v7 migrada
+node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil, una partida v7 migrada y el linaje
 ```
 
 ## Partidas guardadas
 
 `SAVE_VERSION = 8`. Las partidas de versiones anteriores (v6 y v7) se migran solas al cargarlas (`migrateSave` en `systems/save.js`): se conservan personaje, memoria, diario, hitos, NPCs, dinero, vía, Sequence, conocimiento (convertido en pistas), ingredientes, libros y artefactos. Una decisión o un encargo que haya quedado abierto se reabre si esa misma escena existe en esta versión; sólo se pierden las prácticas de actuación y los rituales a medio hacer (cambiaron por completo), con una nota en el diario. Un combate en curso se retoma si el enemigo existe en la versión nueva.
 
-Las partidas v8 ya empezadas reciben solas el contenido nuevo (ciudades, eventos, encargos, artefactos) y se reparan al cargar: si quedaron atrapadas en la "guerra corta" del mundo libre, que antes no terminaba nunca, la paz queda agendada. Con el ascenso simplificado, una poción que ya estaba preparada cuenta como requisito cumplido, una preparación a medio hacer se termina como antes y un ritual de Advancement que haya quedado abierto con la versión anterior (de cinco pasos) se cierra solo al retomarlo.
+Las partidas v8 ya empezadas reciben solas el contenido nuevo (ciudades, eventos, encargos, artefactos) y se reparan al cargar: si quedaron atrapadas en la "guerra corta" del mundo libre, que antes no terminaba nunca, la paz queda agendada. Con el ascenso simplificado, una poción que ya estaba preparada cuenta como requisito cumplido, una preparación a medio hacer se termina como antes y un ritual de Advancement que haya quedado abierto con la versión anterior (de cinco pasos) se cierra solo al retomarlo. Con el linaje, las partidas en curso reciben su historia familiar vacía y pueden seguir con un heredero cuando la vida termine; `SAVE_VERSION` sigue en 8.

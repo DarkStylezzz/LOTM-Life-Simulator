@@ -3,8 +3,9 @@
    tests/ui-smoke.js — prueba de humo en un navegador real (Playwright).
    Abre index.html por file://, crea un personaje con el teclado y el mouse,
    juega varias décadas tocando botones reales (escenas, pestañas, acciones),
-   guarda, recarga la página y sigue. Falla ante cualquier error de página o
-   de consola. Saca capturas en escritorio y en móvil.
+   guarda, recarga la página y sigue. También abre una partida v7 y recorre el
+   linaje (cerrar una vida, elegir heredero, seguir y recargar). Falla ante
+   cualquier error de página o de consola. Saca capturas en escritorio y en móvil.
    Uso:  node tests/ui-smoke.js [--shots=carpeta] [--steps=N]
    ========================================================================= */
 const path = require('path');
@@ -123,9 +124,66 @@ async function runMigrated(){
   await browser.close();
   return {label:'migrada', errors, end:info, stats:{scenes:0,tabs:0,actions:0,advances:30}, reloaded:false};
 }
+// El linaje, con clicks reales: cerrar una vida a los 64, elegir heredero,
+// seguir jugando, leer la historia de quien vino antes y recargar.
+async function runLineage(){
+  const browser = await chromium.launch();
+  const page = await browser.newPage({viewport:{width:1280, height:800}});
+  const errors = [];
+  page.on('pageerror', e=>errors.push('pageerror: ' + e.message));
+  page.on('console', m=>{ if(m.type()==='error' && !/fonts\.g/.test(m.text())) errors.push('console: ' + m.text()); });
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, r=>r.fulfill({status:200, contentType:'text/css', body:''}));
+  await page.goto(URL);
+  await page.waitForSelector('#intro-content .btn-primary');
+  for(let i=0;i<4;i++) await page.click('[data-act="intro-next"]');
+  await page.click('[data-act="intro-start"]');
+  await page.waitForSelector('#screen-game:not(.hidden)');
+  const settle = ()=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
+  await page.evaluate(()=>{
+    const c = STATE.character; c.edad = 64; c.cash = 2000; c.bank = 6000;
+    STATE.pendingEvent = null; STATE.pendingMission = null; STATE.combat = null; STATE.pendingSeals = [];
+    const s = createNpc({gender: c.genero === 'Hombre' ? 'f' : 'm', relType:'acquaintance', age:62, met:true, trust:60, affection:70}); marryPartner(s, true);
+    const a = birthChild(); a.ageOffset = -34; const b = birthChild(); b.ageOffset = -40;
+    addArtifact('mirror', 'x'); seasonStart(); UI.tab = 'personas'; UI.npcSel = null; renderNow();
+  });
+  await settle();
+  const info = {};
+  try{
+    await page.locator('#sidebar [data-act="tab"][data-id="personas"]').first().click().catch(()=>{});
+    await page.locator('#content [data-act="close-life"]').click();
+    await page.locator('[data-act="modal-confirm"]').click();
+    await page.waitForSelector('#screen-end:not(.hidden)', {timeout:5000});
+    info.heirs = await page.locator('.heir-card').count();
+    if(info.heirs !== 2) errors.push('la pantalla final muestra ' + info.heirs + ' herederos (se esperaban 2)');
+    await page.locator('.heir-card [data-act="lineage-continue"]').first().click();
+    await page.waitForSelector('#screen-game:not(.hidden)', {timeout:5000});
+    Object.assign(info, await page.evaluate(()=>({gen: STATE.lineage.lives.length + 1, name: STATE.character.nombre, age: STATE.character.edad, over: STATE.gameOver})));
+    if(info.gen !== 2 || info.over || info.age !== 30) errors.push('el heredero no quedó en juego: ' + JSON.stringify(info));
+    await page.locator('#sidebar [data-act="tab"][data-id="personas"]').first().click();
+    await settle();
+    if(!(await page.locator('#content .ancestors li').count())) errors.push('Personas no muestra el linaje');
+    await page.locator('#content [data-act="lineage-bio"]').first().click();
+    await page.locator('.modal-box [data-act="modal-close"]').first().click();
+    for(let i=0;i<12;i++){
+      await settle();
+      if(await page.locator('[data-act="seal-dismiss"]').count()){ await page.locator('[data-act="seal-dismiss"]').click(); continue; }
+      const blocked = await page.evaluate(()=>timeBlocked());
+      if(blocked){ const n = await page.locator('#content .choice-btn:not([disabled])').count(); if(n) await page.locator('#content .choice-btn:not([disabled])').first().click(); continue; }
+      await page.locator('#sidebar [data-act="tab"][data-id="vida"]').first().click();
+      if(await page.locator('[data-act="advance"][data-mode="season"]').count()) await page.locator('[data-act="advance"][data-mode="season"]').click();
+    }
+    await page.reload();
+    await page.waitForSelector('#screen-game:not(.hidden)', {timeout:5000});
+    info.reloaded = await page.evaluate(()=>STATE.lineage.lives.length === 1 && !STATE.gameOver);
+    if(!info.reloaded) errors.push('después de recargar, el linaje no está');
+  }catch(e){ errors.push('linaje: ' + e.message.split('\n')[0]); }
+  await browser.close();
+  return {label:'linaje', errors, end:info, stats:{scenes:0,tabs:2,actions:3,advances:12}, reloaded:!!info.reloaded};
+}
 (async()=>{
   const results = [];
   results.push(await runMigrated());
+  results.push(await runLineage());
   results.push(await run({width:1440, height:900}, 'escritorio'));
   results.push(await run({width:390, height:844}, 'movil'));
   let bad = 0;

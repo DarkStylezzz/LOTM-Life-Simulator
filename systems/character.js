@@ -70,6 +70,7 @@ function startNewGame(){
   });
   STATE.flags.startClass = c.clase;
   STATE.time.startYear = STATE.settings.world === 'libre' ? rndInt(1300, 1345) : rndInt(1322, 1330);
+  c.birthYear = STATE.time.startYear;
   const cashByClass = {Baja:[50,180], Media:[300,900], Alta:[2200,6500]};
   const [cMin,cMax] = cashByClass[c.clase];
   const tm = computeTraitMods(c.rasgos);

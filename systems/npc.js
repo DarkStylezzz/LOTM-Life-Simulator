@@ -16,7 +16,7 @@
 function npcById(id){ return STATE.npcs.find(n=>n.id===id) || null; }
 function aliveNpcs(){ return STATE.npcs.filter(n=>n.alive); }
 function npcAge(n){ return n.ageOffset === undefined ? 30 : STATE.character.edad + n.ageOffset; }
-function isFamilyNpc(n){ return ['padre','madre','conyuge','pareja'].includes(n.id) || n.id.startsWith('hijo') || n.id.startsWith('hermano'); }
+function isFamilyNpc(n){ return ['padre','madre','conyuge','pareja','abuelo','abuela'].includes(n.id) || n.id.startsWith('hijo') || n.id.startsWith('hermano') || /^tio\d+$/.test(n.id); }
 function childrenNpcs(){ return STATE.npcs.filter(n=>n.id.startsWith('hijo')); }
 function spouseNpc(){ return STATE.npcs.find(n=>n.id==='conyuge' && n.alive) || null; }
 function partnerNpc(){ return STATE.npcs.find(n=>n.id==='pareja' && n.alive) || null; }

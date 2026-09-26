@@ -50,6 +50,12 @@ const ITEM_DEFS = {
     desc:'Hechizos a medio escribir, con páginas arrancadas justo donde se ponía interesante.',
     uses:'Leerlo (1 tiempo libre). Puede enseñar algo que no se puede olvidar.', risk:'Saber prohibido: Cordura y Corrupción.',
     read:{clue:{pathway:['hermit','whiteTower','hangedMan'], reliability:'mixed', strength:[5,9], source:'un grimorio incompleto'}, lore:{cat:'forbidden', chance:0.35}, sanity:[-5,-2]}},
+  // El diario de quien te dejó el linaje: lo que enseña depende de lo que
+  // esa persona sabía (cada ejemplar trae su propio "read", ver systems/lineage.js).
+  book_family_diary:{cat:'book', name:'Un diario de familia', rarity:'raro',
+    desc:'Años de anotaciones, con una letra que conocés.',
+    uses:'Leerlo (1 tiempo libre).', risk:'Algunas páginas hablan de cosas que cuesta leer.',
+    read:{sanity:[2,5]}},
   book_herbal:{cat:'book', name:'Manual de botica anotado', rarity:'poco',
     desc:'Un recetario de remedios caseros con notas al margen escritas con tinta roja.',
     uses:'Leerlo (1 tiempo libre).', risk:'Ninguno evidente.',

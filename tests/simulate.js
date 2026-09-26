@@ -7,12 +7,13 @@
    de ejecución, bloqueos, estado no serializable y estadísticas de balance.
    Uso:  node tests/simulate.js [vidas=40] [--ui] [--seed=N] [--verbose]
                                 [--diff=easy|normal|hard|nightmare] [--style=mixto|dedicado|tranquilo]
-                                [--funnel] [--combat] [--events]
+                                [--funnel] [--combat] [--events] [--lineage]
      --ui     carga también la interfaz (ui/*.js + main.js) con el DOM simulado
      --diff   fija la dificultad (por defecto, una al azar entre normal, difícil y pesadilla)
      --events cuántos eventos pasaron en alguna vida, y cuáles nunca
      --funnel el embudo del camino místico y los rituales por Sequence
      --combat cuánto se pelea y cuánto se muere: por etapa, enemigo, origen y salud al empezar
+     --lineage cuando una vida termina, sigue con un heredero (hasta cuatro generaciones)
      --style  cómo juega el "jugador": mixto (un poco de todo), dedicado (vive
               para el mundo oculto: investiga, actúa, explora y avanza apenas
               puede) o tranquilo (una vida común: trabajo, familia, amigos)
@@ -24,6 +25,7 @@ const args = process.argv.slice(2);
 const LIVES = +(args.find(a=>/^\d+$/.test(a)) || 40);
 const WITH_UI = args.includes('--ui');
 const VERBOSE = args.includes('--verbose');
+const LINEAGE = args.includes('--lineage');
 const seedArg = (args.find(a=>a.startsWith('--seed=')) || '').split('=')[1];
 const DIFF = (args.find(a=>a.startsWith('--diff=')) || '').split('=')[1] || '';
 const STYLE = (args.find(a=>a.startsWith('--style=')) || '').split('=')[1] || 'mixto';
@@ -56,6 +58,7 @@ var __STYLES = {
 };
 var __S = __STYLES[${JSON.stringify(STYLE)}] || __STYLES.mixto;
 var STYLE_NAME = ${JSON.stringify(STYLE)};
+var __LINEAGE = ${LINEAGE};
 console.error = function(){ __sim.errors.push({label:'console.error', msg:Array.from(arguments).map(a=>a && a.message ? a.message : String(a)).join(' ').slice(0,200), stack:Array.from(arguments).map(a=>a && a.stack ? a.stack.split('\\n').slice(0,4).join(' | ') : '').join(''), age:STATE.character.edad}); };
 function __tryAct(label, fn){ try{ fn(); }catch(e){ __sim.errors.push({label, msg:String(e && e.message || e), stack:(e && e.stack || '').split('\\n').slice(0,6).join(' | '), age:STATE.character.edad, month:STATE.time.totalMonths}); if(__sim.errors.length > 400) throw e; } }
 function __pickIdx(n){ return Math.floor(Math.random()*n); }
@@ -113,6 +116,8 @@ function __playerTurn(){
   if(timeBlocked()) return;
   const r = Math.random();
   if(isDivine()){ const acts = divineActions(); const a = pick(acts); if(a.id !== 'end' || Math.random() < 0.08) doDivineAction(a.id); return; }
+  // Con el linaje, a veces un viejo (o un semidiós que ya vivió demasiado) cierra su vida y deja su lugar.
+  if(__LINEAGE && c.edad >= 80 && Math.random() < 0.03 && closeLifeAvailable().ok){ closeLife(); return; }
   // Lo primero: si ya está todo para dar el paso (preparar, beber, avanzar), se da.
   // Un jugador de verdad no posterga eso por una tarde de biblioteca (y saca
   // la plata del banco si hace falta).
@@ -257,6 +262,8 @@ function __liveOne(i, maxMonths){
     }
   };
   const t0 = Date.now();
+  let gens = 1;
+  for(;;){
   while(!STATE.gameOver && STATE.time.totalMonths < maxMonths && steps < 20000){
     steps++;
     const before = STATE.time.totalMonths;
@@ -281,6 +288,14 @@ function __liveOne(i, maxMonths){
       });
     }
   }
+  // El linaje: si hay a quién dejarle la historia, sigue con esa persona.
+  if(!__LINEAGE || !STATE.gameOver || gens >= 4 || STATE.time.totalMonths >= maxMonths || steps >= 20000) break;
+  const hs = lineageHeirs(); if(!hs.length) break;
+  let ok = false;
+  __tryAct('lineage', ()=>{ ok = succeedAs(pick(hs).id); const bad = __checkSerializable(); if(bad.length) __sim.errors.push({label:'serialize', msg:'funciones en STATE después del linaje: '+bad.slice(0,4).join(', ')}); });
+  if(!ok || STATE.gameOver) break;
+  gens++;
+  }
   const c = STATE.character, p = STATE.pathway;
   return {i, age:c.edad, months:STATE.time.totalMonths, over:STATE.gameOver, cat:STATE.endingData&&STATE.endingData.category, title:STATE.endingData&&STATE.endingData.title,
     cause: STATE.endingData && STATE.endingData.meta && STATE.endingData.meta.cause, enemy: STATE.endingData && STATE.endingData.meta && STATE.endingData.meta.enemy, csrc: STATE.endingData && STATE.endingData.meta && STATE.endingData.meta.source, beyonder:!!p.chosenPathway, seq:p.sequence, pathway:p.chosenPathway,
@@ -289,14 +304,14 @@ function __liveOne(i, maxMonths){
     journal: STATE.journal.length, steps, reloads, ms: Date.now()-t0, diff: STATE.settings.difficulty, world: STATE.settings.world,
     attention: Math.round(STATE.world.attention), corruption: c.corruption, sanity: c.sanity, factions: memberFactions().join('/'), combats: c.stats.combatsWon + c.stats.combatsFled,
     seqAge, funnel, rituals: __rituals.slice(), fights: __fights.map(f=>Object.assign({}, f, {res: f.res || (STATE.gameOver ? 'otro final' : 'abierta')})),
-    stageMonths: Object.assign({}, __stageMonths), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey(), fired: Object.keys(STATE.eventHistory) };
+    stageMonths: Object.assign({}, __stageMonths), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey(), fired: Object.keys(STATE.eventHistory), gens };
 }
 `);
 
 const results = [];
 for(let i=0;i<LIVES;i++){
   let r;
-  try{ r = run(ctx, `__liveOne(${i}, 12*120)`); }
+  try{ r = run(ctx, `__liveOne(${i}, 12*${LINEAGE ? 300 : 120})`); }
   catch(e){ console.error('La vida', i, 'explotó:', e.stack); process.exitCode = 1; break; }
   results.push(r);
   if(VERBOSE) console.log(JSON.stringify(r));
@@ -344,6 +359,10 @@ if(args.includes('--combat')){
   table('Peleas por enemigo:', f=>f.name);
   table('Peleas por origen:', f=>f.src || '(sin origen)');
   table('Peleas por salud al empezar:', f=>f.salud < 40 ? 'menos de 40' : f.salud < 70 ? '40 a 69' : '70 o más');
+}
+if(LINEAGE){
+  const g = results.map(r=>r.gens||1);
+  console.log(`Linaje: ${(g.reduce((a,b)=>a+b,0)/n).toFixed(1)} generaciones por partida (máx ${Math.max(...g)}) · ${results.filter(r=>(r.gens||1) > 1).length} de ${results.length} siguieron con un heredero`);
 }
 const savedLives = results.filter(r=>r.saved > 0).length;
 if(savedLives) console.log(`Segundas oportunidades usadas: ${results.reduce((a,r)=>a+r.saved,0)} en ${savedLives} vidas`);
