@@ -43,9 +43,38 @@ function __setup(kind){
   ['s_street','black_market','tarot_fool','e_creator','f_outer'].forEach(id=>learnLore(id,'fuzz'));
   FACTION_KEYS.forEach(k=>{ factionMeet(k); F(k).access = 3; F(k).merit = 30; F(k).trust = 30; });
   if(kind === 'mayor' || kind === 'viejo'){ F('church').relationship = 'miembro'; F('church').joined = true; }
+  if(kind === 'viejo'){
+    // Una vida larga: su propia organización, un discípulo, bisnietos y el mundo en otra época.
+    STATE.org = {name:'La Sociedad de la Lámpara', kind:pick(ORG_KIND_KEYS), founded:calendarYear()-20, founderGen:1, founder:'Ana Vane', members:40, peak:40,
+      influence:50, secrecy:40, treasury:500, inner:[], cities:[currentCityKey()], lastAct:0, lastTick:0, exposures:0, sponsor:null};
+    addOrgInner(); addOrgInner();
+    __makeDisciple(60);
+    c.grandchildren = 3; c.greatGrandchildren = 2; STATE.world.era = 2;
+  }
   createMysticContact({pathway:'death'}); createNpc({met:true, trust:40, affection:40});
   addArtifact(pick(ARTIFACT_KEYS), 'fuzz'); addItem('quest_notebook',1,'fuzz');
   seasonStart(); STATE.pendingSeals = [];
+}
+function __makeDisciple(loyalty){
+  const p = STATE.pathway;
+  const n = createNpc({met:true, trust:70, affection:60, loyalty, age:25, allowHidden:false});
+  n.disciple = {since:calendarYear()-5, pathway:p.chosenPathway, progress:40, lessons:8, lastTaught:-99, aptitude:1, quality:60};
+  n.hidden.pathway = p.chosenPathway; n.hidden.sequence = 8; n.knows.beyonder = true;
+  return n;
+}
+// Una vida larga se gasta (allanamientos, cismas, discípulos que se van o traicionan):
+// antes de cada evento se repone, para que cada escena y cada opción se puedan probar.
+function __legacyRefresh(def){
+  const o = STATE.org || (STATE.org = {name:'La Sociedad de la Lámpara', kind:'sociedad', founded:calendarYear()-20, founderGen:1, founder:'Ana Vane', members:40, peak:40,
+    influence:50, secrecy:40, treasury:500, inner:[], cities:[currentCityKey()], lastAct:0, lastTick:0, exposures:0, sponsor:null});
+  const tags = def.tags || [];
+  if(tags.includes('culto')) o.kind = 'culto'; else if(tags.includes('orden')) o.kind = 'orden';
+  o.members = Math.max(o.members, 40); o.peak = Math.max(o.peak, o.members); o.influence = 50; o.secrecy = 40; o.sponsor = null;
+  o.inner = (o.inner||[]).filter(id=>{ const n = npcById(id); return n && n.alive && n.lifeState === 'presente'; });
+  while(o.inner.length < 2 && addOrgInner());
+  const ds = disciples().filter(n=>n.lifeState === 'presente' && discipleSeq(n) !== null);
+  if(!ds.some(n=>(n.loyalty||0) >= 30)) __makeDisciple(60);
+  if(!ds.some(n=>(n.loyalty||0) < 30)) __makeDisciple(20);
 }
 function __clear(){ STATE.pendingEvent = null; STATE.pendingMission = null; STATE.combat = null; STATE.ritual = null; STATE.brew = null; if(STATE.divinity) STATE.divinity.asc = null; STATE.gameOver = false; STATE.character.salud = 90; STATE.character.sanity = 80; }
 function __drain(){
@@ -66,6 +95,7 @@ function __fuzzEvents(kind){
     const nChoices = def.choices ? def.choices.length : 1;
     for(let i=0;i<nChoices;i++){
       __clear();
+      if(kind === 'viejo' && STATE.pathway.chosenPathway) __legacyRefresh(def);
       const homeCity = STATE.character.ciudad, homeAge = STATE.character.edad, homeSeq = STATE.pathway.sequence;
       try{
         // Los eventos de una ciudad se prueban mudándose ahí un momento.

@@ -28,7 +28,7 @@ function recomputeAnchors(){
   strength += (pathwayMods().anchorBonus||0);
   strength -= Math.min(25, (a.grief||0));
   a.anchorStrength = clamp(Math.round(strength), 0, 100);
-  a.followers = Math.max(0, Math.round(clamp(c.reputation,0,100)/8 + (STATE.factions.tarotClub.secretRep||0)/15 + (a.followerBonus||0)*2));
+  a.followers = Math.max(0, Math.round(clamp(c.reputation,0,100)/8 + (STATE.factions.tarotClub.secretRep||0)/15 + (a.followerBonus||0)*2 + orgFollowers()));
   // Creencia: sólo la parte buena de la reputación, más quienes te siguen.
   a.belief = clamp(Math.round(clamp(c.reputation,0,100)*0.6 + a.followers*3), 0, 100);
   a.identityStability = clamp(Math.round(a.anchorStrength*0.4 + (100-c.corruption)*0.25 + c.sanity*0.2 + (c.humanity??100)*0.15), 0, 100);

@@ -16,6 +16,7 @@ function renderPeople(){
   const take = (f)=>all.filter(n=>!used.has(n.id) && f(n)).map(n=>{ used.add(n.id); return n; });
   const groups = [
     ['Familia', take(n=>n.alive && isFamilyNpc(n) && n.lifeState !== 'desaparecido')],
+    ['Tus discípulos', take(n=>n.alive && n.disciple && n.lifeState !== 'desaparecido')],
     ['Cerca tuyo', take(n=>n.alive && n.lifeState==='presente' && bondScore(n) >= 45)],
     ['Del otro lado del velo', take(n=>n.alive && n.lifeState==='presente' && ((n.known.pathway && n.hidden.pathway) || n.flags.mysticContact))],
     ['Tensiones', take(n=>n.alive && n.lifeState==='presente' && (n.fear >= 50 || n.suspicion >= 50 || n.flags.rival))],
@@ -43,13 +44,13 @@ function lineagePeopleSection(){
   if(c.edad >= CLOSE_LIFE_MIN_AGE && !isDivine()){
     const av = closeLifeAvailable(), heirs = lineageHeirs().length;
     if(!lives.length) out.push(sec('Tu linaje'));
-    out.push(`<div class="action-grid compact">${actionButton({label:'Cerrar esta vida', small: heirs ? 'Te retirás del mundo y la historia sigue con alguien de tu familia.' : 'Te retirás del mundo. La historia termina acá.', disabled:!av.ok, why:av.why}, 'close-life')}</div>`);
+    out.push(`<div class="action-grid compact">${actionButton({label:'Cerrar esta vida', small: heirs ? `Te retirás del mundo y la historia sigue con ${heirsWord()}.` : 'Te retirás del mundo. La historia termina acá.', disabled:!av.ok, why:av.why}, 'close-life')}</div>`);
   }
   return out.join('');
 }
 onAct('close-life', ()=>confirmModal(lineageHeirs().length
-  ? 'Te retirás del mundo: la biografía se escribe y podés elegir con quién de tu familia sigue la historia.'
-  : 'Te retirás del mundo: la biografía se escribe y esta historia termina. No tenés hijos que la sigan.', ()=>closeLife(), {yes:'Cerrar esta vida', title:'Cerrar esta vida'}));
+  ? `Te retirás del mundo: la biografía se escribe y podés elegir si la historia sigue con ${heirsWord()}.`
+  : 'Te retirás del mundo: la biografía se escribe y esta historia termina. No tenés hijos ni discípulos que la sigan.', ()=>closeLife(), {yes:'Cerrar esta vida', title:'Cerrar esta vida'}));
 function npcRow(n){
   const age = n.alive ? npcAgeText(n) : (n.deathYear ? `murió en ${n.deathYear}` : 'murió');
   const hidden = npcHiddenLine(n);
@@ -120,8 +121,18 @@ function npcKnownBlock(n){
   if(hidden) bits.push(`<li>${hidden}</li>`);
   (n.secrets||[]).filter(s=>s.known).forEach(s=>bits.push(`<li>${tierMark('objective')} ${esc(s.text)}</li>`));
   if(n.knows && n.knows.beyonder) bits.push(`<li>${tierMark('objective')} Sabe lo que sos.</li>`);
+  if(n.disciple && n.alive) bits.push(`<li>${tierMark('objective')} ${esc(discipleLine(n))}</li>`);
   if(STATE.anchors.revealed && STATE.anchors.people.includes(n.id)) bits.push(`<li>⚓ Es una de tus anclas.</li>`);
   return `<ul class="known-list">${bits.join('')}</ul>`;
+}
+// Cómo va tu discípulo, en palabras (con números si están activados).
+function discipleLine(n){
+  const d = n.disciple, s = discipleSeq(n), t = discipleTarget(n), need = discipleNeed(t);
+  const where = s === null ? `Es tu ${discipleWord(n)} desde ${d.since}. Todavía no tomó su primera poción.` : `Es tu ${discipleWord(n)} desde ${d.since}. Sequence ${s} de tu vía.`;
+  if(!discipleCanReach(t)) return `${where} Ya no podés ${ng(n, 'llevarlo', 'llevarla')} más lejos: la próxima poción de su camino es la tuya.`;
+  const r = d.progress / need;
+  const how = r >= 1 ? `Está ${ng(n, 'listo', 'lista')} para dar el paso.` : r >= 0.7 ? 'Está cerca del próximo paso.' : r >= 0.3 ? 'Avanza.' : 'Le falta mucho para el próximo paso.';
+  return `${where} ${how}${STATE.settings.showNumbers ? ` (${Math.min(d.progress, need)}/${need})` : ''}`;
 }
 function relNumbers(n){
   return `<div class="rel-grid">${RELATION_DIMS.map(k=>`<div class="rel-dim"><span>${esc(RELATION_LABEL[k])}</span><div class="bar"><div style="width:${n[k]||0}%"></div></div><b>${Math.round(n[k]||0)}</b></div>`).join('')}</div>`;

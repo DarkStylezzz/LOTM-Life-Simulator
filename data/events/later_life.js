@@ -211,6 +211,13 @@ const EVENTS_LATER = [
         run:()=>{ const kids = childrenNpcs().filter(k=>k.alive).sort((a,b)=>bondScore(b)-bondScore(a)); STATE.flags.will = 'favorite:' + kids[0].id;
           adjustRel(kids[0], {trust:[4,8]}); kids.slice(1).forEach(k=>adjustRel(k, {trust:[-8,-3]}));
           return `La mayor parte, para ${kids[0].name}. El escribano levanta una ceja. Los demás se van a enterar cuando no puedas explicarles por qué.`; }},
+      {label:'Casi todo para quien aprendió de vos', small:'Quien sigue tu vía, que siga también tu historia.',
+        requires:()=>disciples().length > 0,
+        run:()=>{ const d = disciples().sort((a,b)=>bondScore(b)-bondScore(a))[0];
+          if(!d){ STATE.flags.will = 'equal'; return 'Al final, partes iguales. El escribano no pregunta por qué cambiaste de idea.'; }
+          STATE.flags.will = 'favorite:' + d.id;
+          adjustRel(d, {loyalty:[6,10], trust:[4,8]}); const kids = childrenNpcs().filter(k=>k.alive && !k.disciple); kids.forEach(k=>adjustRel(k, {trust:[-10,-4], affection:[-6,-2]}));
+          return `La mayor parte, para ${d.name}. El escribano pregunta si es de la familia. Le decís que sí, a su manera.${kids.length ? ' Tus hijos se van a enterar cuando no puedas explicarles por qué.' : ''}`; }},
       {label:'Una parte para una obra de caridad', small:'Que sirva para algo más grande.',
         run:()=>{ STATE.flags.will = 'charity'; applyEffects({reputation:[3,7]}); return 'Una parte para el hospital de caridad del barrio, "para la sala del fondo". El escribano lo anota sin preguntar qué es la sala del fondo.'; }},
       {label:'Lo raro, a alguien que sepa qué hacer con eso', small:'Los objetos que no son sólo objetos.',

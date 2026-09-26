@@ -133,6 +133,8 @@ function processMonth(){
   worldAttentionPressure();
   npcTick();
   factionTick();
+  orgTick();
+  disciplesTick();
   tarotTick();
   divinityTick();
   if(!STATE.gameOver) rollMonthlyEvent();
@@ -200,7 +202,7 @@ function advanceSeason(){ return advanceOneSeason(); }
 /* --------------- cupos específicos por temporada (compat) --------------- */
 // Además del tiempo libre (que es lo que de verdad limita), algunas acciones
 // conservan un tope propio para que no se puedan encadenar sin sentido.
-const SEASON_ACTION_LIMITS = { investigate:2, acting:1, work:2, explore:2, missions:1, personal:2, research:2, seek:1 };
+const SEASON_ACTION_LIMITS = { investigate:2, acting:1, work:2, explore:2, missions:1, personal:2, research:2, seek:1, org:1 };
 function actionsLeft(key){ return (SEASON_ACTION_LIMITS[key]||99) - (STATE.seasonActions[key]||0); }
 function canUseSeasonAction(key){ return actionsLeft(key) > 0; }
 function useSeasonAction(key){ STATE.seasonActions[key] = (STATE.seasonActions[key]||0) + 1; }

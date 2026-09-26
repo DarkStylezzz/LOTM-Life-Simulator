@@ -354,6 +354,8 @@ details.lore.entity{border-color:rgba(138,114,192,0.45);}
 /* ---------- mundo ---------- */
 .faction .fac-head{display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
 .faction.hunted{border-color:rgba(194,74,93,0.6);}
+.faction.selected{border-color:var(--gold); box-shadow:inset 3px 0 0 var(--gold);}
+.own-org{border-color:var(--gold);}
 details.sell-lore, details.betray{margin-top:10px; font-size:13px;}
 details.sell-lore summary, details.betray summary{cursor:pointer; color:var(--ink-dim);}
 .news, .history{list-style:none; display:flex; flex-direction:column; gap:8px; font-family:var(--font-body); font-size:15px;}
@@ -483,6 +485,8 @@ details.sell-lore summary, details.betray summary{cursor:pointer; color:var(--in
 .heir-name{font-family:var(--font-display); font-size:15px; color:var(--gold-bright);}
 .heir-gets{font-family:var(--font-body); font-size:15px; line-height:1.5;}
 .heir-card .btn{align-self:flex-start;}
+.heir-card.disciple{border-color:var(--violet-bright);}
+.heir-card.disciple .heir-name{color:var(--violet-bright);}
 .ancestors{list-style:none; display:flex; flex-direction:column; gap:10px; margin:8px 0 14px; border-left:1px solid var(--line); padding-left:12px;}
 .ancestors .btn{margin-top:4px; padding:5px 10px; font-size:12px;}
 

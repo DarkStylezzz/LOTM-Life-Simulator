@@ -529,7 +529,8 @@ scenario('ciudades nuevas: nombres, oficios, mudanzas, lugares y rumores', ()=>{
   assert(run(ctx, `STATE.character.profesion`) === 'Desempleado', 'un minero en Bayam no puede seguir en la mina');
   // Rumores de ciudad: sólo corren donde corresponden.
   run(ctx, `relocate('balam'); STATE.leads = [];`);
-  const rumors = run(ctx, `(function(){ const seen = {}; for(let i=0;i<300;i++){ STATE.leads = []; const l = addRumor(); if(l) seen[l.rumor] = true; } return Object.keys(seen); })()`);
+  // Un rumor raro sale menos de una vez cada cien: con 1500 intentos, que no salga nunca es casi imposible.
+  const rumors = run(ctx, `(function(){ const seen = {}; for(let i=0;i<1500;i++){ STATE.leads = []; const l = addRumor(); if(l) seen[l.rumor] = true; } return Object.keys(seen); })()`);
   assert(!rumors.includes('catacomb_mass') && !rumors.includes('mine_voice'), 'corren rumores de otras ciudades: ' + rumors.join(','));
   assert(rumors.includes('temple_king'), 'el rumor de Balam no aparece nunca');
   // Ciudades nuevas en una partida vieja: el estado se completa solo.
@@ -676,6 +677,136 @@ scenario('el linaje: morir, elegir heredero y seguir con la herencia', ()=>{
   // A los 30 no se puede cerrar una vida.
   run(ctx, `STATE.character.edad = 30;`);
   assert(!run(ctx, `closeLifeAvailable().ok`), 'se puede cerrar una vida a los 30');
+});
+
+scenario('tu organización: fundarla, conducirla, exponerla y dejarla', ()=>{
+  const storage = makeStorage();
+  const ctx = fresh(storage);
+  run(ctx, NEWLIFE + `(function(){ const c = STATE.character; c.edad = 40; c.cash = 500; c.bank = 99999; c.reputation = 30;
+    const p = STATE.pathway; p.chosenPathway = 'moon'; p.sequence = 6; p.actingMethod = 2; identifyPathway('moon'); invalidatePathwayMods();
+    STATE.pendingSeals = []; seasonStart(); })()`);
+  assert(!run(ctx, `orgFoundable('culto')`) && run(ctx, `orgFoundable('sociedad') && orgFoundable('orden')`), 'las condiciones para fundar no respetan la Sequence');
+  assert(run(ctx, `(function(){ for(let s=1;s<=60;s++){ STATE.flags.orgNameSeed = s; for(const k of ORG_KIND_KEYS){ const ns = orgNameOptions(k); if(ns.length !== 3 || ns.some(n=>/[{}]|\\b(de|a) el\\b/.test(n))) return false; } } return true; })()`), 'los nombres propuestos están mal armados');
+  run(ctx, `foundOrg('sociedad', orgNameOptions('sociedad')[1])`);
+  const o = run(ctx, `({name:STATE.org.name, m:STATE.org.members, inner:STATE.org.inner.length, bank:STATE.character.bank})`);
+  assert(o.m >= 4 && o.m <= 7 && o.inner === 1 && o.bank < 99999, 'la fundación no quedó bien: ' + JSON.stringify(o));
+  // Doce temporadas conduciéndola: cada acción, y los invariantes siempre.
+  const inv = run(ctx, `(function(){ const bad = []; const acts = ['recruit','funds','watch','lore','seek','recruit','hide','funds','recruit','seek','watch','recruit'];
+    for(let i=0;i<acts.length;i++){
+      STATE.character.edad = 40; STATE.character.salud = 90; STATE.character.sanity = 90; seasonStart();
+      if(orgActionAvailable(acts[i]).ok) orgAct(acts[i]);
+      for(let m=0;m<3;m++){ processMonth(); let k = 0; while((STATE.pendingEvent || STATE.pendingMission || STATE.combat) && k++ < 40){ if(STATE.pendingEvent) resolvePendingEvent(0); else if(STATE.pendingMission) resolveMissionChoice(0); else { const a = combatActions().filter(x=>!x.disabled); combatAction((a.find(x=>x.id==='flee')||a[0]).id); } } STATE.gameOver = false; }
+      const o = STATE.org; if(!o) { bad.push('se disolvió sola'); break; }
+      if(o.members < 1 || o.influence < 0 || o.influence > 100 || o.secrecy < 0 || o.secrecy > 100 || o.treasury < 0 || !Number.isFinite(o.treasury)) bad.push(JSON.stringify(o));
+    }
+    return {bad, m:STATE.org && STATE.org.members, t:STATE.org && STATE.org.treasury}; })()`);
+  assert(!inv.bad.length, 'la organización quedó en un estado imposible: ' + inv.bad.slice(0,2).join(' · '));
+  assert(inv.t > 0, 'la organización no juntó plata en tres años: ' + JSON.stringify(inv));
+  // La caja, a tu bolsillo (una vez por temporada).
+  run(ctx, `seasonStart(); STATE.org.treasury = 300;`);
+  const cash0 = run(ctx, `STATE.character.cash`);
+  run(ctx, `orgWithdraw()`);
+  assert(run(ctx, `STATE.character.cash`) === cash0 + 300 && run(ctx, `STATE.org.treasury === 0 && !orgWithdrawAvailable().ok`), 'sacar la plata de la caja no funcionó');
+  // Sin secreto, alguien pregunta; y si hay allanamiento, dispersarlos salva a la mayoría.
+  const exp = run(ctx, `(function(){ STATE.org.secrecy = 5; STATE.org.members = 60; const s0 = FACTION_KEYS.reduce((a,k)=>a+F(k).suspicion,0);
+    for(let i=0;i<12;i++){ STATE.org.lastTick = -99; orgTick(); STATE.org.secrecy = 5; }
+    return {sus: FACTION_KEYS.reduce((a,k)=>a+F(k).suspicion,0) - s0, exposures: STATE.org.exposures}; })()`);
+  assert(exp.exposures > 0 && exp.sus > 0, 'sin secreto, nadie preguntó: ' + JSON.stringify(exp));
+  run(ctx, `STATE.pendingEvent = null; triggerEventById('org_raid', {faction:'church'});`);
+  const raid = run(ctx, `(function(){ const m = STATE.org.members; const i = STATE.pendingEvent.choices.findIndex(c=>c.orig === 1); resolvePendingEvent(i); return {before:m, after:STATE.org.members, sec:STATE.org.secrecy}; })()`);
+  assert(raid.after < raid.before && raid.after >= 1 && raid.sec > 5, 'el allanamiento no hizo lo esperado: ' + JSON.stringify(raid));
+  // Un culto sostiene: suma seguidores a las anclas.
+  run(ctx, `dissolveOrg(); STATE.pathway.sequence = 5; invalidatePathwayMods(); seasonStart(); STATE.character.bank = 99999;`);
+  assert(run(ctx, `!STATE.org && (STATE.flags.orgHistory||[]).length === 1 && orgLifeLines()[0].startsWith('Fundó')`), 'disolverla no quedó en la historia');
+  const f0 = run(ctx, `recomputeAnchors().followers`);
+  run(ctx, `foundOrg('culto', orgNameOptions('culto')[0]); STATE.org.members = 60;`);
+  assert(run(ctx, `recomputeAnchors().followers`) >= f0 + 20, 'el culto no sumó seguidores');
+  // Se hereda: pasa a quien sigue la historia.
+  run(ctx, `(function(){ const a = birthChild(); a.ageOffset = -25; a.knows.beyonder = true; endGame('natural', 'Una vida completa', 'x', {cause:'vejez'}); })()`);
+  const inh = run(ctx, `(function(){ const name = STATE.org.name, m = STATE.org.members; const h = lineageHeirs()[0]; const ok = succeedAs(h.id); return {ok, org: STATE.org && STATE.org.name === name, m0:m, m:STATE.org && STATE.org.members, leader: STATE.org && STATE.org.leader, hist:(STATE.flags.orgHistory||[]).length}; })()`);
+  assert(inh.ok && inh.org && inh.m < inh.m0 && inh.leader && inh.hist === 1, 'la organización no pasó al heredero: ' + JSON.stringify(inh));
+  // Su biografía cuenta lo suyo: condujo el culto, no fundó lo de antes.
+  const lines = run(ctx, `orgLifeLines()`);
+  assert(lines.length === 1 && lines[0].startsWith('Condujo ') && lines[0].includes(', el culto que había fundado '), 'la biografía del heredero cuenta mal la organización: ' + JSON.stringify(lines));
+  // Todo se guarda y se recarga.
+  run(ctx, `saveGame(true)`);
+  const ctx2 = fresh(storage);
+  assert(run(ctx2, `loadGame() && !!STATE.org && STATE.org.members > 0 && typeof orgTick === 'function'`), 'la organización no se recarga');
+  // Abandonada, se deshace de a poco.
+  const gone = run(ctx2, `(function(){ STATE.org.lastAct = -999; for(let i=0;i<80 && STATE.org;i++){ STATE.org.lastTick = -99; orgTick(); } const h = STATE.flags.orgHistory || []; return {org: !!STATE.org, reason: h.length && h[h.length-1].reason}; })()`);
+  assert(!gone.org && gone.reason === 'colapso', 'una organización abandonada no se deshace: ' + JSON.stringify(gone));
+});
+
+scenario('discípulos: tomarlos, enseñarles, su poción y seguir la historia como discípulo', ()=>{
+  const storage = makeStorage();
+  const ctx = fresh(storage);
+  run(ctx, NEWLIFE + `(function(){ const c = STATE.character; c.edad = 50; c.cash = 500; c.bank = 99999;
+    const p = STATE.pathway; p.chosenPathway = 'door'; p.sequence = 5; p.actingMethod = 2; identifyPathway('door'); invalidatePathwayMods();
+    STATE.pendingSeals = []; seasonStart();
+    globalThis.__a = createNpc({met:true, trust:65, affection:55, respect:50, age:22, allowHidden:false});
+    globalThis.__b = createNpc({met:true, trust:65, affection:55, respect:50, age:30, allowHidden:false});
+    globalThis.__c = createNpc({met:true, trust:65, affection:55, respect:50, age:28, allowHidden:false}); })()`);
+  assert(run(ctx, `maxDisciples() === 2 && canTakeDisciple(__a) && !canTakeDisciple(createNpc({met:true, trust:10, age:25}))`), 'las condiciones para tomar un discípulo están mal');
+  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.01; offerDiscipleship(__a); offerDiscipleship(__b); Math.random = r0; })()`);
+  assert(run(ctx, `!!__a.disciple && !!__b.disciple && __a.knows.beyonder && disciples().length === 2 && !canTakeDisciple(__c)`), 'no se respetó el cupo o no se tomaron');
+  // Enseñar hasta la primera poción, con la plata y la ayuda del maestro (y la suerte de cara).
+  const first = run(ctx, `(function(){ let n = 0; while(n++ < 20 && !STATE.pendingEvent){ STATE.time.totalMonths += 3; seasonStart(); doInteraction(__a.id, 'teach'); }
+    const pe = STATE.pendingEvent && STATE.pendingEvent.defId; const r0 = Math.random; Math.random = ()=>0.01; resolvePendingEvent(0); Math.random = r0;
+    return {pe, lessons: __a.disciple.lessons, seq: discipleSeq(__a), known: __a.known.pathway}; })()`);
+  assert(first.pe === 'dis_ready' && first.seq === 9 && first.known, 'la primera poción del discípulo no salió: ' + JSON.stringify(first));
+  // Sigue subiendo, pero nunca a tu altura (Sequence 5): el techo es la 6.
+  const top = run(ctx, `(function(){ for(let k=0;k<80;k++){ STATE.time.totalMonths += 3; seasonStart(); STATE.pendingEvent = null; doInteraction(__a.id, 'teach'); if(STATE.pendingEvent){ const r0 = Math.random; Math.random = ()=>0.01; resolvePendingEvent(0); Math.random = r0; } }
+    return {seq: discipleSeq(__a), reach: discipleCanReach(discipleTarget(__a))}; })()`);
+  assert(top.seq === 6 && !top.reach, 'el discípulo no llegó al techo, o lo pasó: ' + JSON.stringify(top));
+  // Una poción que sale mal (sin morir): pierde parte de lo avanzado.
+  const fail = run(ctx, `(function(){ __b.disciple.progress = discipleNeed(9); const r0 = Math.random; Math.random = ()=>0.99; const t = discipleAdvance(__b, 'alone'); Math.random = r0;
+    return {alive: __b.alive, seq: discipleSeq(__b), progress: __b.disciple.progress}; })()`);
+  assert(fail.alive && fail.seq === null && fail.progress > 0 && fail.progress < 100, 'el fracaso de la poción no hizo lo esperado: ' + JSON.stringify(fail));
+  // Un discípulo Beyonder a veces trae lo que te falta.
+  const gift = run(ctx, `(function(){ STATE.pathway.digestion = 100; addFormula('door', 4, 'true', 'x'); const need = ingredientsNeededFor('door', 4); const before = need.reduce((a,n)=>a+ownedQty('door',n),0);
+    __a.loyalty = 70; STATE.time.totalMonths += (3 - STATE.time.totalMonths % 3) % 3; const r0 = Math.random; Math.random = ()=>0.01; disciplesTick(); Math.random = r0;
+    return need.reduce((a,n)=>a+ownedQty('door',n),0) - before; })()`);
+  assert(gift >= 1, 'el discípulo no trajo el ingrediente que faltaba');
+  // Muere el maestro: la historia puede seguir con el discípulo, como Beyonder de su vía.
+  run(ctx, `(function(){ const s = createNpc({gender:'f', relType:'acquaintance', age:48, met:true, trust:60, affection:70}); marryPartner(s, true); const k = birthChild(); k.ageOffset = -20;
+    STATE.character.bank = 20000; STATE.character.cash = 0; STATE.flags.will = 'equal';
+    endGame('natural', 'Una vida completa', 'x', {cause:'vejez'}); })()`);
+  const heirs = run(ctx, `lineageHeirs().map(n=>({id:n.id, dis:isDiscipleHeir(n), plan:inheritancePlan(n)}))`);
+  const dh = heirs.find(h=>h.dis && h.id === run(ctx, `__a.id`));
+  assert(heirs[0] && !heirs[0].dis && dh && dh.plan.disciple && dh.plan.seq === 6 && dh.plan.money === 1000 && !dh.plan.house && heirs[0].plan.money === 10800, 'los herederos o el legado del discípulo están mal: ' + JSON.stringify(heirs.map(h=>({id:h.id, dis:h.dis, money:h.plan.money, seq:h.plan.seq}))));
+  // Si el testamento favorece al discípulo, se lleva lo que se hubiera llevado un hijo favorito, y las cuentas cierran.
+  const fav = run(ctx, `(function(){ STATE.flags.will = 'favorite:' + __a.id; const k = bloodHeirs()[0]; const r = {d: inheritancePlan(__a), k: inheritancePlan(k)}; STATE.flags.will = 'equal'; return r; })()`);
+  assert(fav.d.money === 8400 && fav.k.money === 3600 && fav.k.favored && !fav.k.house && fav.d.money + fav.k.money + (fav.k.spouse ? fav.k.spouse.amount : 0) === 20000, 'el testamento a favor del discípulo reparte mal: ' + JSON.stringify(fav));
+  const st = run(ctx, `(function(){ const name = __a.name, id = __a.id; const ok = succeedAs(id); const p = STATE.pathway;
+    const master = STATE.npcs.find(n=>/^maestro/.test(n.id));
+    return {ok, first: STATE.character.nombre === name.split(' ')[0], pw: p.chosenPathway, seq: p.sequence, am: p.actingMethod, ident: isIdentified('door'),
+      master: master && master.role, masterDead: master && !master.alive, family: STATE.npcs.filter(n=>n.flags.masterFamily).length, familyIsFamily: STATE.npcs.some(n=>n.flags.masterFamily && isFamilyNpc(n)),
+      fellow: STATE.npcs.some(n=>n.flags.fellowDisciple && !n.disciple), gen: generationNumber(), kind: STATE.lineage.lives[0].heirKind, notebook: inventoryItems().some(it=>/cuadernos/.test(it.name)),
+      bank: STATE.character.bank + STATE.character.cash }; })()`);
+  assert(st.ok && st.first && st.pw === 'door' && st.seq === 6 && st.am === 2 && st.ident, 'el discípulo no siguió como Beyonder: ' + JSON.stringify(st));
+  assert(st.master && st.masterDead && st.family >= 2 && !st.familyIsFamily && st.fellow && st.gen === 2 && st.kind === 'discipulo' && st.notebook && st.bank === 1000, 'la gente o el baúl del maestro quedaron mal: ' + JSON.stringify(st));
+  // Se puede jugar y recargar.
+  run(ctx, `(function(){ for(let m=0;m<24;m++){ processMonth(); let k = 0; while((STATE.pendingEvent || STATE.pendingMission || STATE.combat) && k++ < 40){ if(STATE.pendingEvent) resolvePendingEvent(0); else if(STATE.pendingMission) resolveMissionChoice(0); else { const a = combatActions().filter(x=>!x.disabled); combatAction((a.find(x=>x.id==='flee')||a[0]).id); } } if(STATE.gameOver) break; } })()`);
+  run(ctx, `saveGame(true)`);
+  const ctx2 = fresh(storage);
+  assert(run(ctx2, `loadGame() && STATE.pathway.chosenPathway === 'door' && STATE.lineage.lives.length === 1`), 'la partida del discípulo no se recarga');
+});
+
+scenario('una vida muy larga: las épocas del mundo y los bisnietos', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 70; STATE.pendingSeals = [];`);
+  // Nadie ve una época antes de tiempo; cuando llega el año, empieza (una por mes, si se juntan varias).
+  run(ctx, `eraTick()`);
+  assert(run(ctx, `STATE.world.era`) === 0, 'empezó una época antes de tiempo');
+  const eras = run(ctx, `(function(){ STATE.time.year += 250; let wars = 0; for(let i=0;i<WORLD_ERAS.length + 2;i++){ eraTick(); if(STATE.world.war) wars++; }
+    return {era: STATE.world.era, wars, peace: STATE.pendingConsequences.some(pc=>pc.effect && pc.effect.war === false), log: STATE.world.log.length, journal: STATE.journal.filter(j=>j.cat==='world').length}; })()`);
+  assert(eras.era === 6 && eras.wars > 0 && eras.peace && eras.journal >= 6, 'las épocas no pasaron como debían: ' + JSON.stringify(eras));
+  assert(run(ctx, `triggerEventById('era_old_times') && STATE.journal[0].text === WORLD_ERAS[5].old`), 'el recuerdo de otra época no usa la última');
+  // Bisnietos: aparecen en la biografía.
+  run(ctx, `(function(){ STATE.character.grandchildren = 2; for(let i=0;i<3;i++) triggerEventById('fam_great_grandchild'); })()`);
+  assert(run(ctx, `STATE.character.greatGrandchildren`) === 3, 'no nacieron los bisnietos');
+  run(ctx, `endGame('natural', 'Una vida completa', 'x', {cause:'vejez'})`);
+  assert(run(ctx, `STATE.endingData.paragraphs.join(' ').includes('3 bisnietos')`), 'la biografía no nombra a los bisnietos');
 });
 
 console.log(`\n${passed} escenarios OK, ${failed} con fallas.`);

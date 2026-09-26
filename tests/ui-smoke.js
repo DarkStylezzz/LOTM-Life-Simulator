@@ -3,8 +3,10 @@
    tests/ui-smoke.js — prueba de humo en un navegador real (Playwright).
    Abre index.html por file://, crea un personaje con el teclado y el mouse,
    juega varias décadas tocando botones reales (escenas, pestañas, acciones),
-   guarda, recarga la página y sigue. También abre una partida v7 y recorre el
-   linaje (cerrar una vida, elegir heredero, seguir y recargar). Falla ante
+   guarda, recarga la página y sigue. También abre una partida v7, recorre el
+   linaje (cerrar una vida, elegir heredero, seguir y recargar) y lo que se
+   deja (fundar una organización, tomar un discípulo, enseñarle y seguir la
+   historia con esa persona). Falla ante
    cualquier error de página o de consola. Saca capturas en escritorio y en móvil.
    Uso:  node tests/ui-smoke.js [--shots=carpeta] [--steps=N]
    ========================================================================= */
@@ -180,10 +182,93 @@ async function runLineage(){
   await browser.close();
   return {label:'linaje', errors, end:info, stats:{scenes:0,tabs:2,actions:3,advances:12}, reloaded:!!info.reloaded};
 }
+// Lo que se deja, con clicks reales: fundar una orden, pedirle algo, tomar un
+// discípulo, enseñarle y, al cerrar la vida, seguir la historia con esa persona.
+async function runLegacy(){
+  const browser = await chromium.launch();
+  const page = await browser.newPage({viewport:{width:1280, height:800}});
+  const errors = [];
+  page.on('pageerror', e=>errors.push('pageerror: ' + e.message));
+  page.on('console', m=>{ if(m.type()==='error' && !/fonts\.g/.test(m.text())) errors.push('console: ' + m.text()); });
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, r=>r.fulfill({status:200, contentType:'text/css', body:''}));
+  await page.goto(URL);
+  await page.waitForSelector('#intro-content .btn-primary');
+  for(let i=0;i<4;i++) await page.click('[data-act="intro-next"]');
+  await page.click('[data-act="intro-start"]');
+  await page.waitForSelector('#screen-game:not(.hidden)');
+  const settle = ()=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));
+  const shot = async (name, sel)=>{ if(SHOTS){ if(sel) await page.locator(sel).first().scrollIntoViewIfNeeded(); await settle(); await page.screenshot({path:path.join(SHOTS, `legado-${name}.png`)}); } };
+  // Sin hijos: la historia sólo puede seguir con quien aprenda de vos.
+  const npcId = await page.evaluate(()=>{
+    const c = STATE.character; c.edad = 64; c.cash = 3000; c.bank = 20000;
+    STATE.pendingEvent = null; STATE.pendingMission = null; STATE.combat = null; STATE.pendingSeals = [];
+    const p = STATE.pathway; p.chosenPathway = 'door'; p.sequence = 5; p.actingMethod = 2; p.digestion = 40; identifyPathway('door'); invalidatePathwayMods();
+    const n = createNpc({gender: c.genero === 'Hombre' ? 'f' : 'm', relType:'friend', age:30, met:true, allowHidden:false, trust:90, affection:70, respect:80});
+    n.mystic = 90; n.knows.beyonder = true;
+    seasonStart(); STATE.season.free = 12; UI.tab = 'vida'; UI.npcSel = null; renderNow();
+    return n.id;
+  });
+  await settle();
+  const info = {};
+  try{
+    await page.locator('#sidebar [data-act="tab"][data-id="mundo"]').first().click();
+    await page.locator('#content [data-act="subtab"][data-k="world"][data-id="propia"]').click();
+    await page.locator('#content [data-act="org-kind"][data-k="orden"]').click();
+    await page.locator('#content [data-act="org-name"]').nth(1).click();
+    await shot('01-fundar');
+    await page.locator('#content [data-act="org-found"]').click();
+    await page.locator('[data-act="modal-confirm"]').click();
+    await settle();
+    info.org = await page.evaluate(()=>STATE.org && STATE.org.kind);
+    if(info.org !== 'orden') errors.push('no se fundó la orden: ' + info.org);
+    await page.locator('#content [data-act="org-act"][data-id="recruit"]').click();
+    await settle();
+    info.recruited = await page.evaluate(()=>!!STATE.org && STATE.org.lastAct === STATE.time.totalMonths && !orgActionAvailable('funds').ok);
+    if(!info.recruited) errors.push('la acción de la organización no se hizo (o se pudo repetir en la misma temporada)');
+    await shot('02-tu-organizacion');
+    // El discípulo, desde su ficha.
+    await page.locator('#sidebar [data-act="tab"][data-id="personas"]').first().click();
+    await page.locator(`#content [data-act="npc-open"][data-id="${npcId}"]`).first().click();
+    await page.evaluate(()=>{ window.__r0 = Math.random; Math.random = ()=>0.01; });
+    await page.locator(`#content [data-act="npc-do"][data-k="disciple_offer"]`).click();
+    await page.evaluate(()=>{ Math.random = window.__r0; });
+    await settle();
+    await page.locator(`#content [data-act="npc-do"][data-k="teach"]`).click();
+    await settle();
+    info.lessons = await page.evaluate((id)=>{ const n = npcById(id); return n && n.disciple ? n.disciple.lessons : -1; }, npcId);
+    if(info.lessons !== 1) errors.push('no quedó como discípulo, o la lección no se dio: ' + info.lessons);
+    if(await page.locator(`#content [data-act="npc-do"][data-k="teach"]`).count()) errors.push('se puede enseñar dos veces en la misma temporada');
+    await shot('03-discipulo');
+    // Cerrar la vida: el único heredero es el discípulo.
+    await page.locator('#content [data-act="npc-back"]').click();
+    await page.locator('#content [data-act="close-life"]').click();
+    await page.locator('[data-act="modal-confirm"]').click();
+    await page.waitForSelector('#screen-end:not(.hidden)', {timeout:5000});
+    info.heirs = await page.locator('.heir-card.disciple').count();
+    if(info.heirs !== 1) errors.push('la pantalla final muestra ' + info.heirs + ' discípulos herederos (se esperaba 1)');
+    await shot('04-heredero', '.heir-card.disciple');
+    await page.locator('.heir-card.disciple [data-act="lineage-continue"]').first().click();
+    await page.waitForSelector('#screen-game:not(.hidden)', {timeout:5000});
+    Object.assign(info, await page.evaluate(()=>({kind: STATE.lineage.lives[0] && STATE.lineage.lives[0].heirKind, pw: STATE.pathway.chosenPathway || null,
+      leader: STATE.org && STATE.org.leader === STATE.character.nombre + ' ' + STATE.character.apellido, master: STATE.npcs.some(n=>/^maestro/.test(n.id)), over: STATE.gameOver})));
+    if(info.kind !== 'discipulo' || info.over || !info.master) errors.push('la historia no siguió con el discípulo: ' + JSON.stringify(info));
+    await page.locator('#sidebar [data-act="tab"][data-id="mundo"]').first().click();
+    await page.locator('#content [data-act="subtab"][data-k="world"][data-id="propia"]').click();
+    if(!(await page.locator('#content .own-org').count())) errors.push('la organización no pasó al heredero');
+    await shot('05-organizacion-heredada');
+    await page.reload();
+    await page.waitForSelector('#screen-game:not(.hidden)', {timeout:5000});
+    info.reloaded = await page.evaluate(()=>STATE.lineage.lives.length === 1 && !!STATE.org && !STATE.gameOver);
+    if(!info.reloaded) errors.push('después de recargar, la organización o el linaje no están');
+  }catch(e){ errors.push('legado: ' + e.message.split('\n')[0]); }
+  await browser.close();
+  return {label:'legado', errors, end:info, stats:{scenes:0,tabs:4,actions:5,advances:0}, reloaded:!!info.reloaded};
+}
 (async()=>{
   const results = [];
   results.push(await runMigrated());
   results.push(await runLineage());
+  results.push(await runLegacy());
   results.push(await run({width:1440, height:900}, 'escritorio'));
   results.push(await run({width:390, height:844}, 'movil'));
   let bad = 0;

@@ -34,8 +34,10 @@ function lineageEndSection(heirs){
   const lives = lineageData().lives;
   const out = [];
   if(heirs.length){
+    const dis = heirs.some(isDiscipleHeir), blood = heirs.some(h=>!isDiscipleHeir(h));
+    const who = dis && blood ? 'alguien de tu sangre o con alguien a quien le enseñaste tu vía' : dis ? 'alguien a quien le enseñaste tu vía' : 'alguien de tu sangre';
     out.push(`<section class="lineage"><h2 class="sec-title">Tu linaje sigue</h2>
-      <p class="small-note">La historia puede seguir con alguien de tu sangre. El mundo sigue igual: el mismo año, la misma ciudad, las mismas organizaciones. Lo que sabías, en cambio, hay que descubrirlo de nuevo.</p>
+      <p class="small-note">La historia puede seguir con ${who}. El mundo sigue igual: el mismo año, la misma ciudad, las mismas organizaciones. Lo que sabías, en cambio, hay que descubrirlo de nuevo${dis ? ', salvo lo que ya enseñaste' : ''}.</p>
       <div class="heir-list">${heirs.map(heirCard).join('')}</div></section>`);
   }
   if(lives.length) out.push(`<section class="lineage"><h2 class="sec-title">Antes que ${esc(STATE.character.nombre)}</h2>${ancestorsList(lives)}</section>`);
@@ -43,13 +45,16 @@ function lineageEndSection(heirs){
 }
 function heirCard(n){
   const plan = inheritancePlan(n);
+  if(plan.disciple) return discipleHeirCard(n, plan);
   const bits = [plan.money > 0 ? fmtMoney(plan.money) : 'casi nada de plata'];
   if(plan.house) bits.push('la casa de la familia');
   if(plan.props) bits.push(plan.props === 1 ? 'una propiedad' : `${plan.props} propiedades`);
   if(plan.items) bits.push(plan.items === 1 ? 'un objeto de tu baúl' : `${plan.items} objetos de tu baúl`);
   bits.push('tu diario');
   if(plan.characteristic) bits.push('tu Característica Beyonder');
-  const knows = n.knows && n.knows.beyonder ? 'Sabe lo que eras.' : n.knows && n.knows.partial ? 'Sospecha lo que eras.' : '';
+  if(STATE.org) bits.push(`la conducción de ${STATE.org.name}`);
+  const knows = n.disciple ? `También es tu ${discipleWord(n)}: ${typeof discipleSeq(n) === 'number' ? `sigue como Beyonder de tu vía, Sequence ${discipleSeq(n)}` : 'conoce tu vía'}.`
+    : n.knows && n.knows.beyonder ? 'Sabe lo que eras.' : n.knows && n.knows.partial ? 'Sospecha lo que eras.' : '';
   return `<div class="heir-card">
     <div class="heir-name">${esc(n.name)} <span class="dim">· ${esc(n.role||'')} · ${npcAge(n)} años</span></div>
     <div class="small-note">${n.profession && n.profession !== '—' ? esc(n.profession) + ' · ' : ''}${esc(cap(relWord(n)))}${n.flags.married ? ' · casad' + npcGx(n,'o','a','e') : ''}${n.flags.kids ? ` · ${n.flags.kids} hij${n.flags.kids===1?'o':'os'}` : ''}</div>
@@ -57,10 +62,27 @@ function heirCard(n){
     ${btn('Seguir como ' + firstNameOf(n), 'lineage-continue', {id:n.id}, {cls:'btn-primary'})}
   </div>`;
 }
+// Un discípulo que puede seguir la historia: lo místico es suyo; la plata y la casa, de tu familia.
+function discipleHeirCard(n, plan){
+  const bits = [];
+  if(plan.items) bits.push(plan.items === 1 ? 'un objeto de tu baúl' : `${plan.items} objetos de tu baúl`);
+  bits.push('tus cuadernos');
+  if(plan.characteristic) bits.push('tu Característica Beyonder');
+  if(plan.money > 0) bits.push(plan.family ? `un legado de ${fmtMoney(plan.money)}` : fmtMoney(plan.money));
+  if(plan.house) bits.push('tu casa');
+  if(STATE.org) bits.push(`la conducción de ${STATE.org.name}`);
+  const where = typeof plan.seq === 'number' ? `Beyonder de tu vía, Sequence ${plan.seq}` : 'Conoce tu vía; todavía no tomó su primera poción';
+  return `<div class="heir-card disciple">
+    <div class="heir-name">${esc(n.name)} <span class="dim">· ${esc(cap(discipleWord(n)))} · ${npcAge(n)} años</span></div>
+    <div class="small-note">${esc(where)} · ${esc(cap(relWord(n)))}</div>
+    <p class="heir-gets">Hereda ${esc(listEs(bits))}.${plan.family && !plan.house ? ' La plata y la casa quedan para tu familia.' : ''}</p>
+    ${btn('Seguir como ' + n.name.split(' ')[0], 'lineage-continue', {id:n.id}, {cls:'btn-primary'})}
+  </div>`;
+}
 function ancestorsList(lives){
   return `<ol class="ancestors">${lives.slice().reverse().map((l, i)=>`<li>
     <div><b>${esc(l.nombre)} ${esc(l.apellido)}</b> <span class="dim">(${l.born}–${l.died}${l.cause === 'retiro' ? ', se retiró' : ''})</span></div>
-    <div class="small-note">${esc(l.title || '')}${l.pathway && PATHWAYS[l.pathway] ? ` · Sequence ${l.seq} de la vía ${esc(PATHWAYS[l.pathway].name)}` : ''}${l.epitaph ? ` · “${esc(l.epitaph)}”` : ''}</div>
+    <div class="small-note">${esc(l.title || '')}${l.pathway && PATHWAYS[l.pathway] ? ` · Sequence ${l.seq} de la vía ${esc(PATHWAYS[l.pathway].name)}` : ''}${l.epitaph ? ` · “${esc(l.epitaph)}”` : ''}${l.heirKind === 'discipulo' ? ` · le siguió en su vía ${esc(l.heir)}` : ''}</div>
     ${(l.paragraphs||[]).length ? btn('Leer su historia', 'lineage-bio', {i: lives.length - 1 - i}) : ''}
   </li>`).join('')}</ol>`;
 }

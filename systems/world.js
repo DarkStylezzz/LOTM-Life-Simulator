@@ -176,6 +176,7 @@ function timelineDef(entry){
 function setWorldFlag(name, val){ STATE.world.flags = STATE.world.flags || {}; STATE.world.flags[name] = val; }
 function worldFlag(name){ return !!(STATE.world.flags && STATE.world.flags[name]); }
 function timelineTick(){
+  eraTick();
   const tl = STATE.world.timeline || [];
   const y = calendarYear(), m = STATE.time.month;
   for(const e of tl){
@@ -206,6 +207,21 @@ function timelineTick(){
     if(altered){ remember('altered_'+e.id, `La historia cambió por algo que hiciste: ${def.title}.`, {cat:'achievement'}); }
     STATE._importantMoment = STATE._importantMoment || def.importance >= 3 || (def.city && def.city===currentCityKey());
   }
+}
+// Las épocas del mundo (data/legacy.js): cuando la historia conocida se
+// termina, el mundo sigue cambiando. Corren desde el nacimiento del primer
+// personaje de la partida, así que también se ven a través del linaje.
+function eraTick(){
+  const w = STATE.world; w.era = w.era || 0;
+  const next = WORLD_ERAS[w.era];
+  if(!next || calendarYear() < (STATE.time.startYear||1330) + next.after) return;
+  w.era++;
+  applyTimelineEffect(next.effect || {}, {title:next.title, city:null});
+  logWorld(next.text);
+  const c = STATE.character;
+  logJournal(next.title, next.text, {cat:'world', imp: c.edad >= 60 ? 3 : 2});
+  if(c.edad >= 60) addMilestone('world', `Ve empezar una época nueva: ${next.title.charAt(0).toLowerCase() + next.title.slice(1)}`);
+  STATE._importantMoment = true;
 }
 function applyTimelineEffect(eff, def){
   if(eff.city) for(const k in eff.city) cityAdjust(k, eff.city[k]);

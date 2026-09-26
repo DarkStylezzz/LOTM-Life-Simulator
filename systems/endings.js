@@ -131,6 +131,7 @@ function analyzeLife(category, meta){
   else if(c.estadoCivil === 'Divorciado/a') fam.push('se separó');
   if(kids.length) fam.push(`tuvo ${kids.length} hij${kids.length===1?'o':'os'}${kids.length !== aliveKids.length ? ` (${kids.length-aliveKids.length} murió antes que ${him})` : ''}`);
   if(c.grandchildren) fam.push(`conoció a ${c.grandchildren} niet${c.grandchildren===1?'o':'os'}`);
+  if(c.greatGrandchildren) fam.push(`y a ${c.greatGrandchildren} bisniet${c.greatGrandchildren===1?'o':'os'}`);
   if(fam.length) P.push(cap(fam.join(', ')) + '.');
   else P.push('No formó una familia propia.');
   const estranged = kids.filter(n=>n.alive && bondScore(n) < 25);
@@ -166,6 +167,16 @@ function analyzeLife(category, meta){
   const hunted = huntingFactions();
   if(hunted.length) P.push(`${cap(factionShort(hunted[0]))} lo buscaba todavía cuando ${gone ? 'se retiró' : 'murió'}.`.replace(' lo buscaba', gx(' lo buscaba',' la buscaba',' le buscaba')));
   if(STATE.tarot.stage >= 6) P.push(`En la niebla gris, se sentaba a la mesa de bronce como "${STATE.tarot.card}".`);
+  orgLifeLines().forEach(l=>P.push(l));
+  if(STATE.org) facts.push({k:'Organización', v:`${STATE.org.name} (${STATE.org.members} miembros)`});
+  const dis = STATE.npcs.filter(n=>n.disciple || n.flags.formerDisciple);
+  if(dis.length){
+    const bey = dis.filter(n=>n.hidden.pathway && typeof n.hidden.sequence === 'number');
+    const who = dis.length === 1 ? ng(dis[0], 'un discípulo', 'una discípula') : dis.every(n=>n.gender === 'f') ? dis.length + ' discípulas' : dis.length + ' discípulos';
+    const took = bey.length === 1 ? (dis.length === 1 ? 'Llegó' : `${ng(bey[0], 'Uno', 'Una')} llegó`) : bey.length + ' llegaron';
+    const names = listEs(dis.slice(0,3).map(n=>n.name));
+    P.push(`Tuvo ${who}${dis.length > 3 ? `, entre ${dis.every(n=>n.gender === 'f') ? 'ellas' : 'ellos'} ${names}` : `: ${names}`}${bey.length ? `. ${took} a tomar la poción` : ''}.`);
+  }
   // 8. Secretos.
   const forb = (STATE.lore.forbidden||[]).length + (STATE.lore.entity||[]).length;
   if(forb >= 3) P.push('Supo cosas que ninguna persona debería saber. Se las llevó.');

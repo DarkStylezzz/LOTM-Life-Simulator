@@ -8,6 +8,7 @@
    ========================================================================= */
 function worldSections(){
   const items = [{id:'ciudad', label:'Ciudad'}, {id:'facciones', label:'Organizaciones'}];
+  if(orgSectionVisible()) items.push({id:'propia', label: STATE.org ? 'Tu organización' : 'Fundar'});
   if(STATE.character.edad >= 14 && !isDivine()) items.push({id:'encargos', label:'Encargos', badge: missionOffers().some(m=>m.type==='Duty') ? '•' : ''});
   if(STATE.character.edad >= 13 && !isDivine()) items.push({id:'explorar', label:'Explorar'});
   items.push({id:'historia', label:'Historia'});
@@ -16,7 +17,7 @@ function worldSections(){
 function renderWorld(){
   const items = worldSections();
   const cur = currentSub('world', items);
-  const body = cur === 'facciones' ? worldFactions() : cur === 'encargos' ? worldMissions() : cur === 'explorar' ? worldExplore() : cur === 'historia' ? worldHistory() : worldCity();
+  const body = cur === 'facciones' ? worldFactions() : cur === 'propia' ? worldOwnOrg() : cur === 'encargos' ? worldMissions() : cur === 'explorar' ? worldExplore() : cur === 'historia' ? worldHistory() : worldCity();
   return subnav('world', items) + `<div class="sub-body">${body}</div>`;
 }
 
@@ -99,6 +100,74 @@ onAct('fac-req', (d)=>factionRequest(d.k, d.id));
 onAct('fac-leave', (d)=>confirmModal(`¿Dejar ${factionName(d.k)}?`, ()=>leaveFaction(d.k), {yes:'Irme', danger:true}));
 onAct('fac-sell', (d)=>confirmModal(`¿Venderle "${LORE[d.id].title}" a ${factionShort(d.k)}?`, ()=>sellLoreTo(d.k, d.id), {yes:'Vender'}));
 onAct('fac-betray', (d)=>confirmModal(`Traicionar a ${factionName(d.k)} no tiene vuelta atrás.`, ()=>betrayFaction(d.k, d.id), {yes:'Traicionarlos', danger:true}));
+
+/* ------------------------------ tu organización ------------------------------ */
+// Se ve si ya tenés una, o si tu Sequence te permite fundarla.
+function orgSectionVisible(){
+  if(isDivine()) return false;
+  if(STATE.org) return true;
+  const p = STATE.pathway;
+  return !!p.chosenPathway && p.sequence <= 6 && STATE.character.edad >= 18;
+}
+function worldOwnOrg(){
+  const o = STATE.org;
+  if(!o) return worldFoundOrg();
+  const k = ORG_KINDS[o.kind];
+  const nums = STATE.settings.showNumbers;
+  const inner = orgInnerNpcs();
+  const out = [];
+  out.push(`<section class="card faction own-org"><div class="fac-head"><h3 class="card-h">${esc(o.name)}</h3>${tag(k.label.replace(/^Una? /, ''), 'gold')}</div>
+    <p class="card-text">${esc(k.desc)}</p>
+    <dl class="kv">
+      <dt>Desde</dt><dd>${o.founded}${o.founderGen !== generationNumber() ? ` · la fundó ${esc(o.founder)}` : ''}</dd>
+      <dt>Miembros</dt><dd>${o.members}${o.cities.length > 1 ? ` · en ${o.cities.length} ciudades` : ''}</dd>
+      <dt>Influencia</dt><dd>${tierMark('estimated')} ${esc(orgWord(o.influence, 'influence'))}${nums ? ` (${o.influence})` : ''}</dd>
+      <dt>Secreto</dt><dd class="${o.secrecy < 25 ? 'warn' : ''}">${tierMark('estimated')} ${esc(orgWord(o.secrecy, 'secrecy'))}${nums ? ` (${o.secrecy})` : ''}</dd>
+      <dt>Caja</dt><dd>${fmtMoney(o.treasury)}</dd>
+      ${o.sponsor ? `<dt>Responde a</dt><dd>${esc(factionName(o.sponsor))}</dd>` : ''}
+      ${inner.length ? `<dt>De confianza</dt><dd>${esc(listEs(inner.map(n=>n.name)))}</dd>` : ''}
+      ${o.kind === 'culto' ? `<dt>Te sostienen</dt><dd>${orgFollowers() >= 20 ? 'Muchos rezan tu nombre. Lo sentís, como un peso que te sostiene.' : 'Algunos rezan tu nombre.'}</dd>` : ''}
+    </dl></section>`);
+  out.push(sec('Esta temporada'));
+  const acts = Object.keys(ORG_ACTIONS).map(id=>{ const a = ORG_ACTIONS[id], av = orgActionAvailable(id);
+    return actionButton({label:a.label, small:a.small, time:1, disabled:!av.ok, why:av.why}, 'org-act', {id}); });
+  out.push(`<div class="action-grid">${acts.join('')}</div>`);
+  const more = [];
+  const wd = orgWithdrawAvailable();
+  more.push(actionButton({label:`Sacar la plata de la caja${o.treasury > 0 ? ` (${fmtMoney(o.treasury)})` : ''}`, small: o.kind === 'culto' ? 'Los fieles lo notan.' : 'Para lo que haga falta.', disabled:!wd.ok, why:wd.why}, 'org-withdraw'));
+  const ex = orgExpandAvailable();
+  if(!o.cities.includes(currentCityKey())) more.push(actionButton({label:`Abrir una sede en ${currentCity().name}`, small:'Más gente, más influencia, menos secreto.', disabled:!ex.ok, why:ex.why}, 'org-expand'));
+  more.push(actionButton({label:'Disolverla', small:'No tiene vuelta atrás.', danger:true}, 'org-dissolve'));
+  out.push(`<div class="action-grid compact">${more.join('')}</div>`);
+  return out.join('');
+}
+function worldFoundOrg(){
+  const out = [];
+  out.push(`<p class="intro-text">Con lo que sos, podés fundar algo propio: gente que te sigue, te ayuda y guarda tus secretos. Y que también los puede contar.</p>`);
+  const names = orgNameOptions(UI.orgKind || 'sociedad');
+  if(!names.includes(UI.orgName)) UI.orgName = names[0];
+  ORG_KIND_KEYS.forEach(kind=>{
+    const k = ORG_KINDS[kind];
+    const reqs = orgFoundConditions(kind);
+    const sel = (UI.orgKind || 'sociedad') === kind;
+    out.push(`<section class="card faction ${sel ? 'selected' : ''}"><div class="fac-head"><h3 class="card-h">${esc(k.label)}</h3></div>
+      <p class="card-text">${esc(k.desc)}</p>${reqList(reqs)}
+      <div class="btn-row">${sel ? '' : btn('Elegir', 'org-kind', {k:kind})}</div></section>`);
+  });
+  const kind = UI.orgKind || 'sociedad';
+  out.push(sec('El nombre'));
+  out.push(`<div class="btn-row">${names.map(nm=>btn(nm, 'org-name', {n:nm}, {cls: nm === UI.orgName ? 'btn-primary' : ''})).join('')}${btn('Otros nombres', 'org-names')}</div>`);
+  out.push(`<div class="action-grid compact">${actionButton({label:`Fundar ${UI.orgName}`, small:`${ORG_KINDS[kind].label}. ${fmtMoney(orgCost(kind))}.`, time:2, disabled:!orgFoundable(kind), why: orgFoundConditions(kind).filter(r=>!r.ok).map(r=>r.label).join(' · ')}, 'org-found', {k:kind})}</div>`);
+  return out.join('');
+}
+onAct('org-kind', (d)=>{ UI.orgKind = d.k; UI.orgName = null; renderNow(); }, {free:true});
+onAct('org-name', (d)=>{ UI.orgName = d.n; renderNow(); }, {free:true});
+onAct('org-names', ()=>{ rerollOrgNames(); UI.orgName = null; renderNow(); }, {free:true});
+onAct('org-found', (d)=>confirmModal(`¿Fundar ${UI.orgName}? Desde ese día, hay gente que depende de vos.`, ()=>foundOrg(d.k, UI.orgName), {yes:'Fundarla'}));
+onAct('org-act', (d)=>orgAct(d.id));
+onAct('org-withdraw', ()=>orgWithdraw());
+onAct('org-expand', ()=>orgExpand());
+onAct('org-dissolve', ()=>confirmModal(`¿Disolver ${STATE.org ? STATE.org.name : 'tu organización'}? No tiene vuelta atrás.`, ()=>dissolveOrgAction(), {yes:'Disolverla', danger:true}));
 
 /* ------------------------------ encargos ------------------------------ */
 function worldMissions(){

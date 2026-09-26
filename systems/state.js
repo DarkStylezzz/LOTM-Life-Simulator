@@ -64,7 +64,7 @@ function freshState(){
       conditions:[], wounds:[],
       job:{ months:0, performance:55, lastChange:0, pensionBase:0 },
       lifestyle:'normal', educationScore:0, university:null,
-      grandchildren:0,
+      grandchildren:0, greatGrandchildren:0,
       stats:{ combatsWon:0, combatsFled:0, killed:0, missions:0, researches:0, actings:0, spared:0 }
     },
     time:{ year:1, month:1, totalMonths:0, startYear:1330 },
@@ -92,7 +92,8 @@ function freshState(){
     world:{
       prosperity:55, security:60, attention:0, threat:0,
       factionMood:{ church:'normal', nighthawks:'normal', storm:'normal', machinery:'normal', aurora:'normal', mi9:'normal', psychology:'normal', tarotClub:'normal' },
-      log:[], cities: buildCitiesState(), priceIndex:1, timeline:[], flags:{}, war:false, mysticBoost:0
+      log:[], cities: buildCitiesState(), priceIndex:1, timeline:[], flags:{}, war:false, mysticBoost:0,
+      era:0                          // cuántas épocas del mundo ya empezaron (data/legacy.js, WORLD_ERAS)
     },
     npcs:[],
     inventory:{ items:[], books:[], documents:[], formulas:[], artifacts:[], combatItems:[] },
@@ -108,6 +109,8 @@ function freshState(){
     divinity:{ stage:0, ascended:false, uniqueness:false, characteristics:0, prayersAnswered:0, domainActs:0 },
     // El linaje (systems/lineage.js): las vidas anteriores de la familia.
     lineage:{ lives:[] },
+    // Tu organización, si fundaste o heredaste una (systems/organization.js).
+    org:null,
     endingData:null
   };
 }

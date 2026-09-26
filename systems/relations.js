@@ -68,6 +68,9 @@ function relationTags(n){
   if(n.id==='conyuge') t.push('Matrimonio');
   if(n.id==='pareja') t.push('Pareja');
   if(n.flags.mentor) t.push('Mentor');
+  if(n.disciple) t.push(ng(n, 'Tu discípulo', 'Tu discípula'));
+  else if(n.flags.fellowDisciple) t.push(ng(n, 'Condiscípulo', 'Condiscípula'));
+  if(n.flags.orgMember && STATE.org) t.push(STATE.org.name);
   if(n.flags.rival) t.push('Rival');
   if(n.flags.grudge && n.affection < 30) t.push('Resentimiento');
   if(n.flags.estranged || n.lifeState==='distanciado') t.push('Distanciados');

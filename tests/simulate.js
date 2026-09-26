@@ -52,9 +52,9 @@ run(ctx, `
 var __sim = {errors:[], stats:[]};
 // Cuánto le interesa cada cosa a cada estilo de jugador (probabilidad por turno).
 var __STYLES = {
-  mixto:     {research:0.35, focus:0.8, explore:0.15, mission:0.2,  acting:0.35, collab:0.15, join:0.25, lead:0.4,  connect:0.2, request:0.4, flee:0.85, market:0.1, everySeason:0.5, seek:0.35},
-  dedicado:  {research:0.9,  focus:1,   explore:0.45, mission:0.35, acting:0.95, collab:0.6,  join:0.8,  lead:0.9,  connect:0.9, request:0.9, flee:1,    market:0.5, everySeason:1,   seek:0.95},
-  tranquilo: {research:0.02, focus:0.5, explore:0.02, mission:0.1,  acting:0.35, collab:0.02, join:0.02, lead:0.05, connect:0,   request:0.2, flee:0.9,  market:0,   everySeason:0.2, seek:0}
+  mixto:     {research:0.35, focus:0.8, explore:0.15, mission:0.2,  acting:0.35, collab:0.15, join:0.25, lead:0.4,  connect:0.2, request:0.4, flee:0.85, market:0.1, everySeason:0.5, seek:0.35, org:0.35, teach:0.5},
+  dedicado:  {research:0.9,  focus:1,   explore:0.45, mission:0.35, acting:0.95, collab:0.6,  join:0.8,  lead:0.9,  connect:0.9, request:0.9, flee:1,    market:0.5, everySeason:1,   seek:0.95, org:0.85, teach:0.95},
+  tranquilo: {research:0.02, focus:0.5, explore:0.02, mission:0.1,  acting:0.35, collab:0.02, join:0.02, lead:0.05, connect:0,   request:0.2, flee:0.9,  market:0,   everySeason:0.2, seek:0,    org:0.03, teach:0.15}
 };
 var __S = __STYLES[${JSON.stringify(STYLE)}] || __STYLES.mixto;
 var STYLE_NAME = ${JSON.stringify(STYLE)};
@@ -69,6 +69,8 @@ resolveAdvancement = function(){ const s = STATE.pathway.sequence; __resolveAdva
 // Cada pelea: en qué etapa estabas, contra qué, de dónde vino, con cuánta
 // salud empezaste y cómo terminó. Y cuántos meses pasaste en cada etapa.
 var __fights = [], __curFight = null, __stageMonths = {};
+// Con --lineage: a quién se le pasó la historia en cada generación.
+var __heirKinds = [];
 function __stage(){ const p = STATE.pathway; return !p.chosenPathway ? 'humano' : p.sequence >= 8 ? 'S9-8' : p.sequence >= 6 ? 'S7-6' : p.sequence === 5 ? 'S5' : p.sequence === 4 ? 'S4' : 'S3-0'; }
 var __startCombat0 = startCombat;
 startCombat = function(keyOrTpl, opts){
@@ -80,7 +82,7 @@ startCombat = function(keyOrTpl, opts){
 var __endCombat0 = endCombat;
 endCombat = function(result){ if(__curFight && !__curFight.res) __curFight.res = result; return __endCombat0.apply(this, arguments); };
 function __newLife(i){
-  __rituals = []; __fights = []; __curFight = null; __stageMonths = {};
+  __rituals = []; __fights = []; __curFight = null; __stageMonths = {}; __heirKinds = [];
   const g = pick(['Hombre','Mujer','']);
   creationData = { nombre: randomFirstNameForGender(g), apellido: randomSurname(), genero:g, ciudad: CITIES_DATA[pick(CITY_KEYS)].name, clase: pick(CLASSES),
     rasgos: rollRandomTraits(3), difficulty: ${JSON.stringify(DIFF)} || pick(['normal','normal','hard','nightmare']), world: pick(['libre','canon','alternate']) };
@@ -143,7 +145,7 @@ function __playerTurn(){
   if(Math.random() < 0.3){
     const ns = aliveNpcs().filter(n=>n.met && n.lifeState==='presente');
     const n = pick(ns);
-    if(n){ const ints = availableInteractions(n).filter(x=>x.ok !== false && !x.disabled); const it = pick(ints); if(it) doInteraction(n.id, it.id); }
+    if(n){ const ints = availableInteractions(n).filter(x=>x.ok !== false && !x.disabled && (x.id !== 'disciple_release' || Math.random() < 0.05)); const it = pick(ints); if(it) doInteraction(n.id, it.id); }
   }
   if(timeBlocked()) return;
   // Un jugador con la poción ya tomada prioriza su camino.
@@ -166,6 +168,29 @@ function __playerTurn(){
   FACTION_KEYS.forEach(k=>{ if(!timeBlocked() && canJoin(k) && Math.random() < __S.join) joinFaction(k); });
   if(timeBlocked()) return;
   if(!p.chosenPathway && Math.random() < __S.connect){ const t = pathwayThreads().find(x=>canConnectDots(x.key)); if(t) connectDots(t.key); }
+  if(timeBlocked()) return;
+  // Lo que se construye con los años: una organización propia y discípulos.
+  if(p.chosenPathway){
+    if(!STATE.org && Math.random() < __S.org*0.25){
+      const ks = ORG_KIND_KEYS.filter(k=>orgFoundable(k) && c.cash + c.bank > orgCost(k)*1.5);
+      const k = pick(ks);
+      if(k) foundOrg(k, pick(orgNameOptions(k)));
+    }
+    const o = STATE.org;
+    if(o && Math.random() < __S.org){
+      const want = o.secrecy < 30 ? 'hide' : (nextMissing() && Math.random() < 0.6) ? 'seek' : pick(['recruit','recruit','funds','watch','lore']);
+      if(orgActionAvailable(want).ok) orgAct(want);
+    }
+    if(STATE.org && STATE.org.treasury > 250 && orgWithdrawAvailable().ok && Math.random() < 0.25) orgWithdraw();
+    if(STATE.org && orgExpandAvailable().ok && Math.random() < 0.08) orgExpand();
+    if(timeBlocked()) return;
+    disciples().forEach(n=>{ if(!timeBlocked() && INTERACTION_BY_ID.teach.avail(n) && Math.random() < __S.teach) doInteraction(n.id, 'teach'); });
+    if(timeBlocked()) return;
+    if(disciples().length < maxDisciples() && Math.random() < __S.teach*0.25){
+      const n = pick(aliveNpcs().filter(canTakeDisciple));
+      if(n) doInteraction(n.id, 'disciple_offer');
+    }
+  }
   if(timeBlocked()) return;
   const leads = activeLeads();
   const ingLead = leads.find(l=>l.rumor==='ingredient');
@@ -292,7 +317,7 @@ function __liveOne(i, maxMonths){
   if(!__LINEAGE || !STATE.gameOver || gens >= 4 || STATE.time.totalMonths >= maxMonths || steps >= 20000) break;
   const hs = lineageHeirs(); if(!hs.length) break;
   let ok = false;
-  __tryAct('lineage', ()=>{ ok = succeedAs(pick(hs).id); const bad = __checkSerializable(); if(bad.length) __sim.errors.push({label:'serialize', msg:'funciones en STATE después del linaje: '+bad.slice(0,4).join(', ')}); });
+  __tryAct('lineage', ()=>{ const h = pick(hs); __heirKinds.push(isDiscipleHeir(h) ? 'discípulo' : 'familia'); ok = succeedAs(h.id); const bad = __checkSerializable(); if(bad.length) __sim.errors.push({label:'serialize', msg:'funciones en STATE después del linaje: '+bad.slice(0,4).join(', ')}); });
   if(!ok || STATE.gameOver) break;
   gens++;
   }
@@ -304,7 +329,10 @@ function __liveOne(i, maxMonths){
     journal: STATE.journal.length, steps, reloads, ms: Date.now()-t0, diff: STATE.settings.difficulty, world: STATE.settings.world,
     attention: Math.round(STATE.world.attention), corruption: c.corruption, sanity: c.sanity, factions: memberFactions().join('/'), combats: c.stats.combatsWon + c.stats.combatsFled,
     seqAge, funnel, rituals: __rituals.slice(), fights: __fights.map(f=>Object.assign({}, f, {res: f.res || (STATE.gameOver ? 'otro final' : 'abierta')})),
-    stageMonths: Object.assign({}, __stageMonths), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey(), fired: Object.keys(STATE.eventHistory), gens };
+    stageMonths: Object.assign({}, __stageMonths), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey(), fired: Object.keys(STATE.eventHistory), gens,
+    org: STATE.org ? {kind:STATE.org.kind, members:STATE.org.members, peak:STATE.org.peak} : null, orgsEnded: (STATE.flags.orgHistory||[]).length,
+    disciples: STATE.npcs.filter(n=>n.disciple || n.flags.formerDisciple).length, discBeyonders: STATE.npcs.filter(n=>(n.disciple || n.flags.formerDisciple) && typeof n.hidden.sequence === 'number').length,
+    discLost: STATE.npcs.filter(n=>!n.alive && n.cause === 'perdió el control' && n.disciple).length, era: STATE.world.era||0, ggkids: c.greatGrandchildren||0, heirKinds: __heirKinds.slice() };
 }
 `);
 
@@ -363,6 +391,17 @@ if(args.includes('--combat')){
 if(LINEAGE){
   const g = results.map(r=>r.gens||1);
   console.log(`Linaje: ${(g.reduce((a,b)=>a+b,0)/n).toFixed(1)} generaciones por partida (máx ${Math.max(...g)}) · ${results.filter(r=>(r.gens||1) > 1).length} de ${results.length} siguieron con un heredero`);
+}
+// Lo que se construye con los años: organización propia, discípulos, épocas y bisnietos.
+{
+  const withOrg = results.filter(r=>r.org || r.orgsEnded).length;
+  const kinds = {}; results.filter(r=>r.org).forEach(r=>{ kinds[r.org.kind] = (kinds[r.org.kind]||0)+1; });
+  const peaks = results.filter(r=>r.org).map(r=>r.org.peak);
+  const dis = results.reduce((a,r)=>a+(r.disciples||0),0), disB = results.reduce((a,r)=>a+(r.discBeyonders||0),0), disL = results.reduce((a,r)=>a+(r.discLost||0),0);
+  console.log(`Organización propia: la fundaron ${withOrg} de ${results.length} · activas al final ${JSON.stringify(kinds)}${peaks.length ? ` · pico medio ${Math.round(peaks.reduce((a,b)=>a+b,0)/peaks.length)} miembros` : ''} · discípulos: ${dis} en ${results.filter(r=>r.disciples).length} vidas (${disB} Beyonders, ${disL} perdieron el control)`);
+  const eras = {}; results.forEach(r=>{ eras[r.era||0] = (eras[r.era||0]||0)+1; });
+  console.log(`Épocas del mundo al final: ${JSON.stringify(eras)} · bisnietos en ${results.filter(r=>r.ggkids).length} vidas`);
+  if(LINEAGE){ const hk = {}; results.forEach(r=>(r.heirKinds||[]).forEach(k=>{ hk[k] = (hk[k]||0)+1; })); console.log('Herederos elegidos:', JSON.stringify(hk)); }
 }
 const savedLives = results.filter(r=>r.saved > 0).length;
 if(savedLives) console.log(`Segundas oportunidades usadas: ${results.reduce((a,r)=>a+r.saved,0)} en ${savedLives} vidas`);
