@@ -30,7 +30,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 | Sequence 0 | Una cadena de acontecimientos extraordinarios, un ascenso que puede fallar y un modo divino que cambia la interfaz. |
 | Combate | Táctico: distancia, entorno, estados, arquetipos de enemigos, información oculta de la Sequence rival (??? → rango → estimación → exacta), heridas que quedan, huir o hablar como opciones reales. |
 | Facciones | Iglesias, Nighthawks, MI9, la Orden de la Aurora, la Mente Colmena, los Alquimistas de la Psicología… acceso, mérito, pedidos, deberes, sospecha, persecución, traición. |
-| Tarot Club | Rumores → pruebas que no sabés que son pruebas → invitación → reuniones. |
+| Tarot Club | Rumores → pruebas que no sabés que son pruebas → invitación → reuniones. Un Beyonder termina oyendo hablar del club aunque no lo busque, y cuando el Loco decide invitarte, la invitación llega. |
 | Mundo | Nueve ciudades vivas —Backlund, Tingen, Bayam, Pritz Harbor, un pueblo sin nombre, Trier (Intis), Constant, Enmat Harbor y Balam Oriental—, cada una con su economía, sus facciones, sus oficios, sus lugares para explorar, sus rumores, sus eventos y (en Trier) sus nombres. Historia del mundo libre, canon o alternativa, y la atención del mundo oculto. |
 | La segunda mitad de la vida | Padres que cuidar, hijos en problemas, amigos que se mueren primero, traslados, inversiones, testamento, nietos, confesiones… y, para los Beyonders, no envejecer al ritmo de los demás. De la Sequence 6 hacia arriba: la convergencia, los que te estudian, alguien que te reza, el tiempo que pasa distinto, algo más grande que te mira. |
 | Economía e inventario | Sueldo, gastos, banco, deuda con cuotas, vivienda, propiedades, inflación. Inventario por categorías con procedencia, usos y riesgos. |
@@ -71,13 +71,15 @@ tests/          pruebas sin navegador y en navegador
 Requieren Node 18+ (y Playwright para la de navegador).
 
 ```
-node tests/scenarios.js      # 23 escenarios dirigidos: el ascenso, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
+node tests/scenarios.js      # 24 escenarios dirigidos: el ascenso, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
 node tests/simulate.js 40    # 40 vidas completas con un "jugador" automático: errores, bloqueos, estado serializable y balance
 node tests/simulate.js 10 --ui   # lo mismo, dibujando todas las pestañas con un DOM simulado
 node tests/simulate.js 40 --diff=easy --style=dedicado --funnel
                              # balance: dificultad fija, estilo de jugador (mixto, dedicado o tranquilo)
                              # y el "embudo" del camino místico (a qué edad se llega a cada paso, cuántos
                              # rituales se intentan y cuántos salen bien, y en qué Sequence se muere peleando)
+node tests/simulate.js 40 --events
+                             # qué eventos pasaron en alguna vida jugada "de verdad" y cuáles nunca
 node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor,
                              # en nueve estados de vida, y avisa qué eventos no pudo disparar nunca
 node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil y una partida v7 migrada

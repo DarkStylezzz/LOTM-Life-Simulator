@@ -18,6 +18,13 @@ const TAROT_CARDS_BY_PATHWAY = {
 const TAROT_FREE_CARDS = ['Los Enamorados','La Templanza','La Torre','El Emperador','La Emperatriz','El Juicio','La Fuerza','El Carro'];
 const TAROT_MEMBERS_CANON = ['Justicia','El Colgado','El Sol','El Mago','La Luna','El Ermitaño','La Estrella','El Mundo'];
 
+// Lo que un Beyonder oye del club sin buscarlo (ver tarotTick).
+const TAROT_ECHOES = [
+  {source:'una charla en una taberna', title:'Una charla ajena', text:'En la mesa de al lado, dos desconocidos hablan en voz baja de "un club que se reúne sobre la niebla". Cuando te ven escuchando, cambian de tema.'},
+  {source:'un sueño gris', title:'Un sueño gris', text:'Soñás con una niebla gris y una mesa larga de bronce. No hay nadie sentado. Al despertar, tenés la sensación de que el sueño no era tuyo.'},
+  {source:'una nota en un libro usado', title:'Una nota en el margen', text:'En un libro usado, alguien escribió a lápiz: "El Loco que no pertenece a esta era". Abajo, con otra letra: "No lo repitas".'},
+  {source:'un Beyonder borracho', title:'Un Beyonder que habla de más', text:'Un Beyonder que bebió demasiado jura que conoce a alguien que "rezó al Loco y le respondieron". Sus amigos se lo llevan antes de que termine.'}
+];
 function T(){ return STATE.tarot || (STATE.tarot = {stage:0, observed:0, card:null, meetings:0, lastMeeting:-99, honorific:false, declined:0, heard:[], evals:0, shared:[], lastFormula:-99, lastPrayer:-99, trustEvents:0}); }
 function tarotMember(){ return T().stage >= 6; }
 
@@ -187,9 +194,20 @@ function tarotTick(){
   if(STATE.character.edad < 14) return;
   if(t.stage === 1 && (STATE.pathway.chosenPathway || (STATE.flags.mysticExposure||0) >= 20)) t.stage = 2;
   if(t.stage === 2 && (knowsLore('tarot_fool') || STATE.factions.tarotClub.discovered)) t.stage = 3;
+  // Un Beyonder termina oyendo hablar del club, aunque no lo busque: tres
+  // ecos distintos y ya sabe que existe.
+  if(t.stage === 2 && STATE.pathway.chosenPathway && !STATE.pendingEvent && chance(0.03)){
+    const echo = TAROT_ECHOES.find(e=>!(t.heard||[]).includes(e.source));
+    if(echo){ tarotHear(echo.source); logJournal(echo.title, echo.text, {cat:'mystery', imp:1}); }
+  }
   // Portarse bien sin testigos también se ve, de a poco.
   if(t.stage >= 2 && t.stage < 6 && chance(0.05)) tarotObserve(memoriesByCat('favor_given').length >= memoriesByCat('betrayal').length ? 2 : -1, 'viviste como viviste');
-  if(!tarotMember()) return;
+  if(!tarotMember()){
+    // La invitación no compite con los demás eventos raros: cuando el que
+    // está sobre la niebla gris decide, llega.
+    if(tarotInvitationReady() && !STATE.pendingEvent && !STATE.pendingMission && !STATE.combat && chance(0.08)) triggerEventById('tarot_invitation');
+    return;
+  }
   if(STATE.pendingEvent || STATE.pendingMission || STATE.combat) return;
   if(STATE.time.totalMonths - (t.lastMeeting||-99) >= 3 && chance(0.6)){
     t.lastMeeting = STATE.time.totalMonths; t.meetings = (t.meetings||0) + 1;
