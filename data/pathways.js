@@ -456,17 +456,22 @@ const PATHWAY_INGREDIENTS = {
 
 // Requisito de Digestión (0-100) para avanzar DESDE cada secuencia hacia la siguiente.
 const DIGESTION_REQ = {9:100, 8:100, 7:100, 6:100, 5:100, 4:100, 3:100, 2:100, 1:100, 0:100};
-// Dificultad narrativa / probabilidad base de éxito del ritual de avance por secuencia origen.
+// El ritual de avance, por Sequence de origen: probabilidad base de éxito
+// (el ritual la mueve para arriba o para abajo), el techo (ni el ritual
+// perfecto asegura volverse semidiós) y costo total en dinero (materiales,
+// lugar, la preparación de la poción: todo junto). Subir cuesta más cuanto
+// más arriba, pero ya no hay puertas cerradas: con la poción digerida, la
+// fórmula, los ingredientes y el dinero, el ritual se puede intentar siempre.
 const ADVANCE_DIFFICULTY = {
-  9:{label:'Difícil', baseSuccess:0.55, moneyCost:800, monthsMin:8},
-  8:{label:'Muy difícil', baseSuccess:0.45, moneyCost:2200, monthsMin:14},
-  7:{label:'Extremadamente difícil', baseSuccess:0.40, moneyCost:6000, monthsMin:22},
-  6:{label:'Evento importante', baseSuccess:0.30, moneyCost:15000, monthsMin:36, needsFlag:true},
-  5:{label:'End-game temprano', baseSuccess:0.22, moneyCost:35000, monthsMin:48, needsFlag:true},
-  4:{label:'End-game', baseSuccess:0.15, moneyCost:70000, monthsMin:60, needsFlag:true},
-  3:{label:'Extremadamente raro', baseSuccess:0.07, moneyCost:150000, monthsMin:72, needsFlag:true},
-  2:{label:'Casi legendario', baseSuccess:0.04, moneyCost:300000, monthsMin:90, needsFlag:true},
-  1:{label:'Evento excepcional', baseSuccess:0.02, moneyCost:600000, monthsMin:120, needsFlag:true},
+  9:{label:'Accesible',              baseSuccess:0.70, maxSuccess:0.95, moneyCost:600},
+  8:{label:'Exigente',               baseSuccess:0.64, maxSuccess:0.95, moneyCost:1400},
+  7:{label:'Difícil',                baseSuccess:0.56, maxSuccess:0.92, moneyCost:3000},
+  6:{label:'Muy difícil',            baseSuccess:0.48, maxSuccess:0.88, moneyCost:6000},
+  5:{label:'El umbral del semidiós', baseSuccess:0.32, maxSuccess:0.70, moneyCost:12000},
+  4:{label:'Semidiós',               baseSuccess:0.24, maxSuccess:0.60, moneyCost:24000},
+  3:{label:'Extremo',                baseSuccess:0.18, maxSuccess:0.50, moneyCost:45000},
+  2:{label:'Casi legendario',        baseSuccess:0.14, maxSuccess:0.40, moneyCost:80000},
+  1:{label:'Legendario',             baseSuccess:0.12, maxSuccess:0.35, moneyCost:140000}
 };
 
 /* ---------------------------------------------------------------------

@@ -46,16 +46,21 @@ run(ctx, `
 var __sim = {errors:[], stats:[]};
 // Cuánto le interesa cada cosa a cada estilo de jugador (probabilidad por turno).
 var __STYLES = {
-  mixto:     {research:0.35, focus:0.8, explore:0.15, mission:0.2,  acting:0.35, collab:0.15, join:0.25, lead:0.4,  connect:0.2, request:0.4, flee:0.85, market:0.1, everySeason:0.5},
-  dedicado:  {research:0.9,  focus:1,   explore:0.45, mission:0.35, acting:0.95, collab:0.6,  join:0.8,  lead:0.9,  connect:0.9, request:0.9, flee:1,    market:0.5, everySeason:1},
-  tranquilo: {research:0.02, focus:0.5, explore:0.02, mission:0.1,  acting:0.35, collab:0.02, join:0.02, lead:0.05, connect:0,   request:0.2, flee:0.9,  market:0,   everySeason:0.2}
+  mixto:     {research:0.35, focus:0.8, explore:0.15, mission:0.2,  acting:0.35, collab:0.15, join:0.25, lead:0.4,  connect:0.2, request:0.4, flee:0.85, market:0.1, everySeason:0.5, seek:0.35},
+  dedicado:  {research:0.9,  focus:1,   explore:0.45, mission:0.35, acting:0.95, collab:0.6,  join:0.8,  lead:0.9,  connect:0.9, request:0.9, flee:1,    market:0.5, everySeason:1,   seek:0.95},
+  tranquilo: {research:0.02, focus:0.5, explore:0.02, mission:0.1,  acting:0.35, collab:0.02, join:0.02, lead:0.05, connect:0,   request:0.2, flee:0.9,  market:0,   everySeason:0.2, seek:0}
 };
 var __S = __STYLES[${JSON.stringify(STYLE)}] || __STYLES.mixto;
 var STYLE_NAME = ${JSON.stringify(STYLE)};
 console.error = function(){ __sim.errors.push({label:'console.error', msg:Array.from(arguments).map(a=>a && a.message ? a.message : String(a)).join(' ').slice(0,200), stack:Array.from(arguments).map(a=>a && a.stack ? a.stack.split('\\n').slice(0,4).join(' | ') : '').join(''), age:STATE.character.edad}); };
 function __tryAct(label, fn){ try{ fn(); }catch(e){ __sim.errors.push({label, msg:String(e && e.message || e), stack:(e && e.stack || '').split('\\n').slice(0,6).join(' | '), age:STATE.character.edad, month:STATE.time.totalMonths}); if(__sim.errors.length > 400) throw e; } }
 function __pickIdx(n){ return Math.floor(Math.random()*n); }
+// Cuántos rituales de Advancement se intentan y cuántos salen bien (por Sequence de origen).
+var __rituals = [];
+var __resolveAdvancement0 = resolveAdvancement;
+resolveAdvancement = function(){ const s = STATE.pathway.sequence; __resolveAdvancement0(); __rituals.push({s, ok:STATE.pathway.sequence < s}); };
 function __newLife(i){
+  __rituals = [];
   const g = pick(['Hombre','Mujer','']);
   creationData = { nombre: randomFirstNameForGender(g), apellido: randomSurname(), genero:g, ciudad: CITIES_DATA[pick(CITY_KEYS)].name, clase: pick(CLASSES),
     rasgos: rollRandomTraits(3), difficulty: ${JSON.stringify(DIFF)} || pick(['normal','normal','hard','nightmare']), world: pick(['libre','canon','alternate']) };
@@ -79,7 +84,8 @@ function __resolvePending(){
     if(th && th.level === 2 && Math.random() < __S.flee) a = acts.find(x=>x.id==='pay') || acts.find(x=>x.id==='flee');
     if(!a && th && th.level === 1 && STATE.character.salud < 50 && Math.random() < __S.flee) a = acts.find(x=>x.id==='flee');
     if(!a && STATE.character.salud < 30 && Math.random() < 0.8) a = acts.find(x=>x.id==='flee');
-    if(!a && Math.random() < 0.35) a = acts.find(x=>x.ability);
+    if(!a && Math.random() < 0.6) a = pick(acts.filter(x=>x.ability));
+    if(!a && Math.random() < 0.8) a = acts.find(x=>x.id==='attack' || x.id==='shoot');
     if(!a) a = pick(acts);
     combatAction(a.id); return true;
   }
@@ -93,17 +99,16 @@ function __playerTurn(){
   // Lo primero: si ya está todo para dar el paso (preparar, beber, avanzar), se da.
   // Un jugador de verdad no posterga eso por una tarde de biblioteca (y saca
   // la plata del banco si hace falta).
-  if(c.bank > 0 && p.chosenPathway && p.sequence > 0){ const need = brewCost(p.chosenPathway, p.sequence-1) + ritualCost(); if(c.cash < need) bankWithdraw(Math.min(c.bank, need - c.cash)); }
   if(!p.chosenPathway){
     const pot = potionItems(undefined, 9)[0];
     if(pot && c.edad >= 16 && Math.random() < 0.7){ startDrinkPotion(pot.uid); return; }
     const cand = identifiedPathways().find(k=>brewRequirements(k, 9).every(x=>x.ok));
-    if(cand && Math.random() < 0.8){ startBrew(cand, 9); return; }
+    if(cand && Math.random() < 0.8){ startFirstPotion(cand); return; }
   } else if(p.sequence > 0){
-    const t = p.sequence - 1;
     if(advancementRequirements().every(x=>x.ok) && Math.random() < 0.8){ attemptAdvancement(); return; }
-    if(!potionItems(p.chosenPathway, t).length && brewRequirements(p.chosenPathway, t).every(x=>x.ok) && Math.random() < 0.8){ startBrew(p.chosenPathway, t); return; }
   }
+  // "Buscar lo que te falta": el botón que empuja hacia el próximo paso.
+  if(seekAvailable().ok && Math.random() < __S.seek){ seekMissing(); if(timeBlocked()) return; }
   // Vida mundana
   if(c.edad >= 16 && canSeekJob() && Math.random() < 0.25) seekBetterJob();
   if(c.edad >= 14 && Math.random() < 0.15) workExtra();
@@ -121,9 +126,7 @@ function __playerTurn(){
   if(timeBlocked()) return;
   // Un jugador con la poción ya tomada prioriza su camino.
   if(p.chosenPathway && p.sequence > 0){
-    const t = p.sequence - 1;
     if(advancementRequirements().every(x=>x.ok) && Math.random() < 0.8){ attemptAdvancement(); return; }
-    if(!potionItems(p.chosenPathway, t).length && brewRequirements(p.chosenPathway, t).every(x=>x.ok) && Math.random() < 0.8){ startBrew(p.chosenPathway, t); return; }
     if(p.digestion < 100 && Math.random() < Math.max(0.6, __S.acting)){ doActing(); if(timeBlocked()) return; }
   }
   // Misticismo
@@ -159,15 +162,11 @@ function __playerTurn(){
     const pot = potionItems(undefined, 9)[0];
     if(pot && c.edad >= 16 && Math.random() < 0.5){ startDrinkPotion(pot.uid); return; }
     const cand = identifiedPathways().find(k=>brewRequirements(k, 9).every(x=>x.ok));
-    if(cand && Math.random() < 0.6){ startBrew(cand, 9); return; }
+    if(cand && Math.random() < 0.6){ startFirstPotion(cand); return; }
   } else {
     if(Math.random() < __S.acting && c.edad >= 14) doActing();
     if(timeBlocked()) return;
-    if(p.sequence > 0){
-      const t = p.sequence - 1;
-      if(!potionItems(p.chosenPathway, t).length && brewRequirements(p.chosenPathway, t).every(x=>x.ok) && Math.random() < 0.6){ startBrew(p.chosenPathway, t); return; }
-      if(advancementRequirements().every(x=>x.ok) && Math.random() < 0.7){ attemptAdvancement(); return; }
-    }
+    if(p.sequence > 0 && advancementRequirements().every(x=>x.ok) && Math.random() < 0.7){ attemptAdvancement(); return; }
     const pas = powerActions(); if(pas.length && Math.random() < 0.15) doPowerAction(pick(pas).id);
     if(timeBlocked()) return;
     // Pedirle a la facción lo que falta
@@ -270,7 +269,7 @@ function __liveOne(i, maxMonths){
     cash: c.cash + c.bank - c.debt, job:c.profesion, tarot:STATE.tarot.stage, divine: !!(STATE.divinity&&STATE.divinity.ascended), div: STATE.divinity && STATE.divinity.stage,
     journal: STATE.journal.length, steps, reloads, ms: Date.now()-t0, diff: STATE.settings.difficulty, world: STATE.settings.world,
     attention: Math.round(STATE.world.attention), corruption: c.corruption, sanity: c.sanity, factions: memberFactions().join('/'), combats: c.stats.combatsWon + c.stats.combatsFled,
-    seqAge, funnel, saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey() };
+    seqAge, funnel, rituals: __rituals.slice(), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey() };
 }
 `);
 
@@ -298,13 +297,21 @@ if(args.includes('--funnel')){
   const order = (k)=> /^\d/.test(k) ? '0'+k : k.replace(/S(\d)$/, (m,d)=>'S'+(9-d));
   console.log('Embudo (edad media · cuántas vidas):');
   Object.keys(f).sort((a,b)=>order(a) < order(b) ? -1 : 1).forEach(k=>console.log(`  ${k.padEnd(22)} ${(f[k].reduce((a,b)=>a+b,0)/f[k].length).toFixed(0).padStart(3)} años · ${f[k].length}`));
+  const rit = {}; results.forEach(r=>(r.rituals||[]).forEach(x=>{ const o = rit[x.s] = rit[x.s] || {n:0, ok:0}; o.n++; if(x.ok) o.ok++; }));
+  const rk = Object.keys(rit).sort((a,b)=>b-a);
+  if(rk.length) console.log('Rituales (Sequence de origen: intentos → éxitos):', rk.map(s=>`${s}→${s-1}: ${rit[s].n}→${rit[s].ok} (${Math.round(rit[s].ok/rit[s].n*100)}%)`).join(' · '));
 }
 const savedLives = results.filter(r=>r.saved > 0).length;
 if(savedLives) console.log(`Segundas oportunidades usadas: ${results.reduce((a,r)=>a+r.saved,0)} en ${savedLives} vidas`);
 const causes = {}; results.forEach(r=>{ const k = (r.cat||'-')+':'+(r.cause||r.title||'-'); causes[k] = (causes[k]||0)+1; });
 console.log('Finales:', JSON.stringify(causes));
 const killers = {}; results.filter(r=>r.cause==='combate').forEach(r=>{ const k = (r.enemy||'?') + (r.csrc ? ' ('+r.csrc+')' : ''); killers[k] = (killers[k]||0)+1; });
-if(Object.keys(killers).length) console.log('Muertes en combate:', JSON.stringify(killers));
+if(Object.keys(killers).length){
+  console.log('Muertes en combate:', JSON.stringify(killers));
+  const cd = results.filter(r=>r.cause==='combate'), bySeq = {};
+  cd.forEach(r=>{ const k = r.beyonder ? 'S'+r.seq : 'humano'; bySeq[k] = (bySeq[k]||0)+1; });
+  console.log('  …por Sequence:', JSON.stringify(bySeq), ' · edad media:', (cd.reduce((a,r)=>a+r.age,0)/cd.length).toFixed(0));
+}
 console.log(`Promedios — pistas ${avg(r=>r.clues)}, vías identificadas ${avg(r=>r.identified)}, lore ${avg(r=>r.lore)}, NPCs ${avg(r=>r.npcs)}, hijos ${avg(r=>r.kids)}, patrimonio ${avg(r=>r.cash)}, combates ${avg(r=>r.combats)}, journal ${avg(r=>r.journal)}, recargas ${avg(r=>r.reloads)}, ms/vida ${avg(r=>r.ms)}`);
 console.log('Tarot (etapa media):', avg(r=>r.tarot), ' · atención media:', avg(r=>r.attention), ' · casados:', pct(r=>r.married==='Casado/a'), ' · en facción:', pct(r=>r.factions));
 const byMsg = {};

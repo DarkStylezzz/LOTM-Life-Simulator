@@ -178,7 +178,10 @@ const EVENTS_LIFE = [
         if(chance(0.1)) { applyEffects({salud:[10,20], exposure:2}); return 'Una noche soñás con una mujer vestida de noche que te toca la frente. A la mañana siguiente, la fiebre bajó. El médico no lo entiende.'; }
         return 'Rezás. La fiebre tarda en irse, pero te sentís menos solo.'; }},
       {label:'Pedirle un remedio a alguien que "sabe"', small:'La herborista, la médium, esa gente.', requires:()=>knownMysticNpcs().length>0, run:()=>{
-        const n = pick(knownMysticNpcs()); applyEffects({salud:[-4,4], exposure:2}); adjustRel(n, {trust:4, dependence:4});
+        const n = pick(knownMysticNpcs());
+        // Si ya no está (se mudó, murió) mientras dudabas, te arreglás solo.
+        if(!n){ applyEffects({salud:[-22,-8], sanity:[-3,0]}); return 'Vas a buscar a quien sabía de estas cosas, pero ya no está. Te curás como podés, despacio.'; }
+        applyEffects({salud:[-4,4], exposure:2}); adjustRel(n, {trust:4, dependence:4});
         remember('healed_by', `${n.name} te curó cuando los médicos no podían.`, {cat:'favor_received', npc:n.id});
         return `${n.name} te trae algo que huele a tierra y a hierro. A los dos días estás de pie. No preguntás qué era.`; }}
     ]},

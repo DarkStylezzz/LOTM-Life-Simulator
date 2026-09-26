@@ -69,8 +69,9 @@ function actionButton(a, act, data){
 function choiceButtons(choices, act, extra){
   return `<div class="evt-choices" role="group" aria-label="Opciones">${choices.map((c,i)=>`<button class="choice-btn" data-act="${act}" data-idx="${c.idx ?? i}" ${extra||''}><span class="choice-num" aria-hidden="true">${i+1}</span><span class="choice-body">${esc(c.label)}${c.small ? `<small>${esc(c.small)}</small>` : ''}</span></button>`).join('')}</div>`;
 }
+// Lista de requisitos. Lo que falta muestra, si lo tiene, cómo se consigue.
 function reqList(reqs){
-  return `<ul class="req-list">${reqs.map(r=>`<li class="${r.ok?'req-ok':'req-fail'}"><span aria-hidden="true">${r.ok?'✔':'✘'}</span> ${esc(r.label)}<span class="sr-only">${r.ok?' (cumplido)':' (falta)'}</span></li>`).join('')}</ul>`;
+  return `<ul class="req-list">${reqs.map(r=>`<li class="${r.ok?'req-ok':'req-fail'}"><span aria-hidden="true">${r.ok?'✔':'✘'}</span> ${esc(r.label)}<span class="sr-only">${r.ok?' (cumplido)':' (falta)'}</span>${!r.ok && r.hint ? `<span class="req-hint">${esc(r.hint)}</span>` : ''}</li>`).join('')}</ul>`;
 }
 function changeChips(changes){
   if(!changes || !changes.length) return '';

@@ -142,13 +142,12 @@ function resolveActingChoice(idx){
     const q = actingQuality(choice, pe);
     const tier = qualityTier(q);
     const npc = pe.npc ? npcById(pe.npc) : null;
-    // Digestión según calidad, Sequence (más alta = más lenta), consistencia
-    // y cuánto entendés el Método.
-    const baseDig = {excelente:[12,18], buena:[7,12], mediocre:[2,4], mala:[-8,-3]}[tier];
-    const seqFactor = 1 - (9 - p.sequence)*0.06;
+    // Digestión según calidad, consistencia y cuánto entendés el Método (la
+    // Sequence la frena después, en applyEffects: más alta, más lenta).
+    const baseDig = {excelente:[16,24], buena:[10,16], mediocre:[3,6], mala:[-6,-2]}[tier];
     const methodFactor = [0.55, 1, 1.25][actingMethodLevel()];
     let dig = roll(baseDig);
-    if(dig > 0) dig = dig * seqFactor * methodFactor * actingConsistencyMult();
+    if(dig > 0) dig = dig * methodFactor * actingConsistencyMult();
     const eff = {digestion: Math.round(dig*10)/10};
     if(choice.extra) Object.assign(eff, choice.extra);
     if(tier === 'excelente'){
@@ -212,6 +211,12 @@ function actingStyleLabel(){
   return null;
 }
 
+// Cuanto más alta la Sequence, más tarda en asentarse la poción: las
+// primeras se digieren en un año o dos; las de semidiós, en muchos más.
+// Vale para todo lo que digiere (actuar, vivir tu papel, misiones, eventos).
+const DIGESTION_SEQ_FACTOR = {9:1, 8:0.85, 7:0.7, 6:0.5, 5:0.27, 4:0.15, 3:0.1, 2:0.08, 1:0.06, 0:0.06};
+function digestionSeqFactor(seq){ return DIGESTION_SEQ_FACTOR[seq] ?? 1; }
+
 /* ------------------------------ digestión pasiva (mensual) ------------------------------ */
 // El comportamiento de todos los días importa: un Vidente que trabaja de
 // adivino, un Insomne que hace guardias nocturnas, una Marinera en el
@@ -219,14 +224,14 @@ function actingStyleLabel(){
 function passiveDigestion(){
   const p = STATE.pathway, c = STATE.character;
   if(!p.chosenPathway || p.digestion >= 100) return;
-  let d = 0.35; // vivir con la poción adentro ya digiere un poco
+  let d = 0.5; // vivir con la poción adentro ya digiere un poco
   const job = JOBS[c.profesion];
   if(job && job.align && (job.align[p.chosenPathway]||[]).includes(p.sequence)) d += 0.9;
   const a = p.acting;
   d += (a.consistency - 0.5) * 0.6;
   d -= (a.deviation||0) * 0.25;
   d *= [0.6, 1, 1.2][actingMethodLevel()];
-  d *= (1 - (9 - p.sequence)*0.05) * diffMult('digestion') * getTraitMods().digestionMult;
+  d *= digestionSeqFactor(p.sequence) * diffMult('digestion') * getTraitMods().digestionMult;
   if((a.deviation||0) >= 3 && chance(0.2)) applyEffects({corruption:1, sanity:-1});
   p.digestion = clamp(Math.round((p.digestion + d)*10)/10, 0, 100);
 }

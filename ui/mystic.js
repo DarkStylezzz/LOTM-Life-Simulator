@@ -55,20 +55,21 @@ function mysticPath(){
   const canAct = canUseSeasonAction('acting') && canSpendFreeTime(1) && c.edad >= 13;
   out.push(sec('Vivir tu papel'));
   out.push(`<div class="action-grid">${actionButton({label: lvl >= 1 ? 'Actuar tu papel' : 'Usar lo que ahora sos', small: lvl >= 1 ? 'Una escena donde tu papel se pone a prueba.' : 'Dejar que la poción haga lo suyo, a ver qué pasa.', time:1, disabled:!canAct, why: !canUseSeasonAction('acting') ? 'Ya lo hiciste esta temporada.' : 'Sin tiempo libre.'}, 'acting')}</div>`);
-  // Advancement
+  // Hacia la próxima Sequence: todo lo que falta, cómo se consigue, y el ritual.
   if(p.sequence > 0){
     const reqs = advancementRequirements();
     const target = p.sequence - 1;
+    const ready = reqs.every(x=>x.ok);
     out.push(sec(target === 0 ? 'El trono' : `Hacia la Sequence ${target}`));
-    const nd = seqData(p.chosenPathway, target);
-    out.push(`<section class="card"><p class="card-text">${target === 0 ? 'Lo que viene ya no es una poción.' : `La próxima poción: <b>${esc(nd ? nd.name : '')}</b>.`}</p>${reqList(reqs)}
-      ${btn(target === 0 ? 'Subir al trono' : 'Comenzar el ritual', 'advance-ritual', {}, {cls:'btn-primary', disabled:!reqs.every(x=>x.ok)})}</section>`);
-    if(target > 0){
-      const br = brewRequirements(p.chosenPathway, target);
-      const hasPot = potionItems(p.chosenPathway, target).length > 0;
-      if(!hasPot){
-        out.push(`<section class="card"><h3 class="sub-h">Preparar la poción de ${esc(nd ? nd.name : 'la próxima Sequence')}</h3>${reqList(br)}${btn('Preparar la poción','brew',{p:p.chosenPathway, s:target},{disabled:!br.every(x=>x.ok)})}</section>`);
-      }
+    if(target === 0){
+      out.push(`<section class="card"><p class="card-text">Lo que viene ya no es una poción.</p>${reqList(reqs)}${btn('Subir al trono', 'advance-ritual', {}, {cls:'btn-primary', disabled:!ready})}</section>`);
+    } else {
+      const nd = seqData(p.chosenPathway, target);
+      out.push(`<section class="card path-next"><p class="card-text">La próxima poción: <b>${esc(nd ? nd.name : '')}</b>. La poción se prepara en el mismo ritual.</p>
+        ${reqList(reqs)}
+        ${ready ? `<p class="forecast">${esc(ritualForecast())}</p>` : ''}
+        <div class="btn-row">${seekButton()}${btn('Comenzar el ritual', 'advance-ritual', {}, {cls:'btn-primary', disabled:!ready})}</div>
+        ${seekNote()}</section>`);
     }
   }
   // Habilidades
@@ -91,6 +92,21 @@ onAct('advance-ritual', ()=>{
   confirmModal(msg, ()=>attemptAdvancement(), {yes:'Empezar', title: p.sequence === 1 ? 'El trono' : 'El ritual'});
 });
 onAct('brew', (d)=>startBrew(d.p, +d.s));
+onAct('seek', ()=>seekMissing());
+onAct('first-potion', (d)=>confirmModal('Vas a preparar la poción y beberla esa misma noche. Todavía vas a poder echarte atrás antes del primer trago. Si sale mal, puede costarte caro; si sale bien, ya no vas a ser la misma persona.', ()=>startFirstPotion(d.k), {yes:'Prepararla', title:'La primera poción'}));
+// "Buscar lo que te falta": siempre apunta al próximo paso.
+function seekButton(){
+  const av = seekAvailable();
+  return btn('Buscar lo que te falta', 'seek', {}, {disabled:!av.ok, title: av.ok ? 'Una vez por temporada · 1 tiempo libre' : av.why});
+}
+function seekNote(){
+  const m = nextMissing();
+  if(!m) return '';
+  const ch = seekChance(m);
+  const word = STATE.settings.showNumbers ? `${Math.round(ch*100)}%` : ch >= 0.7 ? 'buenas chances' : ch >= 0.5 ? 'chances parejas' : 'va a costar';
+  const left = !canUseSeasonAction('seek') ? ' Ya buscaste esta temporada.' : '';
+  return `<p class="small-note">Buscar ahora: ${esc(seekTargetText(m))} (${esc(word)}). Una vez por temporada, 1 tiempo libre.${esc(left)}</p>`;
+}
 onAct('power', (d)=>doPowerAction(d.id));
 
 /* ------------------------------ hilos (vías) ------------------------------ */
@@ -98,6 +114,11 @@ function mysticThreads(){
   const ts = pathwayThreads().filter(t=>t.key !== STATE.pathway.chosenPathway);
   const out = [];
   out.push(`<p class="intro-text">${STATE.pathway.chosenPathway ? 'Lo que sabés (o creés saber) de otros caminos.' : 'Cosas que no tienen explicación. Algunas se parecen entre sí. Algunas no son lo que parecen.'}</p>`);
+  // Antes de tener una vía con nombre, "Buscar lo que te falta" también sirve acá.
+  const m = !STATE.pathway.chosenPathway ? nextMissing() : null;
+  if(m && (m.kind === 'identify' || m.kind === 'understand') && !identifiedPathways().length){
+    out.push(`<section class="card path-next"><p class="card-text">Si querés seguir esto en serio, empezá por el hilo que más te convence.</p><div class="btn-row">${seekButton()}</div>${seekNote()}</section>`);
+  }
   if(!ts.length) return out.join('') + emptyState('Todavía nada. O nada que hayas notado.');
   ts.forEach(t=>{
     const unv = t.clues.filter(c=>!c.resolved && !c.verified).length;
@@ -163,13 +184,20 @@ function mysticFirstPotion(){
       ${STATE.character.edad < 16 ? `<p class="small-note">Sos muy chico. Tu cuerpo no lo resistiría.</p>` : btn('Beberla','drink',{id:pt.uid},{cls:'btn-danger'})}</section>`));
   }
   const cands = identifiedPathways();
-  if(cands.length){
-    out.push(sec('Prepararla'));
-    cands.forEach(k=>{
-      const reqs = brewRequirements(k, 9);
-      out.push(`<section class="card"><h3 class="sub-h">${esc(formulaName(k, 9))} <span class="dim">· ${esc(PATHWAYS[k].name)}</span></h3>${reqList(reqs)}${btn('Preparar','brew',{p:k, s:9},{disabled:!reqs.every(r=>r.ok)})}</section>`);
-    });
-  } else out.push(emptyState('Todavía no sabés lo suficiente de ninguna vía como para pensar en una poción.'));
+  if(!cands.length){ out.push(emptyState('Todavía no sabés lo suficiente de ninguna vía como para pensar en una poción.')); return out.join(''); }
+  // La vía por la que vas primero; las demás, más abajo.
+  const main = firstPotionTarget();
+  const order = [main].concat(cands.filter(k=>k !== main)).filter(Boolean);
+  out.push(sec('Tu primera poción'));
+  order.forEach((k, i)=>{
+    const reqs = brewRequirements(k, 9);
+    const ready = reqs.every(r=>r.ok);
+    out.push(`<section class="card ${i === 0 ? 'path-next' : ''}"><h3 class="sub-h">${esc(formulaName(k, 9))} <span class="dim">· ${esc(PATHWAYS[k].name)}</span></h3>
+      ${i === 0 ? '<p class="card-text">Se prepara y se bebe en la misma noche.</p>' : ''}
+      ${reqList(reqs)}
+      <div class="btn-row">${i === 0 ? seekButton() : ''}${btn('Preparar y beber', 'first-potion', {k}, {cls: i === 0 ? 'btn-primary' : '', disabled:!ready})}</div>
+      ${i === 0 ? seekNote() : ''}</section>`);
+  });
   return out.join('');
 }
 onAct('drink', (d)=>confirmModal('Beberla es irreversible. Si la fórmula era mala, o la preparaste mal, puede matarte. Si sale bien, ya no vas a ser la misma persona.', ()=>startDrinkPotion(d.id), {yes:'Beberla', danger:true, title:'La poción'}));
@@ -233,6 +261,7 @@ function mysticMarket(){
   const offers = blackMarketOffers();
   return `<p class="intro-text">Detrás de una casa de empeño, una escalera baja a un depósito. Ahí se vende lo imposible. Y se habla de quién compra.</p>
     <div class="action-grid">${offers.map((o,i)=>actionButton({label:o.label, small:`${fmtMoney(o.price)}${o.sold ? ' · vendido' : ''}`, time:1, disabled:o.sold || STATE.character.cash < o.price || !canSpendFreeTime(1), why: o.sold ? 'Ya lo compraste.' : STATE.character.cash < o.price ? 'No te alcanza.' : 'Sin tiempo libre.'}, 'bm-buy', {idx:i})).join('')}</div>
+    ${STATE.pathway.chosenPathway && STATE.pathway.sequence > 0 && STATE.pathway.sequence - 1 < BLACK_MARKET_MIN_SEQ ? '<p class="small-note">Lo que necesitás para tu próxima Sequence no llega a estos callejones: eso se busca en otra parte.</p>' : ''}
     <p class="small-note">Lo que se compra acá puede ser falso. Nadie te va a devolver la plata.</p>`;
 }
 onAct('bm-buy', (d)=>buyBlackMarket(+d.idx));

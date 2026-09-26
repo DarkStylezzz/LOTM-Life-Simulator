@@ -175,21 +175,76 @@ scenario('cada escena de actuación de cada vía', ()=>{
 
 scenario('preparar y beber la primera poción; ritual de Advancement', ()=>{
   const ctx = fresh();
-  run(ctx, NEWLIFE + `STATE.character.edad = 25; STATE.character.cash = 99999; identifyPathway('moon'); STATE.pathway.knowledge.moon = 70;
+  run(ctx, NEWLIFE + `STATE.character.edad = 25; STATE.character.cash = 500; STATE.character.bank = 99999; identifyPathway('moon'); STATE.pathway.knowledge.moon = 70;
     addFormula('moon', 9, 'true', 'la Iglesia'); ingredientsNeededFor('moon', 9).forEach(n=>addIngredient('moon', 9, n, 90, 'x')); seasonStart();`);
-  assert(run(ctx, `brewRequirements('moon', 9).every(r=>r.ok)`), 'no cumple requisitos de preparación: ' + run(ctx, `JSON.stringify(brewRequirements('moon',9))`));
-  run(ctx, `startBrew('moon', 9)`);
-  resolveAll(ctx);
-  assert(run(ctx, `potionItems('moon', 9).length`) === 1, 'no quedó la poción');
-  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.05; seasonStart(); startDrinkPotion(potionItems('moon',9)[0].uid); for(let i=0;i<6 && STATE.pendingEvent;i++) resolvePendingEvent(0); Math.random = r0; })()`);
+  assert(run(ctx, `brewRequirements('moon', 9).every(r=>r.ok)`), 'no cumple requisitos (el banco también cuenta): ' + run(ctx, `JSON.stringify(brewRequirements('moon',9))`));
+  // Preparar y beber, en un solo paso.
+  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.05; startFirstPotion('moon'); for(let i=0;i<6 && STATE.pendingEvent;i++) resolvePendingEvent(0); Math.random = r0; })()`);
   assert(run(ctx, `STATE.pathway.chosenPathway`) === 'moon', 'no se convirtió en Beyonder');
-  // Ritual a Sequence 8
-  run(ctx, `STATE.pathway.digestion = 100; addFormula('moon', 8, 'true', 'la Iglesia'); ingredientsNeededFor('moon', 8).forEach(n=>addIngredient('moon', 8, n, 90, 'x')); seasonStart(); startBrew('moon', 8);`);
-  resolveAll(ctx);
-  run(ctx, `seasonStart(); STATE.character.sanity = 90;`);
+  assert(run(ctx, `itemsByCat('ingredient').length`) === 0, 'la preparación no consumió los ingredientes');
+  // Ritual a Sequence 8: sin preparar la poción aparte; se prepara en el ritual (cuatro pasos).
+  run(ctx, `STATE.pathway.digestion = 100; addFormula('moon', 8, 'true', 'la Iglesia'); ingredientsNeededFor('moon', 8).forEach(n=>addIngredient('moon', 8, n, 90, 'x')); seasonStart(); STATE.character.sanity = 90;`);
   assert(run(ctx, `advancementRequirements().every(r=>r.ok)`), 'requisitos del ritual: ' + run(ctx, `JSON.stringify(advancementRequirements())`));
-  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.02; attemptAdvancement(); for(let i=0;i<6 && STATE.pendingEvent;i++) resolvePendingEvent(0); Math.random = r0; })()`);
+  const steps = run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.02; attemptAdvancement(); let n = 0; while(STATE.pendingEvent && n < 8){ n++; resolvePendingEvent(0); } Math.random = r0; return n; })()`);
+  assert(steps === 4, 'el ritual debería tener cuatro pasos (tuvo ' + steps + ')');
   assert(run(ctx, `STATE.pathway.sequence`) === 8, 'el ritual no avanzó la Sequence (' + run(ctx, `STATE.pathway.sequence`) + ')');
+  // Un ritual que falla: la fórmula queda, los ingredientes no; se puede reintentar.
+  run(ctx, `STATE.pathway.digestion = 100; addFormula('moon', 7, 'true', 'la Iglesia'); ingredientsNeededFor('moon', 7).forEach(n=>addIngredient('moon', 7, n, 70, 'x')); seasonStart(); STATE.character.sanity = 90;`);
+  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.97; attemptAdvancement(); let n = 0; while(STATE.pendingEvent && n < 8){ n++; resolvePendingEvent(0); } Math.random = r0; })()`);
+  assert(run(ctx, `STATE.pathway.sequence === 8 && hasFormula('moon', 7) && itemsByCat('ingredient').length === 0 && !STATE.gameOver`), 'un ritual fallido debería conservar la fórmula y gastar los ingredientes');
+  // Ya no hay puertas especiales: de la Sequence 6 a la 5 alcanza con lo mismo.
+  run(ctx, `STATE.pathway.sequence = 6; STATE.pathway.digestion = 100; addFormula('moon', 5, 'true', 'x'); ingredientsNeededFor('moon', 5).forEach(n=>addIngredient('moon', 5, n, 80, 'x')); seasonStart();`);
+  assert(run(ctx, `advancementRequirements().every(r=>r.ok)`), 'la Sequence 5 pide algo más: ' + run(ctx, `JSON.stringify(advancementRequirements().filter(r=>!r.ok))`));
+  // Una poción preparada con la versión anterior (o regalada) se usa directamente.
+  run(ctx, `STATE.pathway.sequence = 8; STATE.pathway.digestion = 100; itemsByCat('ingredient').forEach(it=>removeItem(it.uid, it.qty)); quickBrew('moon', 7, 'regalo');`);
+  assert(run(ctx, `advancementRequirements().some(r=>r.id==='potion' && r.ok)`), 'una poción ya preparada no cuenta');
+  // Un ritual empezado con la versión anterior (cinco pasos) se cierra solo.
+  run(ctx, `(function(){ const pot = potionItems('moon', 7)[0]; STATE.ritual = {step:4, acc:0, place:'casa', potion:pot.uid, help:null}; openRitualStep(); })()`);
+  assert(run(ctx, `!STATE.ritual && !(STATE.pendingEvent && STATE.pendingEvent.kind === 'ritual')`), 'un ritual viejo quedó colgado');
+});
+
+scenario('buscar lo que te falta: de un hilo sin nombre a la poción, y de una Sequence a otra', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 22; STATE.character.cash = 99999; addClue({pathway:'darkness', reliability:'real', strength:20, source:'x'});`);
+  const kinds = run(ctx, `(function(){ const seen = []; for(let i=0;i<60;i++){ seasonStart(); const m = nextMissing(); if(!m) break; if(!seen.includes(m.kind)) seen.push(m.kind); seekMissing(); STATE.pendingEvent = null; STATE.combat = null; } return seen; })()`);
+  assert(kinds[0] === 'identify', 'empezó por algo que no era ponerle nombre al hilo: ' + kinds.join(','));
+  // "Entender la vía" puede no hacer falta: a veces se entiende al ponerle nombre.
+  assert(['formula','ingredient'].every(k=>kinds.includes(k)), 'no pasó por todos los pasos: ' + kinds.join(','));
+  assert(run(ctx, `brewRequirements('darkness', 9).every(r=>r.ok)`), 'buscando no llegó a tener todo para la poción: ' + run(ctx, `JSON.stringify(brewRequirements('darkness', 9).filter(r=>!r.ok))`));
+  // Siendo Beyonder: la fórmula y los ingredientes de la próxima Sequence.
+  run(ctx, `STATE.pathway.chosenPathway = 'darkness'; STATE.pathway.sequence = 8; STATE.pathway.digestion = 100; invalidatePathwayMods();`);
+  run(ctx, `(function(){ for(let i=0;i<40;i++){ seasonStart(); if(!nextMissing()) break; seekMissing(); STATE.pendingEvent = null; STATE.combat = null; } })()`);
+  assert(run(ctx, `!nextMissing() && advancementRequirements().every(r=>r.ok)`), 'buscando no juntó lo necesario para el ritual: ' + run(ctx, `JSON.stringify(advancementRequirements().filter(r=>!r.ok))`));
+  // Una vez por temporada.
+  run(ctx, `STATE.pathway.sequence = 7; STATE.pathway.digestion = 100; seasonStart(); seekMissing(); STATE.pendingEvent = null; STATE.combat = null;`);
+  assert(run(ctx, `!seekAvailable().ok && /temporada/.test(seekAvailable().why)`), 'se puede buscar dos veces en la misma temporada');
+});
+
+scenario('lo de semidiós: más lento, más escaso y nunca seguro', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 40; STATE.character.cash = 99999; const p = STATE.pathway; p.chosenPathway = 'moon'; p.sequence = 9; p.digestion = 0; identifyPathway('moon'); invalidatePathwayMods();`);
+  // La digestión (de cualquier fuente) se frena con la altura.
+  const d9 = run(ctx, `(function(){ STATE.pathway.digestion = 0; applyEffects({digestion:10}); return STATE.pathway.digestion; })()`);
+  const d5 = run(ctx, `(function(){ STATE.pathway.sequence = 5; STATE.pathway.digestion = 0; applyEffects({digestion:10}); return STATE.pathway.digestion; })()`);
+  assert(d9 > 0 && d5 > 0 && d5 < d9 * 0.5, `la digestión no se frena en la Sequence 5 (${d9} → ${d5})`);
+  // Una organización no entrega lo de semidiós a cualquier miembro.
+  run(ctx, `const f = F('church'); factionMeet('church'); f.formulas = ['moon']; f.relationship = 'miembro'; f.access = 3; f.merit = 99; seasonStart();`);
+  const low = run(ctx, `factionRequestAvailable('church', 'ingredient')`);
+  assert(!low.ok && /acceso/i.test(low.why), 'con acceso 3 te dan ingredientes de Sequence 4: ' + JSON.stringify(low));
+  assert(!run(ctx, `factionRequestAvailable('church', 'formula').ok`), 'con acceso 3 te dan la fórmula de Sequence 4');
+  run(ctx, `F('church').access = 4;`);
+  assert(run(ctx, `factionRequestAvailable('church', 'ingredient').ok && factionRequestAvailable('church', 'formula').ok`), 'con acceso 4 no te dan lo de Sequence 4');
+  // El mercado negro no llega tan alto.
+  run(ctx, `learnLore('black_market', 'x'); STATE.bmOffers = null;`);
+  assert(!run(ctx, `blackMarketOffers().some(o=>o.kind === 'formula' || o.kind === 'ingredient')`), 'el mercado negro vende lo de Sequence 4');
+  run(ctx, `STATE.pathway.sequence = 7; STATE.bmOffers = null;`);
+  assert(run(ctx, `blackMarketOffers().some(o=>o.kind === 'formula')`), 'el mercado negro dejó de vender lo de Sequence 6');
+  // Buscar: lo de arriba es más difícil de encontrar; ningún ritual de semidiós es seguro.
+  assert(run(ctx, `seekChance({kind:'formula', pathway:'moon', seq:3}) < seekChance({kind:'formula', pathway:'moon', seq:7})`), 'buscar una fórmula de Sequence 3 es tan fácil como una de 7');
+  run(ctx, `STATE.pathway.sequence = 4;`);
+  assert(run(ctx, `advanceSuccessChance(100)`) <= 0.6, 'un ritual perfecto hacia la Sequence 3 es casi seguro');
+  run(ctx, `STATE.pathway.sequence = 9;`);
+  assert(run(ctx, `advanceSuccessChance(100)`) >= 0.9, 'un ritual perfecto hacia la Sequence 8 no es casi seguro');
 });
 
 scenario('investigación, pistas, rumores y exploración', ()=>{
