@@ -36,17 +36,24 @@ function startCombat(keyOrTpl, opts){
   let key = typeof keyOrTpl === 'string' ? keyOrTpl : (keyOrTpl && keyOrTpl.id);
   const tpl = Object.assign({}, ENEMIES[key] || (typeof keyOrTpl === 'object' ? keyOrTpl : ENEMIES.mugger), opts.overrides || {});
   if(!ENEMIES[key]) key = 'mugger';
-  const hp = rndInt(tpl.hp[0], tpl.hp[1]);
   let seq = Array.isArray(tpl.seq) ? rndInt(tpl.seq[0], tpl.seq[1]) : tpl.seq;
   // Un Beyonder hostil no escala con vos: su Sequence sale de una tabla propia.
   if(key === 'rivalBeyonder' && !(opts.overrides && opts.overrides.seq)) seq = wpick([9,8,7,6,5], s=>({9:3,8:4,7:3,6:2,5:0.6})[s]);
+  // Un rival de Sequence más baja que la del arquetipo es más débil, y uno más
+  // alta, más fuerte (un Beyonder hostil de Sequence 9 no pega como uno de 6).
+  // Si el encuentro trae su propia vida y daño, se respetan tal cual.
+  const ov = opts.overrides || {};
+  const nominal = Array.isArray(ENEMIES[key] && ENEMIES[key].seq) ? (ENEMIES[key].seq[0] + ENEMIES[key].seq[1])/2 : ENEMIES[key] && ENEMIES[key].seq;
+  const sScale = (typeof nominal === 'number' && typeof seq === 'number') ? Math.pow(1.15, nominal - seq) : 1;
+  const hp = ov.hp ? rndInt(tpl.hp[0], tpl.hp[1]) : Math.max(8, Math.round(rndInt(tpl.hp[0], tpl.hp[1]) * sScale));
+  const dmg = ov.dmg ? tpl.dmg.slice() : tpl.dmg.map(d=>Math.max(1, Math.round(d * sScale)));
   const pathway = tpl.pathway === '$random' ? pick(Object.keys(PATHWAYS)) : (tpl.pathway || null);
   const envKey = opts.env && COMBAT_ENVS[opts.env] ? opts.env : pick(tpl.env || ['street']);
   const env = COMBAT_ENVS[envKey];
   let range = null;
   if(seq !== null && seq !== undefined){ const o = rndInt(-1,1); range = [clamp(seq-1+o,0,9), clamp(seq+1+o,0,9)]; if(range[0]>seq) range[0]=seq; if(range[1]<seq) range[1]=seq; }
   STATE.combat = {
-    enemy:{ key, name:tpl.name, archetype:tpl.archetype||'human', tier:tpl.tier, desc:tpl.desc, maxHp:hp, hp, dmg:tpl.dmg, defense:tpl.defense,
+    enemy:{ key, name:tpl.name, archetype:tpl.archetype||'human', tier:tpl.tier, desc:tpl.desc, maxHp:hp, hp, dmg, defense:tpl.defense,
       sanityDmg:tpl.sanityDmg||[0,0], corruptionDmg:tpl.corruptionDmg||[0,0], fleeChance:tpl.fleeChance, seq: seq ?? null, pathway, faction:tpl.faction||null,
       talk:tpl.talk||0, reward:tpl.reward||{}, humanoid: tpl.archetype!=='creature', statuses:[], analyzedPlayer:false, usedDesperate:false, next:null },
     env:envKey, distance: tpl.archetype==='smart' ? 1 : (env.hide ? 2 : 1), round:1,
@@ -61,6 +68,16 @@ function startCombat(keyOrTpl, opts){
   STATE._importantMoment = true;
   return STATE.combat;
 }
+
+// Cuántas Sequences le llevás al rival (0 si no lo superás o si no es un
+// Beyonder). Entre Beyonders la Sequence pesa mucho: el de arriba recibe
+// menos daño y se escapa con más facilidad.
+function seqAdvantage(){
+  const cb = STATE.combat, p = STATE.pathway;
+  if(!cb || !p.chosenPathway || cb.enemy.seq === null || cb.enemy.seq === undefined) return 0;
+  return Math.max(0, cb.enemy.seq - p.sequence);
+}
+function seqAdvantageMult(){ return Math.max(0.35, 1 - 0.13*seqAdvantage()); }
 
 /* ------------------------------ estados ------------------------------ */
 function hasStatus(list, id){ return (list||[]).some(s=>s.id===id); }
@@ -180,8 +197,10 @@ function combatAction(action){
     peace = true;
   } else if(action === 'flee'){
     const env = COMBAT_ENVS[cb.env] || {};
-    const p = clamp(e.fleeChance + (env.flee||0) + cb.distance*0.12 + (pathwayMods().fleeBonus||0) + luckMod() + diffAdd('flee'), 0.05, 0.95);
+    const p = clamp(e.fleeChance + (env.flee||0) + cb.distance*0.12 + (pathwayMods().fleeBonus||0) + Math.min(0.25, seqAdvantage()*0.06) + (cb.player.fleeTries||0)*0.1 + luckMod() + diffAdd('flee'), 0.05, 0.95);
     fled = chance(p);
+    // Cada intento fallido te deja más cerca de la salida: ya viste por dónde no.
+    if(!fled) cb.player.fleeTries = (cb.player.fleeTries||0) + 1;
     log.push(fled ? 'Lográs escapar entre la confusión.' : 'Intentás escapar, pero no lo lográs.');
   } else if(action.startsWith('ab:')){
     const r = useCombatAbility(action.slice(3));
@@ -283,7 +302,7 @@ function enemyTurn(incoming, negate){
     let raw = rndInt(e.dmg[0], e.dmg[1]) * mult * incoming * statusMult(e.statuses, 'dmgMult') * statusMult(cb.player.statuses, 'dmgTaken');
     if(e.analyzedPlayer) raw *= 1.2;
     if(e.tier==='mystic' && artifactActiveEffect('ward')) raw *= 0.5;
-    raw *= diffMult('enemyDmg');
+    raw *= diffMult('enemyDmg') * seqAdvantageMult();
     const d = Math.max(0, Math.round(raw) - Math.floor(c.spirituality/40));
     if(d > 0){ applyEffects({salud:-d}); cb.player.dmgTaken += d; }
     return d;
@@ -341,10 +360,11 @@ function combatThreat(){
   const e = cb.enemy, c = STATE.character;
   const myAvg = Math.max(1, playerCombatPower(6.5) - e.defense);
   const toWin = Math.ceil(Math.max(0,e.hp)/myAvg);
-  const eAvg = Math.max(0.5, (e.dmg[0]+e.dmg[1])/2 - Math.floor(c.spirituality/40));
+  const known = cb.info.stage >= 3 || (cb.info.stage === 2 && cb.info.estimate !== null);
+  // La ventaja de Sequence sólo entra en la cuenta si ya sabés qué Sequence tiene.
+  const eAvg = Math.max(0.5, (e.dmg[0]+e.dmg[1])/2 * (known ? seqAdvantageMult() : 1) - Math.floor(c.spirituality/40));
   const toLose = Math.max(1, Math.floor(c.salud/eAvg));
   let level = toLose > toWin*2 ? 0 : toLose >= toWin ? 1 : 2;
-  const known = cb.info.stage >= 3 || (cb.info.stage === 2 && cb.info.estimate !== null);
   if(known && e.seq !== null){ const mine = STATE.pathway.chosenPathway ? STATE.pathway.sequence : 10; const s = cb.info.stage>=3 ? e.seq : cb.info.estimate; if(s < mine) level = Math.min(2, level+1); }
   const labels = ['Parejo','Peligroso','Letal'];
   const notes = ['Por lo que ves, podés con esto.','Esto puede salir mal. Cada turno cuenta.','Todo indica que esto te supera. Huir no es cobardía.'];

@@ -522,5 +522,25 @@ scenario('mundo libre: la guerra corta termina, y las partidas trabadas en guerr
   assert(run(ctx2, `loadGame() && STATE.pendingConsequences.some(pc=>pc.effect && pc.effect.war === false)`), 'no se agendó la paz');
 });
 
+scenario('combate: la Sequence del rival pesa (vida, daño, ventaja y huida)', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 40; STATE.pathway.chosenPathway = 'seer'; STATE.pathway.sequence = 4;`);
+  // Un Beyonder hostil de Sequence 9 es más débil que uno de 5; con vida y daño propios, se respetan.
+  const avg = (seq)=> run(ctx, `(function(){ let hp = 0, d = 0; for(let i=0;i<40;i++){ startCombat('rivalBeyonder', {overrides:{seq:${seq}}}); hp += STATE.combat.enemy.maxHp; d += STATE.combat.enemy.dmg[1]; STATE.combat = null; } return [hp/40, d/40]; })()`);
+  const [hp9, d9] = avg(9), [hp5, d5] = avg(5);
+  assert(hp9 < hp5 && d9 < d5, `el rival de Sequence 9 (${hp9}/${d9}) debería ser más débil que el de 5 (${hp5}/${d5})`);
+  run(ctx, `startCombat('rivalBeyonder', {overrides:{seq:2, hp:[140,140], dmg:[11,20]}})`);
+  assert(run(ctx, `STATE.combat.enemy.maxHp === 140 && STATE.combat.enemy.dmg[1] === 20`), 'no respetó la vida y el daño del encuentro');
+  // Llevarle cuatro Sequences reduce el daño recibido; al mismo nivel, nada.
+  assert(run(ctx, `seqAdvantage() === 0 && seqAdvantageMult() === 1`), 'contra un rival más fuerte no hay ventaja');
+  run(ctx, `STATE.combat = null; startCombat('rivalBeyonder', {overrides:{seq:8}})`);
+  assert(run(ctx, `seqAdvantage() === 4 && seqAdvantageMult() < 0.6`), 'la ventaja de Sequence no se calcula');
+  run(ctx, `STATE.combat = null; STATE.pathway.chosenPathway = null; startCombat('rivalBeyonder', {overrides:{seq:8}})`);
+  assert(run(ctx, `seqAdvantage() === 0`), 'sin vía no hay ventaja de Sequence');
+  // Cada huida fallida deja la siguiente más cerca.
+  run(ctx, `const e = STATE.combat.enemy; e.fleeChance = -5; e.dmg = [0,0]; e.archetype = 'human'; e.talk = 0; e.sanityDmg = [0,0]; e.corruptionDmg = [0,0]; e.next = 'attack'; STATE.character.salud = 90; const r0 = Math.random; Math.random = ()=>0.999; try{ combatAction('flee'); combatAction('flee'); } finally { Math.random = r0; }`);
+  assert(run(ctx, `STATE.combat && STATE.combat.player.fleeTries === 2`), 'no se cuentan los intentos de huida');
+});
+
 console.log(`\n${passed} escenarios OK, ${failed} con fallas.`);
 if(failed) process.exitCode = 1;
