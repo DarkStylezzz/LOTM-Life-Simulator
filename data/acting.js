@@ -172,6 +172,94 @@ const ACTING_ROLES = {
     3:{role:'Cognoscente', principle:'Un Cognoscente usa las leyes del mundo sin romperlas.', fit:['disciplined']},
     2:{role:'Ángel de la Sabiduría', principle:'Un Ángel de la Sabiduría revela sólo lo que es justo revelar.', fit:['secretive']},
     1:{role:'Ojo Omnisciente', principle:'El Ojo Omnisciente ve todo y elige no enloquecer.', fit:['anchored','disciplined']}
+  },
+  demoness:{
+    9:{role:'Asesino', principle:'Un Asesino es paciente y preciso: elige el momento, golpea una sola vez y desaparece antes de que nadie entienda qué pasó.', fit:['cautious','cold','secretive']},
+    8:{role:'Instigador', principle:'Un Instigador no pelea: enciende a otros con la palabra justa y mira desde afuera cómo arden.', fit:['social','charismatic','cold']},
+    7:{role:'Bruja', principle:'Una Bruja es dueña de su belleza y de su odio: encanta, maldice y nunca deja ver cuánto le costó.', fit:['charismatic','secretive','ambitious']},
+    6:{role:'Demonia del Placer', principle:'La Demonia del Placer da lo que el otro desea, y cobra después.', fit:['charismatic','social']},
+    5:{role:'Demonia de la Aflicción', principle:'La Demonia de la Aflicción siembra el mal sin tocarlo: la enfermedad trabaja sola.', fit:['cold','meticulous']},
+    4:{role:'Demonia de la Desesperación', principle:'La Demonia de la Desesperación le quita al mundo la esperanza sin perder la propia.', fit:['cold','anchored']},
+    3:{role:'Demonia Sin Edad', principle:'Quien no envejece mira pasar a los demás sin aferrarse a nadie.', fit:['cold','disciplined']},
+    2:{role:'Demonia de la Catástrofe', principle:'La Catástrofe cae donde decide, no donde la empujan.', fit:['ambitious','cold']},
+    1:{role:'Demonia del Apocalipsis', principle:'El Apocalipsis no destruye por rabia: anuncia un final que ya estaba escrito.', fit:['cold']}
+  },
+  paragon:{
+    9:{role:'Erudito', principle:'Un Erudito estudia cómo funciona el mundo con método y humildad: toda teoría se pone a prueba.', fit:['curious','meticulous','skeptic']},
+    8:{role:'Arqueólogo', principle:'Un Arqueólogo respeta lo que desentierra: registra, conserva y no despierta lo que dormía por algo.', fit:['curious','cautious','meticulous']},
+    7:{role:'Tasador', principle:'Un Tasador dice lo que vale cada cosa, aunque al dueño no le guste escucharlo.', fit:['meticulous','skeptic','cold']},
+    6:{role:'Artesano', principle:'Un Artesano crea con las manos y con paciencia: cada pieza lleva su firma.', fit:['disciplined','meticulous']},
+    5:{role:'Astrónomo', principle:'Un Astrónomo mide el cielo sin pedirle favores.', fit:['meticulous','loner']},
+    4:{role:'Alquimista', principle:'Un Alquimista transforma la materia sabiendo que toda transmutación tiene un precio.', fit:['cautious','curious']},
+    3:{role:'Erudito Arcano', principle:'Un Erudito Arcano usa las leyes ocultas sin creerse su dueño.', fit:['disciplined','skeptic']},
+    2:{role:'Magíster del Conocimiento', principle:'Un Magíster del Conocimiento enseña lo que sabe y admite lo que no.', fit:['social','disciplined']},
+    1:{role:'Iluminador', principle:'Un Iluminador lleva la luz del saber a otros, aunque lo que ilumine asuste.', fit:['brave','social']}
+  },
+  wheelOfFortune:{
+    9:{role:'Monstruo', principle:'Un Monstruo escucha sus presentimientos y no se aferra a la suerte: sabe que la rueda gira.', fit:['lucky','intuitive','superstitious']},
+    8:{role:'Autómata', principle:'Un Autómata calcula sin dejar que el miedo o el deseo toquen la cuenta.', fit:['cold','meticulous','skeptic']},
+    7:{role:'Afortunado', principle:'Un Afortunado acepta la suerte sin abusar de ella: lo que la rueda da, la rueda cobra.', fit:['lucky','social']},
+    6:{role:'Sacerdote de Calamidades', principle:'Un Sacerdote de Calamidades avisa del desastre aunque nadie le crea.', fit:['intuitive','brave']},
+    5:{role:'Vencedor', principle:'Un Vencedor compite para ganar, pero elige qué batallas vale la pena ganar.', fit:['ambitious','lucky']},
+    4:{role:'Mago del Infortunio', principle:'Un Mago del Infortunio reparte desgracias con medida: la mala suerte siempre vuelve.', fit:['cold','cautious']},
+    3:{role:'Caminante del Caos', principle:'Un Caminante del Caos no le teme al desorden: lo recorre hasta encontrar el camino.', fit:['intuitive']},
+    2:{role:'Adivino', principle:'Un Adivino cuida lo que dice, porque sus profecías se cumplen.', fit:['secretive','disciplined']},
+    1:{role:'Serpiente de Mercurio', principle:'La Serpiente de Mercurio sabe que todo vuelve, y actúa en consecuencia.', fit:['disciplined']}
+  },
+  mother:{
+    9:{role:'Sembrador', principle:'Un Sembrador trabaja la tierra con paciencia: siembra, cuida, espera y no fuerza lo que tiene su tiempo.', fit:['disciplined','empathic','tough']},
+    8:{role:'Médico', principle:'Un Médico cura sin preguntar a quién: primero la vida, después todo lo demás.', fit:['empathic','meticulous']},
+    7:{role:'Sacerdote de la Cosecha', principle:'Un Sacerdote de la Cosecha agradece lo que la tierra da y devuelve lo que toma.', fit:['superstitious','empathic']},
+    6:{role:'Biólogo', principle:'Un Biólogo estudia la vida con respeto, incluso cuando la modifica.', fit:['curious','meticulous']},
+    5:{role:'Druida', principle:'Un Druida vive con el bosque, no del bosque.', fit:['loner','anchored']},
+    4:{role:'Alquimista Clásico', principle:'Un Alquimista Clásico crea vida sabiendo que después es responsable de ella.', fit:['meticulous','cautious']},
+    3:{role:'Portador del Féretro', principle:'Quien carga el féretro acompaña el final sin apurarlo.', fit:['empathic','disciplined']},
+    2:{role:'Matriarca de la Desolación', principle:'La Matriarca de la Desolación decide dónde crece la vida y dónde no, sin crueldad.', fit:['cold']},
+    1:{role:'Caminante de la Naturaleza', principle:'Quien camina como la naturaleza no pelea contra su curso.', fit:['anchored']}
+  },
+  abyss:{
+    9:{role:'Criminal', principle:'Un Criminal rompe las reglas con la cabeza fría: elige el golpe, mide el riesgo y nunca deja que su propio deseo lo delate.', fit:['cold','cynic','cautious']},
+    8:{role:'Ángel sin Alas', principle:'Un Ángel sin Alas parece bueno y lo aprovecha: la confianza ajena es su herramienta, nunca su debilidad.', fit:['charismatic','cold']},
+    7:{role:'Asesino en Serie', principle:'Un Asesino en Serie mantiene el control a cualquier precio: el día que el impulso decide por él, deja de ser el cazador.', fit:['cold','meticulous']},
+    6:{role:'Diablo', principle:'Un Diablo tienta, no obliga: la caída la tiene que elegir el otro.', fit:['charismatic','cold']},
+    5:{role:'Apóstol del Deseo', principle:'Un Apóstol del Deseo despierta lo que el otro ya quería, sin dejarse arrastrar por lo que quiere él.', fit:['social','cold']},
+    4:{role:'Demonio', principle:'Un Demonio es fuerte porque no se engaña sobre lo que es.', fit:['tough','brave']},
+    3:{role:'Charlatán', principle:'Un Charlatán sabe que cada palabra en la lengua de los demonios es una semilla, y elige dónde cae.', fit:['social','secretive']},
+    2:{role:'Archiduque Sangriento', principle:'Un Archiduque Sangriento cobra tributo, pero protege a los que lo pagan.', fit:['ambitious']},
+    1:{role:'Monarca Inmundo', principle:'El Monarca Inmundo reina sobre lo caído sin olvidar que él también cayó.', fit:['anchored']}
+  },
+  chained:{
+    9:{role:'Prisionero', principle:'Un Prisionero se contiene: el deseo y la locura están ahí, pero la llave de su celda la tiene él.', fit:['disciplined','cautious','tough']},
+    8:{role:'Lunático', principle:'Un Lunático suelta su locura sólo cuando elige hacerlo, y siempre vuelve a encerrarla.', fit:['disciplined','intuitive']},
+    7:{role:'Hombre Lobo', principle:'Un Hombre Lobo convive con la bestia sin dejar que muerda a los suyos.', fit:['tough','anchored']},
+    6:{role:'Zombi', principle:'Un Zombi soporta lo que mataría a otro, sin olvidar que alguna vez estuvo vivo.', fit:['tough','cold']},
+    5:{role:'Espectro', principle:'Un Espectro atraviesa todo sin quedarse a vivir en nadie.', fit:['loner','secretive']},
+    4:{role:'Títere', principle:'Un Títere interpreta todos sus papeles sin perder el hilo que lo sostiene.', fit:['disciplined']},
+    3:{role:'Discípulo del Silencio', principle:'Un Discípulo del Silencio habla sólo cuando callar sería peor.', fit:['secretive','loner']},
+    2:{role:'Plaga Antigua', principle:'Una Plaga Antigua sabe que su cercanía daña, y elige su distancia.', fit:['cold']},
+    1:{role:'Abominación', principle:'Una Abominación recuerda cómo era ser humano, aunque ya no lo parezca.', fit:['anchored']}
+  },
+  blackEmperor:{
+    9:{role:'Abogado', principle:'Un Abogado conoce la ley mejor que nadie para poder torcerla sin romperla.', fit:['meticulous','cynic','ambitious']},
+    8:{role:'Bárbaro', principle:'Un Bárbaro no pide permiso: avanza por encima de la norma, pero no pisa a los suyos.', fit:['brave','tough']},
+    7:{role:'Sobornador', principle:'Un Sobornador sabe el precio de cada uno, y paga sólo lo necesario.', fit:['cynic','social']},
+    6:{role:'Barón de la Corrupción', principle:'Un Barón de la Corrupción corrompe instituciones, no amistades.', fit:['ambitious','charismatic']},
+    5:{role:'Mentor del Desorden', principle:'Un Mentor del Desorden rompe el orden ajeno para que nazca otro, no por diversión.', fit:['intuitive','ambitious']},
+    4:{role:'Conde de los Caídos', principle:'Un Conde de los Caídos hace caer a los poderosos, nunca a los que ya están en el suelo.', fit:['cold','brave']},
+    3:{role:'Mago Frenético', principle:'Un Mago Frenético abraza el caos sin perder de vista su objetivo.', fit:['intuitive']},
+    2:{role:'Duque de la Entropía', principle:'El Duque de la Entropía sabe que todo decae, y elige qué dejar caer.', fit:['cold']},
+    1:{role:'Príncipe de la Abolición', principle:'El Príncipe de la Abolición deroga lo injusto y responde por lo que abole.', fit:['ambitious','disciplined']}
+  },
+  justiciar:{
+    9:{role:'Árbitro', principle:'Un Árbitro es imparcial: escucha a las dos partes y dicta un veredicto que ninguna puede discutir.', fit:['disciplined','social','skeptic']},
+    8:{role:'Comisario', principle:'Un Comisario cuida el orden de su territorio con firmeza y sin abusar de la placa.', fit:['brave','disciplined']},
+    7:{role:'Interrogador', principle:'Un Interrogador busca la verdad sin quebrar a quien la dice.', fit:['cold','meticulous']},
+    6:{role:'Juez', principle:'Un Juez aplica la ley también a sí mismo.', fit:['disciplined','cold']},
+    5:{role:'Paladín Disciplinario', principle:'Un Paladín Disciplinario castiga sin odio y sin excepciones.', fit:['brave','disciplined']},
+    4:{role:'Mago Imperativo', principle:'Un Mago Imperativo ordena sólo lo que está dispuesto a cumplir.', fit:['disciplined']},
+    3:{role:'Cazador del Caos', principle:'Un Cazador del Caos persigue el desorden sin volverse parte de él.', fit:['brave','cautious']},
+    2:{role:'Equilibrador', principle:'Un Equilibrador sabe que el orden absoluto también es un exceso.', fit:['anchored']},
+    1:{role:'Mano del Orden', principle:'La Mano del Orden no se toma licencias: es la ley, no su dueña.', fit:['disciplined']}
   }
 };
 
@@ -558,6 +646,222 @@ const ACTING_SEEDS = [
     choices:[
       {label:'Registrarlo y no intervenir', small:'Prepararse, no forzar.', align:'aligned'},
       {label:'Mirar más allá, hasta el final', small:'Riesgo alto.', align:'bold', extra:{sanity:[-8,-3], corruption:[1,3]}}
+    ]},
+
+  // ============================== DEMONESS ==============================
+  {id:'dem_shadow', pw:'demoness', seqs:[9], title:'Seguir sin ser visto', text:'Durante una semana seguís a un prestamista que arruinó a media cuadra. Conocés sus horarios, sus atajos y la ventana que deja abierta.',
+    choices:[
+      {label:'Estudiarlo hasta saber dónde golpear, y esperar', small:'Un solo golpe, en el momento exacto.', align:'aligned'},
+      {label:'Entrar esa misma noche por la ventana y dejarle una nota sobre la almohada', small:'Que sepa que pudiste.', align:'bold', extra:{attention:[0,2], sanity:[-2,0]}},
+      {label:'Encararlo a los gritos en plena calle', small:'Sin sombra y sin paciencia.', align:'contradict', extra:{reputation:-1}},
+      {label:'Dejarlo pasar', small:'', align:'neutral'}
+    ]},
+  {id:'dem_whisper', pw:'demoness', seqs:[8,7], npc:'work', title:'Una palabra al oído', text:'{npc} y un compañero se detestan en silencio. Bastaría una frase tuya para que estalle todo.',
+    choices:[
+      {label:'Decir la frase justa, a la persona justa, y apartarte', small:'Encender sin quemarte.', align:'aligned', npcRel:{dependence:3}},
+      {label:'Encender a todo el taller hasta que la pelea sea de todos', small:'Una hoguera entera.', align:'bold', extra:{reputation:[-2,1]}, npcRel:{suspicion:3}},
+      {label:'Ayudar a que se reconcilien', small:'Apagar el fuego. Fuera del papel.', align:'contradict', npcRel:{trust:4}},
+      {label:'No meterte', small:'', align:'neutral'}
+    ]},
+  {id:'dem_mirror', pw:'demoness', seqs:[7,6], title:'El espejo', text:'Frente al espejo, tu reflejo tarda un instante en seguirte. Sabés que podrías dejar algo tuyo ahí adentro.',
+    choices:[
+      {label:'Guardar en el espejo un reflejo tuyo, con cuidado, como quien guarda un seguro', small:'Una Bruja siempre tiene una salida.', align:'aligned'},
+      {label:'Mirarte hasta que el reflejo hable primero', small:'Riesgo alto.', align:'bold', extra:{sanity:[-5,-2], corruption:[0,2]}},
+      {label:'Tapar todos los espejos de la casa', small:'No querer saber.', align:'contradict', extra:{sanity:[1,2]}}
+    ]},
+  {id:'dem_desire', pw:'demoness', seqs:[6,5,4], npc:'any', title:'Lo que el otro quiere', text:'{npc} te niega algo que necesitás. Ves con toda claridad qué desea a cambio.',
+    choices:[
+      {label:'Darle lo que desea, y cobrar después', small:'El placer primero; la cuenta, más tarde.', align:'aligned', npcRel:{dependence:5, affection:3}},
+      {label:'Hacer que lo desee tanto que se olvide de pedir nada', small:'Un encanto sin freno.', align:'bold', npcRel:{dependence:8, suspicion:3}, extra:{corruption:[1,3]}},
+      {label:'Pedírselo de frente, sin juegos', small:'Honesto. Fuera del papel.', align:'contradict', npcRel:{trust:3}}
+    ]},
+  {id:'dem_despair', pw:'demoness', seqs:[4,3,2,1], title:'Una ciudad sin esperanza', text:'Sentís la desesperación de la ciudad como si fuera el clima. Podrías empujarla un poco más.',
+    choices:[
+      {label:'Dejarla estar, y sostenerte de la que ya hay', small:'Prudente.', align:'aligned'},
+      {label:'Empujarla', small:'Riesgo alto.', align:'bold', extra:{sanity:[-6,-2], corruption:[2,4], attention:[1,3]}}
+    ]},
+
+  // ============================== PARAGON ==============================
+  {id:'par_machine', pw:'paragon', seqs:[9], title:'Una máquina rota', text:'En el taller del barrio hay una máquina de vapor que nadie sabe arreglar. El dueño ya habla de venderla como chatarra.',
+    choices:[
+      {label:'Desarmarla con método, anotando cada pieza', small:'Toda teoría se pone a prueba.', align:'aligned', extra:{reputation:1}},
+      {label:'Arreglarla y, de paso, mejorarla con una idea que nadie probó', small:'Todo o nada.', align:'bold', extra:{salud:[-6,0], cash:[0,40]}},
+      {label:'Decir que sabés y cobrar sin entenderla', small:'Plata fácil.', align:'contradict', extra:{cash:[10,30], reputation:-2}},
+      {label:'No meterte', small:'', align:'neutral'}
+    ]},
+  {id:'par_dig', pw:'paragon', seqs:[8,7], title:'Una escalera en el pozo', text:'Unos obreros encontraron, al cavar un pozo, una escalera de piedra que baja más de lo razonable.',
+    choices:[
+      {label:'Registrar todo y bajar con cuidado, de a un escalón', small:'Conservar antes que llevarse.', align:'aligned'},
+      {label:'Bajar hasta el final esa misma noche', small:'Lo que haya abajo, ahora.', align:'bold', extra:{sanity:[-5,-2], salud:[-6,0], clue:{pathway:'$random', reliability:'mixed', strength:[2,5]}}},
+      {label:'Venderle el hallazgo al primer anticuario', small:'Negocio.', align:'contradict', extra:{cash:[30,90]}}
+    ]},
+  {id:'par_heirloom', pw:'paragon', seqs:[7,6], npc:'any', title:'Una reliquia de familia', text:'{npc} te muestra una reliquia de su familia y te pregunta cuánto vale.',
+    choices:[
+      {label:'Decirle la verdad: vale poco, pero tiene historia', small:'El precio justo.', align:'aligned', npcRel:{trust:4, respect:2}},
+      {label:'Decirle también lo que no preguntó: que el objeto no está del todo muerto', small:'Toda la verdad.', align:'bold', npcRel:{fear:3, respect:4}, extra:{sanity:[-2,0]}},
+      {label:'Inflarle el precio y quedarte con una comisión', small:'Un tasador que miente.', align:'contradict', npcRel:{suspicion:3}, extra:{cash:[20,60]}}
+    ]},
+  {id:'par_invent', pw:'paragon', seqs:[6,5,4,3,2,1], title:'Un invento', text:'Tenés en la cabeza una máquina que no existe. Funcionaría. Cambiaría algo.',
+    choices:[
+      {label:'Construirla con paciencia, pieza por pieza', small:'Cada pieza, con tu firma.', align:'aligned'},
+      {label:'Meterle una Característica para que funcione ya', small:'Riesgo alto.', align:'bold', extra:{sanity:[-6,-2], corruption:[1,3], attention:[1,3]}},
+      {label:'Venderle la idea a una fábrica sin construirla', small:'Que la haga otro.', align:'contradict', extra:{cash:[80,200]}}
+    ]},
+
+  // ============================== WHEEL OF FORTUNE ==============================
+  {id:'wof_hunch', pw:'wheelOfFortune', seqs:[9], title:'Un mal presentimiento', text:'Esta mañana, al salir, sentís con toda claridad que no deberías tomar el tranvía de siempre.',
+    choices:[
+      {label:'Hacerle caso sin dramatizar, e ir caminando', small:'Escuchar el presentimiento.', align:'aligned'},
+      {label:'Avisarle a todo el vagón que se baje', small:'Aunque te tomen por loco.', align:'bold', extra:{reputation:[-2,2]}},
+      {label:'Ignorarlo: son supersticiones', small:'La rueda no perdona.', align:'contradict', extra:{salud:[-8,0]}}
+    ]},
+  {id:'wof_dice', pw:'wheelOfFortune', seqs:[8,7,6], title:'Los dados', text:'En la trastienda de un bar se juega fuerte a los dados. Sentís que esta noche la suerte está de tu lado.',
+    choices:[
+      {label:'Apostar poco y retirarte a tiempo', small:'Lo que la rueda da, la rueda cobra.', align:'aligned', extra:{cash:[5,30]}},
+      {label:'Apostarlo todo a una sola tirada', small:'Todo o nada.', align:'bold', extra:{cash:[-60,140]}},
+      {label:'Hacer trampa con dados cargados', small:'Sin fe en la suerte.', align:'contradict', extra:{cash:[20,60], reputation:-2}},
+      {label:'Mirar y no jugar', small:'', align:'neutral'}
+    ]},
+  {id:'wof_cold', pw:'wheelOfFortune', seqs:[8], npc:'work', title:'Una cuenta fría', text:'{npc} te pide consejo para una decisión importante, y está claramente dejándose llevar por el miedo.',
+    choices:[
+      {label:'Hacer la cuenta en frío y decírsela tal cual', small:'Sin miedo y sin deseo.', align:'aligned', npcRel:{respect:4, trust:2}},
+      {label:'Calcularle la vida entera: las probabilidades de todo', small:'Una máquina de verdad.', align:'bold', npcRel:{fear:2, respect:3}, extra:{sanity:[-2,0]}},
+      {label:'Decirle lo que quiere oír', small:'Cálido. Fuera del papel.', align:'contradict', npcRel:{affection:3}}
+    ]},
+  {id:'wof_loop', pw:'wheelOfFortune', seqs:[5,4,3,2,1], title:'Otra vez', text:'Vivís el mismo día por segunda vez. Nadie más se da cuenta. Vos sabés cómo termina.',
+    choices:[
+      {label:'Cambiar una sola cosa, la justa', small:'La rueda gira; no la fuerces.', align:'aligned'},
+      {label:'Cambiarlo todo, a ver qué pasa', small:'Riesgo alto.', align:'bold', extra:{sanity:[-7,-3], corruption:[1,3]}}
+    ]},
+
+  // ============================== MOTHER ==============================
+  {id:'mom_garden', pw:'mother', seqs:[9], title:'Un huerto que no crece', text:'La vecina tiene un huerto seco que ya dio por perdido. Te pregunta si podés "darle una mano".',
+    choices:[
+      {label:'Trabajarlo con paciencia, estación tras estación', small:'Todo tiene su tiempo.', align:'aligned', extra:{reputation:2}},
+      {label:'Hundir las manos en la tierra y ordenarle que crezca', small:'Que florezca esta misma noche.', align:'bold', extra:{sanity:[-4,-1], attention:[0,2]}},
+      {label:'Comprar verdura en el mercado y decir que creció sola', small:'Un atajo.', align:'contradict', extra:{cash:[-15,-5]}},
+      {label:'Decirle que no tenés tiempo', small:'', align:'neutral'}
+    ]},
+  {id:'mom_patient', pw:'mother', seqs:[8,7], npc:'any', title:'Un enfermo sin plata', text:'{npc} está enfermo y no tiene con qué pagar un médico.',
+    choices:[
+      {label:'Curarlo con lo que sabés, sin cobrarle', small:'Primero la vida.', align:'aligned', npcRel:{trust:5, affection:4}},
+      {label:'Curarlo del todo, más allá de lo que un médico podría', small:'Que no quede nada.', align:'bold', npcRel:{trust:4, suspicion:4}, extra:{sanity:[-3,0]}},
+      {label:'Cobrarle igual, en cuotas', small:'Negocio.', align:'contradict', extra:{cash:[10,30]}, npcRel:{affection:-3}}
+    ]},
+  {id:'mom_harvest', pw:'mother', seqs:[7,6], title:'La fiesta de la cosecha', text:'En las afueras festejan la cosecha con un ritual viejo que ya nadie entiende. Vos sí lo entendés.',
+    choices:[
+      {label:'Participar con respeto y dar las gracias', small:'Devolver lo que se toma.', align:'aligned'},
+      {label:'Guiar el ritual de verdad, con tu poder', small:'Que la tierra conteste.', align:'bold', extra:{reputation:[0,3], attention:[1,2]}},
+      {label:'Burlarte de las supersticiones del campo', small:'Cosas de gente sin estudios.', align:'contradict', extra:{reputation:-2}}
+    ]},
+  {id:'mom_creature', pw:'mother', seqs:[5,4,3,2,1], title:'Una criatura nueva', text:'Podrías crear una criatura que no existe: útil, hermosa, viva. No sabés qué va a desear.',
+    choices:[
+      {label:'No crearla hasta entender la responsabilidad que asumís', small:'Prudente.', align:'aligned'},
+      {label:'Crearla', small:'Riesgo alto.', align:'bold', extra:{sanity:[-6,-2], corruption:[1,3], attention:[1,3]}}
+    ]},
+
+  // ============================== ABYSS ==============================
+  {id:'aby_jeweler', pw:'abyss', seqs:[9], title:'Una puerta sin llave', text:'La puerta trasera de la joyería quedó sin llave. Nadie mira.',
+    choices:[
+      {label:'Entrar, llevarte una sola pieza y no dejar rastro', small:'Cabeza fría.', align:'aligned', extra:{cash:[40,110], corruption:[0,1]}},
+      {label:'Llevarte todo lo que puedas cargar', small:'El deseo manda.', align:'bold', extra:{cash:[90,220], attention:[1,3], corruption:[1,2]}},
+      {label:'Avisarle al joyero', small:'Fuera del papel.', align:'contradict', extra:{reputation:2}},
+      {label:'Seguir de largo', small:'', align:'neutral'}
+    ]},
+  {id:'aby_confession', pw:'abyss', seqs:[8,7,6], npc:'any', title:'Un secreto sucio', text:'{npc} te confiesa algo vergonzoso que hizo. Confía en vos. Podrías usarlo.',
+    choices:[
+      {label:'Escuchar con cara de ángel y guardarte el secreto para cuando haga falta', small:'La confianza es una herramienta.', align:'aligned', npcRel:{trust:4, dependence:3}},
+      {label:'Empujarle a hacerlo otra vez, peor', small:'Que caiga del todo.', align:'bold', npcRel:{dependence:6}, extra:{corruption:[1,3]}},
+      {label:'Aconsejarle que lo repare', small:'Bueno de verdad. Fuera del papel.', align:'contradict', npcRel:{trust:3, respect:3}}
+    ]},
+  {id:'aby_party', pw:'abyss', seqs:[5,4], title:'Una fiesta', text:'En una fiesta ves con toda claridad lo que cada invitado desea y no se anima a admitir.',
+    choices:[
+      {label:'Avivar un solo deseo: el que te sirve', small:'Despertar lo que ya estaba.', align:'aligned'},
+      {label:'Avivarlos todos a la vez', small:'Que arda la fiesta.', align:'bold', extra:{corruption:[2,4], sanity:[-4,-1], attention:[1,3]}},
+      {label:'Irte antes de que empiece', small:'No querer ver.', align:'contradict', extra:{sanity:[1,2]}}
+    ]},
+  {id:'aby_tongue', pw:'abyss', seqs:[3,2,1], title:'La lengua de abajo', text:'Una frase en la lengua de los demonios te quema la garganta. Si la dijeras, una multitud entera haría lo que quisieras.',
+    choices:[
+      {label:'Tragártela', small:'Prudente.', align:'aligned'},
+      {label:'Decirla', small:'Riesgo alto.', align:'bold', extra:{corruption:[3,6], sanity:[-6,-2]}}
+    ]},
+
+  // ============================== CHAINED ==============================
+  {id:'cha_urge', pw:'chained', seqs:[9], title:'Algo que no hay que hacer', text:'Tenés ganas, muchas, de hacer algo que sabés que no deberías: una copa más, una palabra de más, un golpe.',
+    choices:[
+      {label:'Contenerte, sin drama', small:'La llave es tuya.', align:'aligned', extra:{sanity:-1}},
+      {label:'Encerrarte una semana entera, sin ver a nadie', small:'Una celda de verdad.', align:'bold', extra:{sanity:[-4,-1], salud:[-3,0]}},
+      {label:'Darte el gusto', small:'Por una vez.', align:'contradict', extra:{sanity:[1,3]}}
+    ]},
+  {id:'cha_laugh', pw:'chained', seqs:[8,7], npc:'close', title:'Una risa que no es tuya', text:'Cenando con {npc}, sentís que la locura te sube por la garganta como una carcajada.',
+    choices:[
+      {label:'Disculparte, salir y dejarla afuera', small:'Soltarla sólo cuando elegís.', align:'aligned'},
+      {label:'Soltarla un segundo, controlada, y volver a guardarla', small:'Probar la correa.', align:'bold', npcRel:{suspicion:3, fear:2}, extra:{sanity:[-3,0]}},
+      {label:'Dejarla salir entera', small:'Sin cadenas.', align:'contradict', npcRel:{fear:5, affection:-4}, extra:{sanity:[-5,-2]}}
+    ]},
+  {id:'cha_moon', pw:'chained', seqs:[7,6], title:'Luna llena', text:'Es luna llena. El cuerpo te pide correr, morder, cazar.',
+    choices:[
+      {label:'Atarte con tus propias cadenas hasta el amanecer', small:'La bestia no muerde a nadie.', align:'aligned', extra:{salud:[-3,0]}},
+      {label:'Correr por el bosque toda la noche, lejos de todos', small:'Soltarla donde no hace daño.', align:'bold', extra:{attention:[0,2], salud:[-4,0]}},
+      {label:'Salir a la ciudad', small:'Que pase lo que pase.', align:'contradict', extra:{corruption:[2,4], reputation:-3}}
+    ]},
+  {id:'cha_silence', pw:'chained', seqs:[5,4,3,2,1], title:'Un silencio absoluto', text:'Podrías callar el mundo a tu alrededor: voces, hechizos, pensamientos.',
+    choices:[
+      {label:'Callar sólo lo necesario', small:'Prudente.', align:'aligned'},
+      {label:'Callarlo todo, aunque no sepas si vas a poder volver a encenderlo', small:'Riesgo alto.', align:'bold', extra:{sanity:[-6,-2], humanity:-1}}
+    ]},
+
+  // ============================== BLACK EMPEROR ==============================
+  {id:'be_contract', pw:'blackEmperor', seqs:[9], npc:'any', title:'Un contrato con trampa', text:'{npc} está por firmar un contrato de alquiler. Ves en un segundo la cláusula que lo va a arruinar.',
+    choices:[
+      {label:'Mostrarle la cláusula y cómo darla vuelta a su favor', small:'Torcer la ley sin romperla.', align:'aligned', npcRel:{trust:5, respect:3}},
+      {label:'Reescribir el contrato entero para que el que quede atrapado sea el dueño', small:'La grieta, al revés.', align:'bold', npcRel:{respect:4}, extra:{attention:[0,1]}},
+      {label:'No decir nada: la ley es la ley', small:'Fuera del papel.', align:'contradict'}
+    ]},
+  {id:'be_inspector', pw:'blackEmperor', seqs:[8,7,6], title:'Una multa inventada', text:'Un inspector municipal quiere clausurar el negocio de un amigo por una falta que no existe.',
+    choices:[
+      {label:'Ofrecerle exactamente lo que acepta, ni un centavo más', small:'Cada uno tiene su precio.', align:'aligned', extra:{cash:[-40,-15]}},
+      {label:'Comprarlo a él y a su jefe, de una vez', small:'Que la oficina entera te deba.', align:'bold', extra:{cash:[-120,-60], reputation:[0,2]}},
+      {label:'Denunciarlo por las vías formales', small:'Fuera del papel.', align:'contradict', extra:{reputation:1}}
+    ]},
+  {id:'be_tavern', pw:'blackEmperor', seqs:[8], title:'Una pelea de taberna', text:'Tres tipos te buscan pelea a la salida de una taberna.',
+    choices:[
+      {label:'Ir de frente, a mano limpia', small:'Un bárbaro no pide permiso.', align:'aligned', extra:{salud:[-8,-2], reputation:[0,2]}},
+      {label:'Romperles todo, a ellos y al lugar', small:'Sin ninguna norma.', align:'bold', extra:{salud:[-10,0], cash:[-40,0], reputation:-1}},
+      {label:'Llamar a la policía', small:'Fuera del papel.', align:'contradict'},
+      {label:'Irte por la otra puerta', small:'', align:'neutral'}
+    ]},
+  {id:'be_office', pw:'blackEmperor', seqs:[5,4,3,2,1], title:'Una oficina podrida', text:'Una oficina del gobierno funciona a fuerza de coimas y miedo. Podrías hacerla caer, o hacerla tuya.',
+    choices:[
+      {label:'Hacerla caer desde adentro, sin que se vea tu mano', small:'Que nazca otro orden.', align:'aligned'},
+      {label:'Hacerla tuya', small:'Riesgo alto.', align:'bold', extra:{corruption:[2,4], cash:[50,150], attention:[1,3]}}
+    ]},
+
+  // ============================== JUSTICIAR ==============================
+  {id:'jus_dispute', pw:'justiciar', seqs:[9], npc:'any', title:'Una disputa', text:'Dos vecinos se pelean por un pedazo de patio, y {npc} te pide que decidas quién tiene razón.',
+    choices:[
+      {label:'Escuchar a los dos y dictar un veredicto justo', small:'Imparcial.', align:'aligned', npcRel:{respect:5}},
+      {label:'Imponer tu veredicto y hacerlo cumplir en el acto', small:'Autoridad sin discusión.', align:'bold', npcRel:{respect:3, fear:3}},
+      {label:'Darle la razón a tu amigo, aunque no la tenga', small:'Parcial.', align:'contradict', npcRel:{affection:3, respect:-2}},
+      {label:'No meterte', small:'', align:'neutral'}
+    ]},
+  {id:'jus_patrol', pw:'justiciar', seqs:[8,7], title:'Tu territorio', text:'En tu barrio alguien les está robando a los viejos que cobran la pensión.',
+    choices:[
+      {label:'Vigilar, identificarlo y entregarlo a la ley', small:'El orden, con firmeza.', align:'aligned', extra:{reputation:2}},
+      {label:'Atraparlo vos mismo y asegurarte de que no vuelva a hacerlo', small:'Justicia en el acto.', align:'bold', extra:{salud:[-8,0], reputation:[0,3]}},
+      {label:'Hacer la vista gorda', small:'No es tu problema.', align:'contradict'},
+      {label:'Avisarle a la policía y olvidarte', small:'', align:'neutral'}
+    ]},
+  {id:'jus_lie', pw:'justiciar', seqs:[7,6], npc:'work', title:'Una mentira en el trabajo', text:'Falta plata de la caja y {npc} jura que no fue. Sabés que miente.',
+    choices:[
+      {label:'Hacerle las preguntas justas hasta que la verdad salga sola', small:'Sin quebrarlo.', align:'aligned', npcRel:{respect:3, fear:2}},
+      {label:'Mirarlo a los ojos y arrancarle la confesión', small:'Directo al alma.', align:'bold', npcRel:{fear:6}, extra:{sanity:[-3,0]}},
+      {label:'Taparlo: total, fue poca plata', small:'La ley, para los otros.', align:'contradict', npcRel:{affection:3, dependence:2}}
+    ]},
+  {id:'jus_rule', pw:'justiciar', seqs:[5,4,3,2,1], title:'Una regla nueva', text:'Podrías dictar una regla para toda la ciudad, en lengua mística. Todos la cumplirían.',
+    choices:[
+      {label:'Dictarla pequeña, justa y por un tiempo', small:'Sólo lo que estás dispuesto a cumplir.', align:'aligned'},
+      {label:'Dictarla para siempre', small:'Riesgo alto.', align:'bold', extra:{sanity:[-6,-2], humanity:-1, attention:[1,3]}}
     ]}
 ];
 

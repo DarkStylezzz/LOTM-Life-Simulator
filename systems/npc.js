@@ -174,7 +174,7 @@ function seedHiddenWorld(vecina, cain, yulen){
   const city = currentCity();
   // El Sr. Cain: su afiliación real cambia de vida en vida.
   const cf = wpick(['tarotClub','aurora','mi9','nighthawks'], k=>({tarotClub:4, aurora:2.5, mi9:2, nighthawks:1.5})[k]);
-  const cpath = {tarotClub:'fool', aurora:'hangedMan', mi9:pick(['redPriest','error']), nighthawks:'darkness'}[cf];
+  const cpath = {tarotClub:'fool', aurora:'hangedMan', mi9:pick(['redPriest','error','justiciar']), nighthawks:'darkness'}[cf];
   cain.hidden = {pathway:cpath, sequence: cf==='tarotClub' ? 6 : rndInt(6,8), faction:cf};
   cain.mystic = 95; cain.goals = [{id:'identidad', progress:0}, {id: cf==='aurora' ? 'poder' : 'organizacion', progress:0}];
   addHiddenTruth(`El Sr. Cain era ${PATHWAYS[cpath].name}, Sequence ${cain.hidden.sequence}, y trabajaba para ${factionName(cf)}.`, {key:'cain', npc:'extraño'});

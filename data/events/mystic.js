@@ -11,7 +11,7 @@
    ========================================================================= */
 const EVENTS_MYSTIC = [
   // ---------------- ganchos originales (texto conservado) ----------------
-  {id:'myst_cain_client', type:'mystic', rarity:'mystic', tags:['cain','symbol'], weight:6, cooldown:60, repeatable:false,
+  {id:'myst_cain_client', type:'mystic', rarity:'mystic', tags:['cain','symbol'], weight:7, cooldown:60, repeatable:false,
     context:(ctx)=>{ const n = npcById('extraño'); if(!n || !n.alive) return null; ctx.npc = n; return ctx; },
     run:(ctx)=>{ meetNpc(ctx.npc); applyEffects({clue:{pathway:ctx.npc.hidden.pathway || '$random', reliability:'real', strength:[2,5], source:'los símbolos del Sr. Cain'}, exposure:2});
       addItem('doc_symbol', 1, 'dibujado por el Sr. Cain en una servilleta');
@@ -51,7 +51,53 @@ const EVENTS_MYSTIC = [
   {id:'myst_detective', type:'mystic', rarity:'mystic', tags:['knowledge'], requirements:{ageMin:16}, weight:2, cooldown:48,
     run:()=>{ applyEffects({clue:{pathway:'whiteTower', reliability:'mixed', strength:[3,6], source:'un investigador privado'}}); if(chance(0.35)) addRumor('detective');
       return {title:'Un detective que no pregunta', text:'Un investigador privado resuelve en una tarde un caso que tenía a la policía en vilo hace meses. Dice que "estaba todo a la vista".'}; }},
-  {id:'myst_strange_book', type:'mystic', rarity:'mystic', tags:['book'], weight:4, cooldown:36,
+  // ---------------- las ocho vías de la quinta tanda ----------------
+  // Pesan según cuánto pisa Loen cada vía en la novela: Paragon es la vía de la
+  // Iglesia del Vapor y la Maquinaria (tanto como Darkness o Tyrant); Black Emperor
+  // y Justiciar rondan la corona y MI9; las otras cinco llegan de lejos (sus
+  // organizaciones están en otros reinos), y sus ganchos no tapan los del Sr. Cain
+  // o el Tarot.
+  {id:'myst_mirror_lady', type:'mystic', rarity:'mystic', tags:['mirror','desire'], weight:2, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'demoness', reliability:'mixed', strength:[2,5], source:'una casa de modas'}}); if(chance(0.35)) addRumor('mirror_witch');
+      return {title:'La modista sin reflejo', text:'En la vidriera de una casa de modas, la modista acomoda un vestido frente a un espejo enorme. En el espejo, el vestido se acomoda solo.'}; }},
+  {id:'myst_riot', type:'mystic', rarity:'mystic', tags:['crowd','desire'], requirements:{ageMin:16}, weight:1, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'demoness', reliability:'real', strength:[3,6], source:'una revuelta de barrio'}}); return {title:'Una revuelta de la nada', text:'Una pelea entre dos borrachos se convierte, en diez minutos, en una revuelta de medio barrio. En el centro, una mujer que nadie conoce sonríe, y se va antes de que llegue la policía.'}; }},
+  {id:'myst_automaton', type:'mystic', rarity:'mystic', tags:['machine'], weight:4, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'paragon', reliability:'mixed', strength:[2,5], source:'un autómata de feria'}}); if(chance(0.35)) addRumor('clockwork_inventor');
+      return {title:'Un autómata', text:'En una feria, un autómata de latón escribe con pluma el nombre de cada persona que se le acerca. El tuyo lo escribe antes de que llegues.'}; }},
+  {id:'myst_sealed_room', type:'mystic', rarity:'mystic', tags:['machine','ruins'], requirements:{ageMin:16}, weight:2, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'paragon', reliability:'real', strength:[3,6], source:'una sala sellada bajo la calle'}}); return {title:'La sala sellada', text:'Unos obreros que cavaban para una cañería encontraron una sala de piedra, sellada, llena de mecanismos que todavía se mueven. Esa tarde llegan hombres con un engranaje bordado en la solapa, y la sala desaparece de los diarios.'}; }},
+  {id:'myst_lucky_man', type:'mystic', rarity:'mystic', tags:['luck'], weight:2, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'wheelOfFortune', reliability:'mixed', strength:[2,5], source:'un hombre con demasiada suerte'}}); if(chance(0.35)) addRumor('lucky_gambler');
+      return {title:'Demasiada suerte', text:'En la calle, un hombre esquiva por centímetros un carro desbocado, después una maceta que cae y después un tranvía. Sigue caminando, pálido, como quien sabe que la cuenta le va a llegar.'}; }},
+  {id:'myst_deja_vu', type:'mystic', rarity:'mystic', tags:['luck','fate'], requirements:{ageMin:16}, weight:1, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'wheelOfFortune', reliability:'real', strength:[3,6], source:'un día que se repitió'}, sanity:-2}); return {title:'Ya lo viviste', text:'Una tarde entera se repite, igual, palabra por palabra. La segunda vez, una vieja del mercado te guiña un ojo, como si ella también lo supiera.'}; }},
+  {id:'myst_winter_fruit', type:'mystic', rarity:'mystic', tags:['earth'], weight:2, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'mother', reliability:'mixed', strength:[2,5], source:'una vendedora del mercado'}}); if(chance(0.35)) addRumor('miracle_orchard');
+      return {title:'Fruta en invierno', text:'En pleno invierno, una vendedora del mercado ofrece duraznos maduros. Jura que son de su quinta, y que "a la tierra hay que saber pedirle".'}; }},
+  {id:'myst_healer_hands', type:'mystic', rarity:'mystic', tags:['earth','care'], requirements:{ageMin:16}, weight:1, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'mother', reliability:'real', strength:[3,6], source:'un médico de barrio'}}); return {title:'Unas manos que curan', text:'Un médico de barrio cierra con las manos una herida que debería haber necesitado veinte puntos. Después se las lava con tierra, no con agua.'}; }},
+  {id:'myst_smiling_dead', type:'mystic', rarity:'mystic', tags:['crime'], weight:2, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'abyss', reliability:'mixed', strength:[2,5], source:'un crimen en los diarios'}, sanity:-1}); if(chance(0.35)) addRumor('smiling_killer');
+      return {title:'Un crimen', text:'Los diarios hablan de un crimen horrible en un barrio rico. Lo que no dicen, pero todos comentan, es que el muerto sonreía.'}; }},
+  {id:'myst_offer', type:'mystic', rarity:'mystic', tags:['crime','desire'], requirements:{ageMin:18}, weight:1, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'abyss', reliability:'real', strength:[3,6], source:'un desconocido muy elegante'}}); return {title:'Una oferta', text:'En un bar, un desconocido muy elegante te ofrece exactamente lo que más querés. Te negás. Se ríe, paga tu cuenta y se va. Durante una semana, lo que te ofreció no te deja dormir.'}; }},
+  {id:'myst_howl', type:'mystic', rarity:'mystic', tags:['madness','beast'], weight:2, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'chained', reliability:'mixed', strength:[2,5], source:'el manicomio de la ciudad'}}); if(chance(0.35)) addRumor('asylum_howl');
+      return {title:'Un aullido', text:'Una noche de luna llena llega desde el manicomio un aullido que no es de ningún perro. A la mañana, los enfermeros cambian de tema cuando alguien pregunta.'}; }},
+  {id:'myst_prisoner', type:'mystic', rarity:'mystic', tags:['madness'], requirements:{ageMin:16}, weight:1, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'chained', reliability:'real', strength:[3,6], source:'un guardia de la cárcel'}}); return {title:'El preso que no quería salir', text:'Un preso que llevaba veinte años encerrado se niega a salir el día que le dan la libertad. "Afuera no me puedo contener", le dice al guardia. El guardia te lo cuenta a vos, todavía asustado.'}; }},
+  {id:'myst_lawyer', type:'mystic', rarity:'mystic', tags:['law'], weight:3, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'blackEmperor', reliability:'mixed', strength:[2,5], source:'un juicio en los diarios'}}); if(chance(0.35)) addRumor('lawyer_no_degree');
+      return {title:'Un abogado', text:'Un abogado saca de la cárcel a un hombre que todos sabían culpable, con un argumento que nadie entiende del todo. El juez firma como si le dolieran las manos.'}; }},
+  {id:'myst_disorder', type:'mystic', rarity:'mystic', tags:['law'], requirements:{ageMin:16}, weight:2, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'blackEmperor', reliability:'real', strength:[3,6], source:'una oficina del gobierno'}}); return {title:'Una oficina en desorden', text:'Durante una semana, en una oficina del gobierno se pierde todo: expedientes, sellos, el reloj de pared. El único que parece feliz es un funcionario nuevo al que nadie recuerda haber contratado.'}; }},
+  {id:'myst_judge', type:'mystic', rarity:'mystic', tags:['law','order'], weight:3, cooldown:36,
+    run:()=>{ applyEffects({clue:{pathway:'justiciar', reliability:'mixed', strength:[2,5], source:'un juez de paz'}}); if(chance(0.35)) addRumor('silent_judge');
+      return {title:'El juez de paz', text:'Un juez de paz resuelve una pelea de vecinos con una sola frase. Nadie, ni siquiera el que pierde, se anima a discutirle.'}; }},
+  {id:'myst_verdict', type:'mystic', rarity:'mystic', tags:['law','order'], requirements:{ageMin:16}, weight:2, cooldown:48,
+    run:()=>{ applyEffects({clue:{pathway:'justiciar', reliability:'real', strength:[3,6], source:'un hombre de uniforme'}}); return {title:'Una prohibición', text:'Un hombre de uniforme le dice a un borracho violento: "No vas a volver a levantar la mano". El borracho lo intenta, delante de todos, y el brazo no le responde.'}; }},
+  {id:'myst_strange_book', type:'mystic', rarity:'mystic', tags:['book'], weight:5, cooldown:36,
     run:()=>{ applyEffects({clue:{pathway:'$random', reliability:'mixed', strength:[4,9], source:'un libro de segunda mano'}, sanity:-2}); addItem('book_mystic_fragment', 1, 'una librería de segunda mano');
       return {title:'Un libro extraño', text:'En una librería de segunda mano encontrás un libro con anotaciones que no deberían tener sentido... y sin embargo lo tienen.'}; }},
   {id:'myst_cain_returns', type:'mystic', rarity:'mystic', tags:['cain'], weight:3, cooldown:48,
@@ -61,7 +107,7 @@ const EVENTS_MYSTIC = [
       if(f==='tarotClub'){ tarotHear('el Sr. Cain'); return {title:'Sr. Cain vuelve', text:'El extraño cliente regresa. Esta vez insinúa pertenecer a "un club poco convencional", que se reúne "más arriba de donde llegan las nubes".'}; }
       if(f==='aurora'){ return {title:'Sr. Cain vuelve', text:'El extraño cliente regresa. Esta vez te habla de "un grupo que devuelve lo que la vida te quitó". Sonríe demasiado.'}; }
       return {title:'Sr. Cain vuelve', text:'El extraño cliente regresa. Esta vez te hace preguntas sobre vos. Demasiado precisas para ser curiosidad.'}; }},
-  {id:'myst_tarot_card', type:'mystic', rarity:'mystic', tags:['tarot'], weight:2, cooldown:48,
+  {id:'myst_tarot_card', type:'mystic', rarity:'mystic', tags:['tarot'], weight:3, cooldown:48,
     hiddenRequirements:()=>STATE.flags.mysticExposure>15,
     run:()=>{ STATE.flags.tarotHint = (STATE.flags.tarotHint||0)+1; addItem('tarot_card', 1, 'encontrada fuera de lugar'); tarotHear('una carta fuera de lugar');
       return {title:'Una carta de tarot', text:'Encontrás una carta de tarot fuera de lugar, con un símbolo que no pertenece a ningún mazo comercial.'}; }},

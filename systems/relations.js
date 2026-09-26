@@ -297,16 +297,24 @@ function confideBeyonderSecret(n){
 }
 
 /* ------------------------------ pareja ------------------------------ */
+// El género de las parejas que el juego le propone al personaje: el opuesto
+// al suyo (la costumbre de la época), o null si no declaró género. Si la vida
+// lo fijó de otra manera, manda eso: una Bruja de la vía Demoness que antes
+// era hombre sigue buscando a quien buscaba (ver witchTransformation).
+function partnerGender(){
+  if(STATE.flags.partnerGender) return STATE.flags.partnerGender;
+  const g = STATE.character.genero;
+  return g === 'Hombre' ? 'f' : g === 'Mujer' ? 'm' : null;
+}
 function romanceCompatible(n){
   if(!n || !n.alive || isFamilyNpc(n) || n.flags.married) return false;
   const age = npcAge(n), mine = STATE.character.edad;
   if(age < 18 || Math.abs(age - mine) > 14) return false;
-  const g = STATE.character.genero;
   // Sin género declarado, cualquier combinación es posible; si no, se sigue
   // la costumbre de la época salvo con una chance baja (vidas distintas).
-  if(!g) return true;
-  const opposite = (g==='Hombre' && n.gender==='f') || (g==='Mujer' && n.gender==='m');
-  return opposite || n.flags.romanceOpen === true;
+  const want = partnerGender();
+  if(!want) return true;
+  return n.gender === want || n.flags.romanceOpen === true;
 }
 function startDating(n){
   const prev = partnerNpc(); if(prev && prev !== n) return;

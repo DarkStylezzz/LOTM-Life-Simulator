@@ -153,7 +153,7 @@ const EVENTS_LATER = [
       'En la biblioteca, alguien te recomienda un libro con una seguridad que te hace reír. El libro es malísimo. Volvés a la biblioteca igual.']),
     choices:[
       {label:'Darle una oportunidad', small:'¿Por qué no, a esta altura?',
-        run:()=>{ const c = STATE.character; const g = c.genero === 'Hombre' ? 'f' : c.genero === 'Mujer' ? 'm' : (chance(0.5)?'m':'f');
+        run:()=>{ const c = STATE.character; const g = partnerGender() || (chance(0.5)?'m':'f');
           const n = createNpc({met:true, gender:g, relType:'acquaintance', ageMin:Math.max(35, c.edad-8), ageMax:c.edad+6, trust:25, affection:30});
           startDating(n); return `Se llama ${n.name}. Los dos tienen una vida entera detrás, con sus muertos y sus mañas. Tal vez por eso es tan fácil hablar.`; }},
       {label:'Dejarlo pasar', small:'Ya no estás para empezar de cero.',

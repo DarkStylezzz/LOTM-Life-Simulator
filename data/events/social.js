@@ -106,7 +106,7 @@ const EVENTS_SOCIAL = [
       'Todas las mañanas se cruzan en la misma esquina. Hoy, por fin, alguien dice buen día primero.',
       'Te toca compartir mesa en una taberna llena. Para el final de la noche, ya no son desconocidos.']),
     choices:[
-      {label:'Invitarle a salir', small:'Arriesgarse un poco.', run:()=>{ const c = STATE.character; const g = c.genero==='Hombre' ? 'f' : c.genero==='Mujer' ? 'm' : (chance(0.5)?'f':'m');
+      {label:'Invitarle a salir', small:'Arriesgarse un poco.', run:()=>{ const c = STATE.character; const g = partnerGender() || (chance(0.5)?'f':'m');
         const n = createNpc({gender:g, relType:'acquaintance', ageMin:Math.max(18, c.edad-8), ageMax:c.edad+8, met:true, trust:rndInt(30,50), affection:rndInt(45,65)});
         if(chance(0.7 + luckMod())){ startDating(n); return `Se llama ${n.name}. Dice que sí. Ninguno de los dos sabe todavía adónde va esto.`; }
         adjustRel(n, {affection:-10}); return `Se llama ${n.name}. Te dice que no, con amabilidad. Igual te quedás con su nombre.`; }},

@@ -35,7 +35,8 @@ const CONDITION_POOLS = {
 };
 // Afinidad de vía con algunos síntomas: a veces una poción "tuerce" el cuerpo
 // hacia lo que la vía ya es.
-const PATHWAY_CONDITION_BIAS = { moon:'hambre', death:'frio', darkness:'ojos', hangedMan:'sombra', visionary:'voces', sun:'cicatriz', tyrant:'temblor' };
+const PATHWAY_CONDITION_BIAS = { moon:'hambre', death:'frio', darkness:'ojos', hangedMan:'sombra', visionary:'voces', sun:'cicatriz', tyrant:'temblor',
+  demoness:'frio', abyss:'marca', chained:'hambre', wheelOfFortune:'pesadillas' };
 
 const WOUNDS = {
   leve:     {name:'Herida leve', months:2, combat:-1},
