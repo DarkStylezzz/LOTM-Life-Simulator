@@ -68,7 +68,7 @@ function buscarPareja(){
   const chanceOfMeeting = clamp(0.35 + c.reputation/200 + luckMod(), 0.15, 0.65);
   let text;
   if(chance(chanceOfMeeting)){
-    const g = c.genero==='Hombre' ? 'f' : c.genero==='Mujer' ? 'm' : (chance(0.5)?'f':'m');
+    const g = partnerGender() || (chance(0.5)?'f':'m');
     const n = createNpc({gender:g, relType:'acquaintance', ageMin:Math.max(18, c.edad-10), ageMax:c.edad+10, met:true, trust:rndInt(30,55), affection:rndInt(35,60)});
     startDating(n);
     text = `Conocés a ${n.name}${n.profession ? ', que trabaja como '+n.profession.toLowerCase() : ''}. Hay algo ahí que te dan ganas de seguir explorando.`;

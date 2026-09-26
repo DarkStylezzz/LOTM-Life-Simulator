@@ -26,9 +26,12 @@ function identifiedPathways(){ return Object.keys(PATHWAYS).filter(isIdentified)
 // Vías "cercanas" en esta vida: lo que realmente anda cerca tuyo (facciones
 // fuertes en tu ciudad, NPCs Beyonder que conociste, el secreto familiar).
 // Las pistas al azar tienden a apuntar ahí: el mundo es coherente.
+// El fondo (las vías que no tenés cerca) suma siempre lo mismo, sin importar
+// cuántas vías existan: sumar vías al mundo no dispersa las pistas al azar.
+const PATHWAY_BACKGROUND_WEIGHT = 14;
 function nearPathwayWeights(){
-  const w = {};
-  Object.keys(PATHWAYS).forEach(k=>{ w[k] = 1; });
+  const w = {}, keys = Object.keys(PATHWAYS), base = PATHWAY_BACKGROUND_WEIGHT / keys.length;
+  keys.forEach(k=>{ w[k] = base; });
   const city = currentCity();
   FACTION_KEYS.forEach(f=>{ const s = city.factions[f]||0; (STATE.factions[f].formulas||[]).forEach(p=>{ w[p] += s*2; }); });
   aliveNpcs().forEach(n=>{ if(n.met && n.hidden.pathway) w[n.hidden.pathway] += 3; });

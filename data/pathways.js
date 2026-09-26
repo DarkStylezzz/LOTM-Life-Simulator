@@ -246,6 +246,133 @@ const PATHWAYS = {
       {n:1,name:'Omniscient Eye', ability:'Como un faro, iluminás y percibís todo lo del pasado y del futuro — a costa de rozar la locura.'},
       {n:0,name:'White Tower', ability:'Te convertís en la Torre Blanca: una estructura infinita de conocimiento coronada por un ojo que todo lo ve.'}
     ]
+  },
+  // Quinta tanda: las ocho vías que faltaban para completar las 22 (demoness,
+  // paragon, wheelOfFortune, mother, abyss, chained, blackEmperor, justiciar).
+  // Nombres de Sequence verificados con búsquedas sobre la wiki de LOTM (fandom)
+  // y Friends & Fables, que coinciden en las diez Sequences de cada una. Van en
+  // pares de vías vecinas: Demoness con Red Priest, Paragon con Hermit, Mother
+  // con Moon, Abyss con Chained y Black Emperor con Justiciar; Wheel of Fortune
+  // no tiene vecina.
+  demoness: {
+    key:'demoness', name:'Demoness', theme:'Asesinato, seducción, instigación, maldiciones, enfermedad, desesperación, catástrofe',
+    seq:[
+      {n:9,name:'Assassin', ability:'Te movés sin ruido, caés desde cualquier altura como una pluma y sabés dónde golpear para que no haga falta un segundo golpe.'},
+      {n:8,name:'Instigator', ability:'Una palabra tuya en el momento justo enciende rencores, celos y multitudes enteras.'},
+      {n:7,name:'Witch', ability:'Llamas negras, escarcha y espejos que guardan un reflejo tuyo para morir en tu lugar. Quien toma esta poción siendo hombre despierta mujer.'},
+      {n:6,name:'Pleasure', ability:'Tu presencia despierta deseo y complacencia: la gente quiere darte lo que pedís.'},
+      {n:5,name:'Affliction', ability:'Sembrás enfermedades con hilos invisibles que nadie más ve.'},
+      {n:4,name:'Despair', ability:'Tu cercanía hunde a los demás en una desesperación helada; entrás y salís del mundo de los espejos.'},
+      {n:3,name:'Unaging', ability:'Tu cuerpo deja de envejecer, y lo que mirás con intención se vuelve piedra.'},
+      {n:2,name:'Catastrophe', ability:'Desatás catástrofes a la escala de una ciudad: plagas, heladas, derrumbes.'},
+      {n:1,name:'Apocalypse', ability:'Tu presencia anuncia el final de un mundo entero.'},
+      {n:0,name:'Demoness', ability:'Te convertís en la Demonia Primordial: el deseo, la catástrofe y el final con un mismo rostro.'}
+    ]
+  },
+  paragon: {
+    key:'paragon', name:'Paragon', theme:'Ciencia, invención, artesanía, arqueología, alquimia, astronomía, el progreso de la civilización',
+    seq:[
+      {n:9,name:'Savant', ability:'La ciencia, la historia y la mecánica te entran solas; entendés cómo funciona casi cualquier máquina.'},
+      {n:8,name:'Archaeologist', ability:'Leés ruinas y reliquias de épocas perdidas como un libro abierto, y ves las trampas que dejaron sus dueños.'},
+      {n:7,name:'Appraiser', ability:'Con una mirada sabés qué es un objeto, cuánto vale y qué peligro guarda, aunque esté sellado.'},
+      {n:6,name:'Artisan', ability:'Fabricás armas y artefactos Beyonder con tus manos, fundiendo Características en metal y engranajes.'},
+      {n:5,name:'Astronomer', ability:'Leés el cielo con precisión matemática para orientarte, calcular y predecir.'},
+      {n:4,name:'Alchemist', ability:'Transmutás la materia y creás vida artificial: gólems, homúnculos, aleaciones imposibles.'},
+      {n:3,name:'Arcane Scholar', ability:'Dominás las leyes ocultas que hay detrás de la ciencia y las usás como herramientas.'},
+      {n:2,name:'Knowledge Magister', ability:'Tu saber se vuelve autoridad: lo que enseñás, el mundo lo aprende.'},
+      {n:1,name:'Illuminator', ability:'Iluminás civilizaciones enteras: tus ideas empujan a la humanidad a un salto que no esperaba.'},
+      {n:0,name:'Paragon', ability:'Te convertís en el Paragon: el progreso mismo, la chispa que lleva a una civilización a su era siguiente.'}
+    ]
+  },
+  wheelOfFortune: {
+    key:'wheelOfFortune', name:'Wheel of Fortune', theme:'Suerte, destino, probabilidad, premoniciones, desgracia, ciclos',
+    seq:[
+      {n:9,name:'Monster', ability:'Tu Espiritualidad es altísima y presentís el peligro antes de que llegue. La suerte te sigue; las desgracias, también.'},
+      {n:8,name:'Robot', ability:'Tu mente calcula como una máquina: fría, exacta, sin que el miedo ni el deseo tuerzan la cuenta.'},
+      {n:7,name:'Lucky One', ability:'La buena suerte te acompaña de forma casi descarada: las cosas, simplemente, te salen.'},
+      {n:6,name:'Calamity Priest', ability:'Presentís las catástrofes con precisión y podés desviarlas... o dirigirlas.'},
+      {n:5,name:'Winner', ability:'En cualquier competencia o apuesta, el destino se inclina de tu lado.'},
+      {n:4,name:'Misfortune Mage', ability:'Repartís mala suerte como un hechizo: al rival se le traba el arma, se le cae el techo, se le tuerce el pie.'},
+      {n:3,name:'Chaoswalker', ability:'Caminás por el caos y encontrás, entre mil resultados posibles, el que te conviene.'},
+      {n:2,name:'Soothsayer', ability:'Tus profecías no sólo predicen: empujan al destino a cumplirlas.'},
+      {n:1,name:'Snake of Mercury', ability:'Encerrás a otros en un ciclo de destino que se repite, y vos mismo podés volver a empezar un encuentro.'},
+      {n:0,name:'Wheel of Fortune', ability:'Te convertís en la Rueda de la Fortuna: todos los resultados posibles del destino, girando a tu voluntad.'}
+    ]
+  },
+  mother: {
+    key:'mother', name:'Mother', theme:'Tierra, cosecha, fertilidad, curación, plantas, el ciclo de la vida y la muerte',
+    seq:[
+      {n:9,name:'Planter', ability:'Todo lo que plantás crece fuerte y rápido; entendés la tierra, las semillas y el tiempo de cada cosa.'},
+      {n:8,name:'Doctor', ability:'Curás heridas y enfermedades con una eficacia que ningún médico común alcanza.'},
+      {n:7,name:'Harvest Priest', ability:'Bendecís cosechas y rituales de la tierra; la fertilidad responde a tu fe.'},
+      {n:6,name:'Biologist', ability:'Entendés la vida por dentro: podés cruzar especies, alterar criaturas y crear híbridos.'},
+      {n:5,name:'Druid', ability:'Las plantas y los animales responden a tu voluntad; el bosque se vuelve tu aliado.'},
+      {n:4,name:'Classical Alchemist', ability:'Fabricás vida artificial y transformás la materia viva según fórmulas antiguas.'},
+      {n:3,name:'Pallbearer', ability:'Devolvés a la tierra lo que muere, y de la tierra hacés brotar lo nuevo.'},
+      {n:2,name:'Desolation Matriarch', ability:'Podés secar una región entera o hacerla florecer: la tierra estéril también es tuya.'},
+      {n:1,name:'Naturewalker', ability:'Caminás como la naturaleza misma: donde pisás, el mundo vivo cambia.'},
+      {n:0,name:'Mother', ability:'Te convertís en la Madre: la tierra que da la vida y la que la recibe al final.'}
+    ]
+  },
+  abyss: {
+    key:'abyss', name:'Abyss', theme:'Crimen, deseo, depravación, demonios, corrupción, la caída',
+    seq:[
+      {n:9,name:'Criminal', ability:'Tu cuerpo y tus sentidos se afilan para el delito, y cada falta que cometés te vuelve un poco más fuerte.'},
+      {n:8,name:'Unwinged Angel', ability:'Parecés un ángel sin alas: hermoso, fuerte, capaz de despertar la confianza de cualquiera... y de traicionarla.'},
+      {n:7,name:'Serial Killer', ability:'Tu instinto asesino se vuelve sobrenatural: sabés quién es presa con sólo mirarlo.'},
+      {n:6,name:'Devil', ability:'Tentación, corrupción y una fuerza infernal: ya no sos del todo humano.'},
+      {n:5,name:'Desire Apostle', ability:'Leés y avivás los deseos ajenos hasta que la gente hace lo que jamás habría hecho.'},
+      {n:4,name:'Demon', ability:'Tu cuerpo crece y se endurece; resistís venenos, maldiciones y ataques a la mente.'},
+      {n:3,name:'Blatherer', ability:'Tus palabras en la lengua de los demonios corrompen mentes y roen la realidad.'},
+      {n:2,name:'Bloody Archduke', ability:'Sos un aristócrata del infierno: comandás legiones y cobrás tributo en sangre.'},
+      {n:1,name:'Filthy Monarch', ability:'Gobernás la inmundicia, el pecado y todo lo que cayó.'},
+      {n:0,name:'Abyss', ability:'Te convertís en el Abismo: el fondo de todo deseo, donde cae lo que el mundo no quiere mirar.'}
+    ]
+  },
+  chained: {
+    key:'chained', name:'Chained', theme:'Contención, cadenas, locura reprimida, transformación, maldiciones, silencio',
+    seq:[
+      {n:9,name:'Prisoner', ability:'Te volvés tu propio carcelero: cuanto más te contenés, más fuerza guardás adentro.'},
+      {n:8,name:'Lunatic', ability:'Podés soltar un poco de la locura que contenés para ganar fuerza y velocidad... y volver a encerrarla.'},
+      {n:7,name:'Werewolf', ability:'Te transformás en una bestia, y tu mordida contagia una maldición.'},
+      {n:6,name:'Zombie', ability:'Tu cuerpo aguanta balas y heridas que matarían a cualquiera; el dolor ya no te alcanza como antes.'},
+      {n:5,name:'Wraith', ability:'Te volvés espectral: atravesás reflejos y cuerpos, y podés poseer a otros.'},
+      {n:4,name:'Puppet', ability:'Interpretás cualquiera de tus papeles anteriores con fuerza de semidiós, y los demás se mueven como títeres.'},
+      {n:3,name:'Disciple of Silence', ability:'Imponés un silencio absoluto que ahoga voces, hechizos y pensamientos.'},
+      {n:2,name:'Ancient Bane', ability:'Sos una maldición antigua: tu sola existencia pudre lo que te rodea.'},
+      {n:1,name:'Abomination', ability:'Tu forma ya no tiene nombre; la mente humana se quiebra al verte.'},
+      {n:0,name:'Chained', ability:'Te convertís en el Encadenado: la locura y el deseo que el mundo contiene, atados sólo por vos.'}
+    ]
+  },
+  blackEmperor: {
+    key:'blackEmperor', name:'Black Emperor', theme:'Leyes y sus grietas, soborno, corrupción, desorden, nobleza, poder',
+    seq:[
+      {n:9,name:'Lawyer', ability:'Encontrás al instante las grietas de cualquier regla, contrato o ley, y sabés cómo colarte por ellas.'},
+      {n:8,name:'Barbarian', ability:'Tu fuerza y tu ferocidad crecen sin freno; te abrís paso por encima de cualquier norma.'},
+      {n:7,name:'Briber', ability:'Tus sobornos compran más que favores: debilitan, confunden o doblegan a quien los acepta.'},
+      {n:6,name:'Baron of Corruption', ability:'Corrompés personas e instituciones; los que te rodean empiezan a obedecer tus reglas.'},
+      {n:5,name:'Mentor of Disorder', ability:'Sembrás desorden en el orden ajeno: las reglas del otro se vuelven en su contra.'},
+      {n:4,name:'Earl of the Fallen', ability:'Hacés caer a otros: su moral, su fuerza y su posición se desmoronan ante vos.'},
+      {n:3,name:'Frenzied Mage', ability:'Tu poder se vuelve caótico y enorme; las reglas se tuercen a tu alrededor.'},
+      {n:2,name:'Duke of Entropy', ability:'Todo lo que tocás se desordena y decae; el caos obedece a tu título.'},
+      {n:1,name:'Prince of Abolition', ability:'Abolís leyes, instituciones y hasta conceptos con una sola orden.'},
+      {n:0,name:'Black Emperor', ability:'Te convertís en el Emperador Negro: el soberano del desorden, por encima de toda ley.'}
+    ]
+  },
+  justiciar: {
+    key:'justiciar', name:'Justiciar', theme:'Orden, ley, juicio, prohibición, castigo, equilibrio',
+    seq:[
+      {n:9,name:'Arbiter', ability:'Tu presencia impone autoridad: la gente acepta tus veredictos y te cuesta muy poco hacerte obedecer.'},
+      {n:8,name:'Sheriff', ability:'Reconocés a quien rompe la ley, y sentís cuándo algo en tu territorio no está en orden.'},
+      {n:7,name:'Interrogator', ability:'Atacás directamente la mente y el alma: nadie te miente mucho tiempo.'},
+      {n:6,name:'Judge', ability:'Dictás veredictos y prohibiciones que el mundo obliga a cumplir.'},
+      {n:5,name:'Disciplinary Paladin', ability:'Castigás a quien rompe tus reglas con una fuerza que no admite apelación.'},
+      {n:4,name:'Imperative Mage', ability:'Tus órdenes, dichas en lengua mística, se vuelven reglas para quien las escucha.'},
+      {n:3,name:'Chaos Hunter', ability:'Anulás poderes Beyonder y fenómenos sobrenaturales: imponés orden sobre el caos.'},
+      {n:2,name:'Balancer', ability:'Equilibrás fuerzas enteras: lo que se desborda, lo devolvés a su cauce.'},
+      {n:1,name:'Hand of Order', ability:'Sos la mano del Orden: tu veredicto es ley en cualquier lugar donde estés.'},
+      {n:0,name:'Justiciar', ability:'Te convertís en el Justiciar: el Orden hecho persona, juez y ley al mismo tiempo.'}
+    ]
   }
 };
 const PATHWAY_LIST = Object.values(PATHWAYS);
@@ -451,6 +578,109 @@ const PATHWAY_INGREDIENTS = {
     2:['Pluma arrancada de un ser que venció a un Ángel sólo con el intelecto', 'Libro que nadie terminó de escribir'],
     1:['Ojo de latón que brilla como un faro en la oscuridad', 'Estante de una biblioteca que no figura en ningún plano'],
     0:['La Unicidad de la White Tower', 'Tres Características Beyonder de Omniscient Eye']
+  },
+  // Quinta tanda (demoness, paragon, wheelOfFortune, mother, abyss, chained,
+  // blackEmperor, justiciar). Las fuentes consultadas no publican una fórmula
+  // completa, Sequence por Sequence, de ninguna de estas ocho vías. Por eso los
+  // ingredientes son ORIGINALES, coherentes con el tema de cada Sequence: el mismo
+  // criterio que ya se usó para Tyrant, Twilight Giant, Sun, Hanged Man, Death,
+  // Moon, Error y White Tower. Sólo la Sequence 0 sigue el patrón canónico: la
+  // Unicidad más tres Características de la Sequence 1.
+  demoness: {
+    9:['Veneno de una araña que caza de noche (5 ml)', 'Pluma negra que cayó sin hacer ruido'],
+    8:['Carta anónima que terminó en un duelo', 'Brasa de una revuelta callejera'],
+    7:['Espejo de mano que perteneció a una bruja', 'Escarcha recogida en una noche de luna nueva'],
+    6:['Perfume de una cortesana que arruinó a tres casas nobles', 'Seda roja que alguien se negó a devolver'],
+    5:['Hilo invisible tomado de la cama de un enfermo', 'Frasco con el aliento de una epidemia'],
+    4:['Lágrima congelada de alguien que perdió toda esperanza', 'Fragmento de un espejo que da al Mundo de los Espejos'],
+    3:['Estatua de piedra que alguna vez fue una persona', 'Rosa que no se marchita desde hace cien años'],
+    2:['Ceniza de una ciudad que cayó en una sola noche', 'Hielo del invierno que mató a una generación'],
+    1:['Fragmento de un astro que anunció el fin de una era', 'Velo negro de una profetisa del apocalipsis'],
+    0:['La Unicidad de la Demoness', 'Tres Características Beyonder de Apocalypse']
+  },
+  paragon: {
+    9:['Aceite de una máquina que funcionó cien años sin detenerse', 'Tinta de un tratado que cambió una ciencia entera'],
+    8:['Tierra de una excavación que devolvió una ciudad perdida', 'Brújula de un explorador que nunca volvió'],
+    7:['Lupa de un tasador que nunca se equivocó', 'Sello roto de un objeto que la Iglesia había sellado'],
+    6:['Engranaje forjado con una Característica fundida', 'Martillo de un artesano que murió sobre el yunque'],
+    5:['Lente de un telescopio que vio una estrella que ya no existe', 'Carta astral calculada sin un solo error'],
+    4:['Mercurio que nunca termina de enfriarse', 'Arcilla que se movió sola en el taller de un alquimista'],
+    3:['Ecuación que describe una ley oculta del mundo', 'Pieza de una máquina que funciona sin ninguna energía'],
+    2:['Pizarrón de un aula donde se enseñó lo que nadie sabía', 'Libro que nadie escribió pero todos entienden'],
+    1:['Lámpara que alumbró el nacimiento de una era', 'Chispa de la primera máquina de vapor que funcionó de verdad'],
+    0:['La Unicidad del Paragon', 'Tres Características Beyonder de Illuminator']
+  },
+  wheelOfFortune: {
+    9:['Trébol de cuatro hojas encontrado sin buscarlo', 'Ojo de un gato negro que se cruzó con un cortejo fúnebre'],
+    8:['Engranaje de un autómata de feria que jugaba al ajedrez', 'Tabla de cálculos sin una sola corrección'],
+    7:['Moneda que salió cara cien veces seguidas', 'Herradura hallada en un camino que nadie transita'],
+    6:['Campana que sonó sola antes de un naufragio', 'Ceniza de un incendio que se detuvo en la puerta de una casa'],
+    5:['Dado cargado que igual perdió una sola vez', 'Laurel de un vencedor que nunca había ganado nada'],
+    4:['Espejo roto que le trajo siete años de desgracia a otro', 'Clavo de la horca de un inocente'],
+    3:['Arena de un reloj que se dio vuelta solo', 'Pluma de un ave que voló en círculos hasta morir'],
+    2:['Hoja de un oráculo que ya se cumplió', 'Hueso tallado de un adivino que acertó su propia muerte'],
+    1:['Escama plateada de una serpiente que se muerde la cola', 'Gota de mercurio que vuelve siempre al mismo lugar'],
+    0:['La Unicidad de la Wheel of Fortune', 'Tres Características Beyonder de Snake of Mercury']
+  },
+  mother: {
+    9:['Semilla guardada de la mejor cosecha en veinte años', 'Tierra negra de un campo que nunca dio una mala cosecha'],
+    8:['Bisturí de un médico que nunca perdió un paciente', 'Hierba que cerró una herida infectada en una sola noche'],
+    7:['Espiga de la última gavilla de una cosecha bendecida', 'Pan horneado con el trigo de un ritual de siembra'],
+    6:['Injerto de dos árboles que no deberían poder unirse', 'Huevo de un ave nacida de dos especies'],
+    5:['Corteza de un roble que le habló en sueños a un pueblo entero', 'Muérdago cortado con una hoz de oro'],
+    4:['Arcilla modelada que respiró una vez', 'Savia de un árbol alquímico que da frutos de metal'],
+    3:['Tierra de una tumba donde creció un manzano', 'Cuerda de un féretro que cargaron los seis hijos del difunto'],
+    2:['Sal de un campo que quedó estéril para siempre', 'La primera flor que brotó en un desierto'],
+    1:['Huella de un pie descalzo que hizo brotar un bosque', 'Rocío que cayó sobre toda una región la misma mañana'],
+    0:['La Unicidad de la Mother', 'Tres Características Beyonder de Naturewalker']
+  },
+  abyss: {
+    9:['Navaja usada en un crimen que nunca se resolvió', 'Sangre de un ladrón atrapado en el acto'],
+    8:['Pluma blanca manchada de hollín', 'Cáliz robado del altar de una iglesia'],
+    7:['Lista de nombres escrita por un asesino antes de que lo atraparan', 'Cuerda con siete nudos, uno por cada víctima'],
+    6:['Cuerno de un demonio menor atrapado en un sello', 'Contrato firmado con sangre que se cumplió'],
+    5:['Perfume que hizo pecar a un santo', 'Moneda con la que se compró una traición'],
+    4:['Escama negra que resiste el fuego sagrado', 'Colmillo de un demonio que devoró a su invocador'],
+    3:['Lengua de alguien que convenció a una ciudad entera de odiar', 'Página escrita en la lengua de los demonios'],
+    2:['Corona de hierro oxidada por la sangre', 'Estandarte de una legión que no era humana'],
+    1:['Barro del fondo de la ciudad más inmunda del mundo', 'Cetro de un rey que cayó en desgracia'],
+    0:['La Unicidad del Abyss', 'Tres Características Beyonder de Filthy Monarch']
+  },
+  chained: {
+    9:['Grillete de una celda donde alguien pasó treinta años', 'Pan duro que un preso guardó para su último día'],
+    8:['Camisa de fuerza de un manicomio clausurado', 'Carcajada grabada en un cilindro de cera'],
+    7:['Pelaje de un lobo que caminó en dos patas', 'Agua de luna llena recogida en una huella'],
+    6:['Tierra de una tumba que alguien abrió desde adentro', 'Vendaje de un cuerpo que nunca se pudrió'],
+    5:['Espejo por el que alguien entró y no salió', 'Suspiro de un fantasma encerrado en una botella'],
+    4:['Hilos de un titiritero que nunca soltó a sus muñecos', 'Muñeco de trapo que se movió solo durante un velorio'],
+    3:['Campana sin badajo de un monasterio del silencio', 'Lengua de un orador que no sabía callarse'],
+    2:['Maldición escrita hace mil años que todavía funciona', 'Hueso de una bestia extinta que sigue tibio'],
+    1:['Carne que no pertenece a ninguna criatura conocida', 'Ojo que sigue mirando después de arrancado'],
+    0:['La Unicidad del Chained', 'Tres Características Beyonder de Abomination']
+  },
+  blackEmperor: {
+    9:['Sello de un juez que aceptó un soborno', 'Tinta de un contrato con una cláusula que nadie leyó'],
+    8:['Colmillo de un oso que mató a su domador', 'Sangre de un luchador que nunca aceptó perder'],
+    7:['Moneda de oro que pasó por cien manos sucias', 'Anillo que un funcionario dejó en prenda'],
+    6:['Blasón de una casa noble arruinada por la codicia', 'Pluma con la que se firmó un decreto injusto'],
+    5:['Pieza de ajedrez movida sin respetar las reglas', 'Sello partido de una institución que se vino abajo'],
+    4:['Corona abollada de un noble caído', 'Escudo de armas borrado a martillazos'],
+    3:['Varita de un mago que perdió la razón en medio de un hechizo', 'Reloj que marcha hacia atrás cuando se le antoja'],
+    2:['Óxido de una armadura que se deshizo sola', 'Polvo de un palacio que se derrumbó sin causa'],
+    1:['Tratado de paz roto el mismo día en que se firmó', 'Cetro negro que abolió una ley centenaria'],
+    0:['La Unicidad del Black Emperor', 'Tres Características Beyonder de Prince of Abolition']
+  },
+  justiciar: {
+    9:['Martillo de un juez de paz que nunca falló injustamente', 'Juramento escrito y cumplido hasta la última letra'],
+    8:['Estrella de latón de un comisario que murió en su puesto', 'Llave de la celda de un pueblo sin crímenes'],
+    7:['Lámpara de una sala de interrogatorios', 'Confesión firmada sin ninguna presión'],
+    6:['Toga de un magistrado incorruptible', 'Balanza de un tribunal que pesó con justicia'],
+    5:['Espada de un paladín que castigó a su propio hermano', 'Cadena de un condenado que aceptó su sentencia'],
+    4:['Pergamino con una orden que nadie pudo desobedecer', 'Sello de lacre de un decreto imperial'],
+    3:['Punta de lanza que atravesó a un Beyonder descontrolado', 'Ceniza de un fenómeno sobrenatural extinguido'],
+    2:['Fiel de una balanza que nunca se inclinó', 'Piedra angular de un edificio que resistió un terremoto'],
+    1:['Guantelete de un verdugo que nunca ejecutó a un inocente', 'Fragmento del primer código de leyes escrito'],
+    0:['La Unicidad del Justiciar', 'Tres Características Beyonder de Hand of Order']
   }
 };
 
@@ -495,7 +725,15 @@ const FIRST_POTIONS = {
   death:{name:'Fórmula del Recolector de Cadáveres', ingredientCost:590, prepDifficulty:0.6},
   moon:{name:'Fórmula del Boticario', ingredientCost:480, prepDifficulty:0.62},
   error:{name:'Fórmula del Saqueador', ingredientCost:520, prepDifficulty:0.58},
-  whiteTower:{name:'Fórmula del Lector', ingredientCost:560, prepDifficulty:0.64}
+  whiteTower:{name:'Fórmula del Lector', ingredientCost:560, prepDifficulty:0.64},
+  demoness:{name:'Fórmula del Asesino', ingredientCost:560, prepDifficulty:0.6},
+  paragon:{name:'Fórmula del Erudito', ingredientCost:600, prepDifficulty:0.62},
+  wheelOfFortune:{name:'Fórmula del Monstruo', ingredientCost:540, prepDifficulty:0.62},
+  mother:{name:'Fórmula del Sembrador', ingredientCost:500, prepDifficulty:0.58},
+  abyss:{name:'Fórmula del Criminal', ingredientCost:560, prepDifficulty:0.6},
+  chained:{name:'Fórmula del Prisionero', ingredientCost:520, prepDifficulty:0.6},
+  blackEmperor:{name:'Fórmula del Abogado', ingredientCost:600, prepDifficulty:0.6},
+  justiciar:{name:'Fórmula del Árbitro', ingredientCost:580, prepDifficulty:0.6}
 };
 
 /* ---------------------------------------------------------------------
@@ -664,6 +902,94 @@ const PATHWAY_META = {
     ],
     anomalyAct:'Deducir la causa de la anomalía paso a paso, sin saltearte ninguno',
     factions:{machinery:2}
+  },
+  demoness: {
+    vague:['el deseo','los asesinatos','las maldiciones','la enfermedad'],
+    symbol:'un espejo de mano con una grieta en forma de corona',
+    anomalies:[
+      'El espejo de la habitación te devuelve una sonrisa que no es la tuya, y es hermosa.',
+      'La escarcha cubre los vidrios en pleno verano y dibuja la silueta de una mujer.',
+      'Sentís, de golpe, la envidia de todas las personas que alguna vez te odiaron en silencio.'
+    ],
+    anomalyAct:'Sostenerle la mirada a la anomalía como a una rival: sin miedo y sin deseo',
+    factions:{}
+  },
+  paragon: {
+    vague:['las máquinas','las ruinas','las estrellas','los inventos'],
+    symbol:'un engranaje con un ojo en el centro',
+    anomalies:[
+      'Los relojes de la habitación se ponen de acuerdo en la misma hora, y después en una hora que no existe.',
+      'Entendés de golpe cómo funciona el mundo por dentro, como una máquina con la tapa abierta.',
+      'Las herramientas de la mesa se ordenan solas por tamaño. Hay una que no reconocés.'
+    ],
+    anomalyAct:'Desarmar la anomalía como a una máquina: pieza por pieza, anotando dónde iba cada una',
+    factions:{machinery:3}
+  },
+  wheelOfFortune: {
+    vague:['la suerte','el destino','las premoniciones','los ciclos'],
+    symbol:'una rueda de ocho rayos rodeada por una serpiente que se muerde la cola',
+    anomalies:[
+      'Tirás una moneda para probar. Cae de canto. Tres veces seguidas.',
+      'Tenés la certeza de que este momento ya lo viviste, palabra por palabra, y de que la otra vez salió mal.',
+      'Una serpiente plateada se enrosca en el borde del círculo y desaparece cuando la mirás.'
+    ],
+    anomalyAct:'Esperar el giro exacto de la anomalía y elegir, entre todos sus resultados, el que te conviene',
+    factions:{}
+  },
+  mother: {
+    vague:['la tierra','las cosechas','los remedios','las plantas'],
+    symbol:'una semilla que brota de una mano abierta',
+    anomalies:[
+      'Del piso de madera brotan raíces finas que buscan tus pies.',
+      'Huele a tierra mojada y a pan recién horneado, aunque no llueve y no hay ningún horno.',
+      'Las flores del florero se abren y se marchitan tres veces mientras respirás.'
+    ],
+    anomalyAct:'Tratar la anomalía como a una planta: darle tiempo, tierra y paciencia',
+    factions:{}
+  },
+  abyss: {
+    vague:['el crimen','el deseo','los demonios','la corrupción'],
+    symbol:'una llama negra en el fondo de un pozo',
+    anomalies:[
+      'Sentís, con una claridad asquerosa, todos los deseos que la gente del barrio esconde.',
+      'El piso bajo el círculo parece hundirse, como si debajo no hubiera nada.',
+      'Una voz grave y amable te ofrece exactamente lo que querés. No le creés. Te cuesta no creerle.'
+    ],
+    anomalyAct:'Mirar la anomalía de frente y negarle lo que te pide, sin desearlo ni un poco',
+    factions:{}
+  },
+  chained: {
+    vague:['las cadenas','la locura','las bestias','las maldiciones'],
+    symbol:'un eslabón roto rodeado de ojos cerrados',
+    anomalies:[
+      'Escuchás cadenas que se arrastran en la habitación de al lado. No hay habitación de al lado.',
+      'Algo adentro tuyo tira de la correa. Por un segundo, casi la soltás.',
+      'Tu reflejo en la ventana tiene los ojos de un lobo.'
+    ],
+    anomalyAct:'Sujetarte a vos mismo y aguantar, sin soltar ni un eslabón',
+    factions:{}
+  },
+  blackEmperor: {
+    vague:['las leyes','los sobornos','el desorden','la nobleza'],
+    symbol:'una corona negra sobre un código de leyes abierto',
+    anomalies:[
+      'Las letras de un contrato que tenías en la mesa se reacomodan y dicen otra cosa.',
+      'Sentís que alguien, muy arriba, te ofrece un título a cambio de algo que no nombra.',
+      'Todo en la habitación se desordena un poco: nada se cae, pero nada está donde estaba.'
+    ],
+    anomalyAct:'Buscar la grieta en las reglas de la anomalía y usarla a tu favor',
+    factions:{mi9:1}
+  },
+  justiciar: {
+    vague:['las leyes','el castigo','los contratos','el orden'],
+    symbol:'una balanza sobre una espada clavada en un libro',
+    anomalies:[
+      'Un martillo de juez golpea tres veces en algún lugar. Después, silencio absoluto.',
+      'Sentís que acabás de romper una regla que no conocías, y que alguien lo anotó.',
+      'Los objetos de la habitación se alinean en perfecto orden, en ángulos exactos.'
+    ],
+    anomalyAct:'Juzgar la anomalía y dictarle una prohibición en voz alta',
+    factions:{mi9:2}
   }
 };
 Object.keys(PATHWAY_META).forEach(k=>{ if(PATHWAYS[k]) Object.assign(PATHWAYS[k], PATHWAY_META[k]); });

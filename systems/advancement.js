@@ -330,6 +330,24 @@ function ritualForecast(){
   if(ch >= 0.4) return 'Es posible, pero nada está garantizado.';
   return 'Algo te dice que todavía no es el momento: tu cabeza o tu cuerpo no están listos.';
 }
+// La Bruja (Demoness, Sequence 7): quien toma la poción siendo hombre
+// despierta mujer. Es lo más famoso de la vía, y la novela lo trata como una
+// crisis: el cuerpo cambia, la persona sigue siendo la misma. El personaje
+// conserva a quién ama (partnerGender) y la gente cercana nota el cambio.
+// Devuelve el texto que se suma al del ritual (y al diario).
+function witchTransformation(){
+  const c = STATE.character;
+  if(c.genero !== 'Hombre' || STATE.flags.witchBody) return '';
+  STATE.flags.partnerGender = STATE.flags.partnerGender || 'f';
+  STATE.flags.witchBody = true;
+  c.genero = 'Mujer';
+  applyEffects({sanity:-rndInt(6,12)});
+  aliveNpcs().filter(n=>n.met && (isFamilyNpc(n) || n.affection >= 50)).forEach(n=>adjustRel(n, {suspicion:rndInt(6,12)}));
+  const text = 'A la mañana siguiente, el cuerpo que te devuelve el espejo es el de una mujer. La poción de la Bruja no pregunta. Tu nombre, tus recuerdos y la gente que querés siguen siendo los mismos; lo que cambió es cómo te mira el mundo, y vas a tener que explicarlo, o esconderlo.';
+  addMilestone('mystic', 'La poción de la Bruja te cambia el cuerpo');
+  remember('witch_body', 'Despertaste con otro cuerpo después de la poción de la Bruja.', {cat:'secret'});
+  return ' ' + text;
+}
 function resolveAdvancement(){
   const r = STATE.ritual; const p = STATE.pathway, c = STATE.character;
   const seq = p.sequence, key = p.chosenPathway;
@@ -350,7 +368,8 @@ function resolveAdvancement(){
     const nd = seqData(key, p.sequence);
     applyEffects({sanity:-rndInt(5,15), corruption:rndInt(1,6), spirituality:[5,12], humanity: -Math.max(1, Math.round((9 - p.sequence)/2))});
     p.acting = {history:[], quality:Math.round((p.acting.quality+50)/2), consistency:0.5, deviation:0};
-    const text = `Las velas se apagan. Una fuerza desconocida parece observarte. El ritual concluye: alcanzás la Sequence ${p.sequence} — ${nd.name}. ${nd.ability}`;
+    const text = `Las velas se apagan. Una fuerza desconocida parece observarte. El ritual concluye: alcanzás la Sequence ${p.sequence} — ${nd.name}. ${nd.ability}` +
+      (key === 'demoness' && p.sequence === 7 ? witchTransformation() : '');
     logJournal('ADVANCEMENT RITUAL — ÉXITO', text, {cat:'pathway', imp:3});
     addMilestone('advance', `Sequence ${p.sequence} — ${nd.name}`);
     remember('advanced_'+p.sequence, `Alcanzaste la Sequence ${p.sequence}: ${nd.name}.`, {cat:'achievement'});

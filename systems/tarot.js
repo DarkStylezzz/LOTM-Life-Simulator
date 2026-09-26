@@ -12,7 +12,9 @@
 const TAROT_CARDS_BY_PATHWAY = {
   visionary:'Justicia', tyrant:'El Colgado', sun:'El Sol', door:'El Mago', hermit:['El Ermitaño','La Ermitaña'], moon:'La Luna',
   darkness:'La Estrella', redPriest:'El Carro', twilightGiant:'La Fuerza', hangedMan:'La Templanza', death:'La Muerte',
-  error:'La Rueda de la Fortuna', whiteTower:['La Sacerdotisa','La Sacerdotisa'], fool:'El Juicio'
+  error:'La Rueda de la Fortuna', whiteTower:['La Sacerdotisa','La Sacerdotisa'], fool:'El Juicio',
+  demoness:'La Emperatriz', blackEmperor:'El Emperador', abyss:'El Diablo', mother:'El Mundo', chained:'La Torre',
+  paragon:'El Hierofante', wheelOfFortune:'La Rueda de la Fortuna', justiciar:'Justicia'
 };
 // En la línea canónica esos lugares ya tienen dueño: te toca otra carta.
 const TAROT_FREE_CARDS = ['Los Enamorados','La Templanza','La Torre','El Emperador','La Emperatriz','El Juicio','La Fuerza','El Carro'];

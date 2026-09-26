@@ -133,7 +133,9 @@ const COMBAT_ENVS = {
 const PATHWAY_ENV_AFFINITY = {
   darkness:['night','sewer','fog'], death:['cemetery','night'], tyrant:['docks'], sun:['chapel','street'],
   redPriest:['forest','alley'], twilightGiant:['street','ruins'], door:['alley','sewer'], moon:['forest','night'],
-  hangedMan:['night','sewer'], visionary:['street'], fool:['fog','street'], hermit:['ruins'], error:['street','alley'], whiteTower:['street']
+  hangedMan:['night','sewer'], visionary:['street'], fool:['fog','street'], hermit:['ruins'], error:['street','alley'], whiteTower:['street'],
+  demoness:['night','alley'], paragon:['ruins'], wheelOfFortune:['street','fog'], mother:['forest','cemetery'], abyss:['alley','sewer'],
+  chained:['night','forest'], blackEmperor:['street'], justiciar:['street','chapel']
 };
 
 /* Estados: duran unos turnos y los aplican habilidades, enemigos y objetos. */

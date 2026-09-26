@@ -69,7 +69,7 @@ const RUMOR_POOL = [
     ]},
   {id:'night_bookshop', text:'Hay una librería que sólo abre de noche y vende libros que no existen.', steps:2,
     outcomes:[
-      {w:50, type:'item', items:['book_grimoire','book_untitled','book_astrology','book_herbal'], result:'La encontrás. El librero no pregunta tu nombre. Te vende un libro que no figura en ningún catálogo.'},
+      {w:50, type:'item', items:['book_grimoire','book_untitled','book_astrology','book_herbal','book_engines','book_gambler'], result:'La encontrás. El librero no pregunta tu nombre. Te vende un libro que no figura en ningún catálogo.'},
       {w:20, type:'danger', attention:4, result:'Alguien anota tu cara cuando entrás. No volvés a ver la librería.'},
       {w:30, type:'nothing', result:'Una librería de viejo común, con un dueño insomne. Nada más.'}
     ]},
@@ -163,6 +163,58 @@ const RUMOR_POOL = [
       {w:40, type:'faction', faction:'psychology', result:'Te recibe en un consultorio impecable. Habla de un "mar" que compartimos todos. Te pregunta si alguna vez nadaste en él.'},
       {w:30, type:'npc', pathway:'visionary', role:'Médico de la mente', result:'Es bueno. Demasiado bueno: sabe lo que vas a decir antes de que lo digas.'},
       {w:30, type:'nothing', result:'Un buen médico con métodos modernos. Nada imposible.'}
+    ]},
+  {id:'mirror_witch', text:'Dicen que en una casa de modas del centro atiende una mujer que no aparece en los espejos.', steps:2,
+    outcomes:[
+      {w:40, type:'npc', pathway:'demoness', role:'Modista de la casa del centro', result:'La conocés. Es encantadora, y lo sabe. Cuando te despide, su reflejo en la vidriera se queda mirándote un segundo más.'},
+      {w:20, type:'pathway', pathway:'demoness', result:'No la ves nunca, pero encontrás los espejos del taller: todos tienen una grieta con forma de corona.'},
+      {w:15, type:'danger', sanity:[-6,-2], attention:2, result:'Te mira una sola vez, desde el fondo del local. Esa noche, en tu espejo, hay alguien que no sos vos.'},
+      {w:25, type:'nothing', result:'Una modista con buena mano y un espejo viejo que deforma. Nada más.'}
+    ]},
+  {id:'clockwork_inventor', text:'Un relojero del barrio fabricó un autómata que, dicen, juega al ajedrez mejor que cualquier persona.', steps:2,
+    outcomes:[
+      {w:40, type:'npc', pathway:'paragon', role:'Relojero inventor', result:'El autómata existe, y el relojero también. Te muestra planos de máquinas que no deberían funcionar. Funcionan.'},
+      {w:25, type:'faction', faction:'machinery', result:'Cuando llegás, el taller está cerrado. Un hombre con un engranaje en la solapa te pregunta, muy amable, por qué te interesa tanto.'},
+      {w:35, type:'nothing', result:'Adentro del autómata había un enano muy bueno al ajedrez. Un truco de feria, y muy bien hecho.'}
+    ]},
+  {id:'lucky_gambler', text:'En los garitos de la ciudad hay un jugador que nunca pierde. Nunca.', steps:2,
+    outcomes:[
+      {w:40, type:'npc', pathway:'wheelOfFortune', role:'Jugador que nunca pierde', result:'Lo encontrás. Gana, sí, pero no parece feliz. "La suerte se paga", te dice, "y yo ya estoy muy endeudado".'},
+      {w:20, type:'pathway', pathway:'wheelOfFortune', result:'No llegás a verlo, pero en su mesa los dados salen siempre en el orden de una misma secuencia.'},
+      {w:15, type:'danger', enemy:'thugs', result:'A la casa no le gusta que se hagan preguntas sobre quién gana.'},
+      {w:25, type:'nothing', result:'Un tramposo con muy buenas manos. Lo atrapan la semana siguiente.'}
+    ]},
+  {id:'miracle_orchard', text:'En las afueras hay una quinta donde los frutales dan fruta en pleno invierno.', steps:2,
+    outcomes:[
+      {w:45, type:'npc', pathway:'mother', role:'Quintera de las afueras', result:'La quintera te recibe con las manos llenas de tierra. Te regala una fruta que sabe a verano, y te mira como si supiera algo de vos.'},
+      {w:25, type:'pathway', pathway:'mother', result:'La quinta existe. Los árboles florecen alrededor de un círculo de piedras donde alguien reza todas las mañanas.'},
+      {w:30, type:'nothing', result:'Un invernadero con vidrios muy bien disimulados. Ingenioso, no imposible.'}
+    ]},
+  {id:'smiling_killer', text:'Los diarios hablan de un asesino que deja a sus víctimas sonriendo.', steps:3,
+    outcomes:[
+      {w:35, type:'pathway', pathway:'abyss', result:'Seguís el rastro hasta un sótano con olor a azufre. En la pared, alguien escribió una lista de deseos ajenos, uno por víctima.'},
+      {w:25, type:'danger', enemy:'hitman', result:'El que buscabas se enteró de que lo buscabas.'},
+      {w:15, type:'faction', faction:'nighthawks', result:'Un hombre de abrigo negro te espera en la esquina de tu casa. Te pide, con mucha calma, que dejes el caso en manos de quien corresponde.'},
+      {w:25, type:'nothing', result:'Un veneno que contrae los músculos de la cara. Horrible, pero no sobrenatural.'}
+    ]},
+  {id:'asylum_howl', text:'En el manicomio de la ciudad, un paciente aúlla las noches de luna llena, y los enfermeros no se animan a entrar.', steps:2,
+    outcomes:[
+      {w:35, type:'npc', pathway:'chained', role:'Paciente del manicomio', result:'Te dejan verlo un minuto. Está atado a la cama con cadenas que él mismo pidió. "No me las saquen", te dice, muy lúcido. "Todavía no."'},
+      {w:25, type:'pathway', pathway:'chained', result:'En el registro del manicomio, cada luna llena hay una misma anotación: "El paciente pidió que lo encerraran. Se lo encerró".'},
+      {w:20, type:'danger', enemy:'lostBeyonder', result:'Llegás una noche de luna llena. Las cadenas no alcanzaron.'},
+      {w:20, type:'nothing', result:'Un pobre hombre muy enfermo. Aúlla porque sufre, no por otra cosa.'}
+    ]},
+  {id:'lawyer_no_degree', text:'Dicen que hay un abogado que gana todos los juicios sin haber pisado nunca una facultad.', steps:2,
+    outcomes:[
+      {w:40, type:'npc', pathway:'blackEmperor', role:'Abogado sin título', result:'Te atiende en un estudio lleno de humo. Encuentra tres errores en tu propio contrato de alquiler en un minuto, y te cobra por el favor.'},
+      {w:20, type:'faction', faction:'mi9', result:'El abogado no existe. El que te atiende en su lugar es un hombre de traje gris que quiere saber por qué preguntás.'},
+      {w:40, type:'nothing', result:'Un buen abogado, con un título comprado. Corrupción común y corriente.'}
+    ]},
+  {id:'silent_judge', text:'En los tribunales hablan de un juez de paz ante el que nadie puede mentir.', steps:2,
+    outcomes:[
+      {w:40, type:'npc', pathway:'justiciar', role:'Juez de paz', result:'Lo ves en una audiencia. Un testigo empieza a mentir y se calla a mitad de la frase, como si la mentira se le hubiera trabado en la garganta.'},
+      {w:25, type:'pathway', pathway:'justiciar', result:'En su sala, las balanzas están siempre quietas, aunque se abra la ventana.'},
+      {w:35, type:'nothing', result:'Un juez viejo, muy perspicaz, con una mirada que asusta. Nada más que eso.'}
     ]},
   // --- rumores que sólo corren en ciudades concretas (city) ---
   {id:'catacomb_mass', city:'trier', text:'Dicen que en las catacumbas de Trier se sigue celebrando una misa, todos los domingos, para feligreses que murieron hace siglos.', steps:2,

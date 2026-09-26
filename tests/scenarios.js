@@ -183,7 +183,72 @@ scenario('cada escena de actuación de cada vía', ()=>{
       for(let i=0;i<3;i++){ STATE.gameOver = false; STATE.character.sanity = 100; STATE.character.salud = 100; STATE.character.corruption = 0; seasonStart(); STATE.seasonActions.acting = 0; doActing(); if(STATE.pendingEvent && STATE.pendingEvent.kind==='acting'){ resolvePendingEvent(i % STATE.pendingEvent.choices.length); n++; } STATE.pendingEvent = null; STATE.combat = null; }
     } }
     return n; })()`);
-  assert(n >= 14*9*3*0.9, 'escenas de actuación que no abrieron: ' + n);
+  assert(n >= run(ctx, `Object.keys(PATHWAYS).length`)*9*3*0.9, 'escenas de actuación que no abrieron: ' + n);
+});
+
+scenario('las 22 vías: datos completos, y cada una se puede tomar y subir', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 25; STATE.character.cash = 500; STATE.character.bank = 999999;`);
+  const keys = run(ctx, `Object.keys(PATHWAYS)`);
+  assert(keys.length === 22, 'no son 22 vías: ' + keys.length);
+  const problems = run(ctx, `(function(){ const out = []; const tags = new Set([].concat(...Object.values(TRAIT_TAGS)));
+    const ids = new Set();
+    for(const k of Object.keys(PATHWAYS)){
+      const pw = PATHWAYS[k];
+      for(let s=0; s<=9; s++){
+        const sd = seqData(k, s); if(!sd || !sd.name || !sd.ability) out.push(k+': sin Sequence '+s);
+        if(!(PATHWAY_INGREDIENTS[k] && PATHWAY_INGREDIENTS[k][s] && PATHWAY_INGREDIENTS[k][s].length)) out.push(k+': sin ingredientes '+s);
+        if(!(ABILITIES[k]||[]).some(a=>a.seq===s)) out.push(k+': sin habilidad en la Sequence '+s);
+        if(s >= 1){ const r = (ACTING_ROLES[k]||{})[s]; if(!r || !r.role || !r.principle) out.push(k+': sin rol '+s); else r.fit.forEach(t=>{ if(!tags.has(t)) out.push(k+': rasgo desconocido '+t); }); }
+      }
+      if(!(ABILITIES[k]||[]).some(a=>a.seq===9 && a.combat && a.cost)) out.push(k+': sin habilidad de combate en la Sequence 9');
+      (ABILITIES[k]||[]).forEach(a=>{ if(ids.has(a.id)) out.push('habilidad repetida '+a.id); ids.add(a.id); });
+      if(!FIRST_POTIONS[k]) out.push(k+': sin primera fórmula');
+      if(!(pw.vague && pw.vague.length >= 3 && pw.symbol && pw.anomalies && pw.anomalies.length >= 3 && pw.anomalyAct)) out.push(k+': sin descriptores o ritual');
+      if(ACTING_SEEDS.filter(x=>x.pw===k).length < 3) out.push(k+': menos de tres escenas');
+      if(!PATHWAY_ENV_AFFINITY[k]) out.push(k+': sin afinidad de entorno');
+      if(!TAROT_CARDS_BY_PATHWAY[k]) out.push(k+': sin carta del Tarot');
+    }
+    return out; })()`);
+  assert(!problems.length, problems.slice(0, 8).join(' · '));
+  // Cada vía nueva, de punta a punta: pistas, identificar, la primera poción y dos rituales.
+  const fresh8 = ['demoness','paragon','wheelOfFortune','mother','abyss','chained','blackEmperor','justiciar'];
+  for(const k of fresh8){
+    run(ctx, NEWLIFE + `STATE.character.edad = 25; STATE.character.cash = 500; STATE.character.bank = 999999; STATE.character.sanity = 90;
+      addClue({pathway:'${k}', reliability:'real', strength:30, source:'x'}); identifyPathway('${k}'); STATE.pathway.knowledge['${k}'] = 70;
+      addFormula('${k}', 9, 'true', 'x'); ingredientsNeededFor('${k}', 9).forEach(n=>addIngredient('${k}', 9, n, 90, 'x')); seasonStart();`);
+    assert(run(ctx, `brewRequirements('${k}', 9).every(r=>r.ok)`), k + ': no se puede preparar la primera poción');
+    run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.05; startFirstPotion('${k}'); for(let i=0;i<6 && STATE.pendingEvent;i++) resolvePendingEvent(0); Math.random = r0; })()`);
+    assert(run(ctx, `STATE.pathway.chosenPathway`) === k, k + ': no se volvió Beyonder');
+    for(const seq of [8, 7]){
+      run(ctx, `STATE.pathway.digestion = 100; STATE.character.sanity = 90; addFormula('${k}', ${seq}, 'true', 'x'); ingredientsNeededFor('${k}', ${seq}).forEach(n=>addIngredient('${k}', ${seq}, n, 90, 'x')); seasonStart();`);
+      run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.02; attemptAdvancement(); let n = 0; while(STATE.pendingEvent && n < 8){ n++; resolvePendingEvent(0); } Math.random = r0; })()`);
+      assert(run(ctx, `STATE.pathway.sequence`) === seq, k + ': el ritual no llevó a la Sequence ' + seq);
+    }
+    // El rol, los pasivos, las acciones de poder y una escena de actuación de la Sequence 7.
+    assert(run(ctx, `currentRole().role === ACTING_ROLES['${k}'][7].role`), k + ': el rol de la Sequence 7 no es el propio');
+    run(ctx, `invalidatePathwayMods(); pathwayMods(); powerActions(); seasonStart(); STATE.seasonActions.acting = 0; doActing(); if(STATE.pendingEvent) resolvePendingEvent(0); STATE.pendingEvent = null; STATE.combat = null;`);
+    assert(!run(ctx, `STATE.gameOver`), k + ': la vida terminó en la prueba');
+  }
+});
+
+scenario('Demoness: la poción de la Bruja cambia el cuerpo, no a quién se ama', ()=>{
+  const ctx = fresh();
+  const MAN = NEWLIFE.replace("nombre:'Ana'", "nombre:'Tomás'").replace("genero:'Mujer'", "genero:'Hombre'");
+  run(ctx, MAN + `STATE.character.edad = 28; STATE.character.bank = 999999; STATE.character.sanity = 95;
+    STATE.pathway.chosenPathway = 'demoness'; STATE.pathway.sequence = 8; STATE.pathway.digestion = 100; identifyPathway('demoness'); invalidatePathwayMods();
+    addFormula('demoness', 7, 'true', 'x'); ingredientsNeededFor('demoness', 7).forEach(n=>addIngredient('demoness', 7, n, 90, 'x')); seasonStart();`);
+  assert(run(ctx, `partnerGender()`) === 'f', 'antes de la poción, las parejas propuestas no eran mujeres');
+  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.02; attemptAdvancement(); let n = 0; while(STATE.pendingEvent && n < 8){ n++; resolvePendingEvent(0); } Math.random = r0; })()`);
+  assert(run(ctx, `STATE.pathway.sequence`) === 7, 'no llegó a Bruja');
+  assert(run(ctx, `STATE.character.genero`) === 'Mujer' && run(ctx, `STATE.flags.witchBody`) === true, 'la poción no cambió el cuerpo');
+  assert(run(ctx, `partnerGender()`) === 'f', 'cambió a quién se ama');
+  assert(run(ctx, `romanceCompatible(createNpc({gender:'f', ageMin:26, ageMax:30})) && !romanceCompatible(createNpc({gender:'m', ageMin:26, ageMax:30}))`), 'la compatibilidad romántica no sigue a partnerGender');
+  assert(run(ctx, `STATE.journal.some(j=>j.title==='ADVANCEMENT RITUAL — ÉXITO' && j.text.includes('el cuerpo que te devuelve el espejo')) && gx('o','a') === 'a'`), 'no quedó escrito, o el texto no usa el femenino');
+  // Una segunda poción no vuelve a hacer nada; y una mujer que llega a Bruja no cambia.
+  assert(run(ctx, `witchTransformation()`) === '', 'la transformación se aplicó dos veces');
+  run(ctx, NEWLIFE + `STATE.character.edad = 28; STATE.pathway.chosenPathway = 'demoness'; STATE.pathway.sequence = 7;`);
+  assert(run(ctx, `witchTransformation() === '' && STATE.character.genero === 'Mujer' && !STATE.flags.partnerGender`), 'afectó a quien ya era mujer');
 });
 
 scenario('preparar y beber la primera poción; ritual de Advancement', ()=>{
