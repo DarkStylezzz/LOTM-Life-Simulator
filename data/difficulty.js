@@ -23,11 +23,11 @@ const DIFFICULTIES = {
   },
   hard:{
     label:'Difícil', desc:'Menos información y más riesgos. Las pistas falsas abundan y los errores dejan marca.',
-    mult:{ mystic:0.9, death:1.3, corruption:1.2, sanityLoss:1.2, attention:1.3, reward:0.85, potion:-0.07, falseClue:1.5, digestion:0.85, threat:1.25, highSeq:1.2, hints:0.5 }
+    mult:{ mystic:0.9, death:1.3, corruption:1.2, sanityLoss:1.2, attention:1.3, reward:0.85, potion:-0.07, falseClue:1.5, digestion:0.85, threat:1.25, highSeq:1.2, hints:0.5, enemyDmg:1.1, flee:-0.03 }
   },
   nightmare:{
     label:'Pesadilla', desc:'Cada error se paga caro. El mundo no te debe nada y casi nunca avisa.',
-    mult:{ mystic:0.85, death:1.7, corruption:1.4, sanityLoss:1.35, attention:1.6, reward:0.7, potion:-0.14, falseClue:2, digestion:0.7, threat:1.6, highSeq:1.45, hints:0 }
+    mult:{ mystic:0.85, death:1.7, corruption:1.4, sanityLoss:1.35, attention:1.6, reward:0.7, potion:-0.14, falseClue:2, digestion:0.7, threat:1.6, highSeq:1.45, hints:0, enemyDmg:1.2, flee:-0.06 }
   }
 };
 const WORLD_MODES = {

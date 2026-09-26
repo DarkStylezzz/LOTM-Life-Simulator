@@ -228,7 +228,7 @@ function resolveLead(l){
       // Quien busca el mismo ingrediente suele estar donde estás vos: de tu
       // misma Sequence, no más arriba. A veces, ni siquiera es un Beyonder.
       const rival = l.seq <= 7 && chance(0.6);
-      startCombat(rival ? 'rivalBeyonder' : 'thugs', {env:'alley', source:'una pista', overrides: rival ? {pathway:l.pathway, seq:clamp(l.seq + 1, 5, 9)} : {}});
+      startCombat(rival ? 'rivalBeyonder' : 'thugs', {env:'alley', source:'una pista', overrides: rival ? {pathway:l.pathway, seq:clamp(l.seq + 1, 1, 9)} : {}});
       return 'Alguien más buscaba lo mismo. Y llegó antes.';
     }
     if(c.cash < l.price) return `Llegás hasta el vendedor. Pide ${fmtMoney(l.price)}. No los tenés. Se encoge de hombros: "Otro va a tenerlos."`;

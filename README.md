@@ -18,7 +18,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 | Sistema | Resumen |
 |---|---|
 | Tiempo | Meses, temporadas y años; tiempo libre por temporada; resúmenes de temporada y de año. |
-| Dificultad | Fácil, Normal, Difícil y Pesadilla: multiplicadores de riesgo, pistas, digestión, pociones, recompensas y daño en combate (`data/difficulty.js`). En Fácil, hasta tres muertes evitables no llegan: el personaje sobrevive con una secuela, y la biografía lo cuenta. |
+| Dificultad | Fácil, Normal, Difícil y Pesadilla: multiplicadores de riesgo, pistas, digestión, pociones, recompensas, daño en combate y huidas (`data/difficulty.js`). En Fácil, hasta tres muertes evitables no llegan: el personaje sobrevive con una secuela, y la biografía lo cuenta. |
 | Eventos | Datos con `id, type, rarity, tags, requirements, weight, cooldown, repeatable, narrativeImportance, hiddenRequirements, choices, consequences, delayedConsequences`. Rarezas común / poco común / raro / místico / extraordinario. |
 | Memoria y consecuencias | El personaje recuerda favores, traiciones, pactos, pérdidas. Hay verdades ocultas que se descubren tarde (o nunca: aparecen al final, en *Lo que nunca supo*). |
 | Personas | NPCs con personalidad, objetivos, miedos, secretos, vida propia (se casan, se mudan, enferman, sospechan, te delatan) y siete ejes de relación. Familia que crece por etapas. |
@@ -28,7 +28,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 | Método de Actuación y digestión | Escenas por vía y Sequence; calidad de la actuación; digestión natural por vivir el papel (hasta en el trabajo). |
 | Pociones y Advancement | Para subir de Sequence hace falta: la poción actual digerida, la fórmula de la próxima, sus dos ingredientes (el principal se puede reemplazar por una Característica), el dinero del ritual (del bolsillo o del banco) y cordura suficiente. Todo está a la vista en **Misticismo → Tu camino**, con cómo se consigue cada cosa. **Buscar lo que te falta** (una vez por temporada) empuja siempre hacia el próximo paso: ponerle nombre a una vía, entenderla, la fórmula o un ingrediente. La poción se prepara dentro del ritual, que tiene cuatro pasos y un presentimiento antes de empezar; la primera se prepara y se bebe en la misma noche. Si el ritual falla, la fórmula queda. Lo que frena es la altura: de la Sequence 5 para arriba la poción tarda años en digerirse, las fórmulas y los ingredientes casi no circulan (las organizaciones sólo se los confían a quien tiene su confianza y el mercado negro no pasa de la Sequence 5) y ningún ritual de semidiós es seguro. |
 | Sequence 0 | Una cadena de acontecimientos extraordinarios, un ascenso que puede fallar y un modo divino que cambia la interfaz. |
-| Combate | Táctico: distancia, entorno, estados, arquetipos de enemigos, información oculta de la Sequence rival (??? → rango → estimación → exacta), heridas que quedan, huir o hablar como opciones reales. |
+| Combate | Táctico: distancia, entorno, estados, arquetipos de enemigos, información oculta de la Sequence rival (??? → rango → estimación → exacta), heridas que quedan, huir o hablar como opciones reales. La Sequence pesa: un Beyonder que está por debajo tuyo te pega menos y recibe más, y un Beyonder hostil es tan fuerte como su Sequence. Cada intento de huida fallido hace más fácil el siguiente; a quien te estudió durante años o a un Santo que perdió el control, en cambio, cuesta mucho sacárselos de encima. |
 | Facciones | Iglesias, Nighthawks, MI9, la Orden de la Aurora, la Mente Colmena, los Alquimistas de la Psicología… acceso, mérito, pedidos, deberes, sospecha, persecución, traición. |
 | Tarot Club | Rumores → pruebas que no sabés que son pruebas → invitación → reuniones. |
 | Mundo | Nueve ciudades vivas —Backlund, Tingen, Bayam, Pritz Harbor, un pueblo sin nombre, Trier (Intis), Constant, Enmat Harbor y Balam Oriental—, cada una con su economía, sus facciones, sus oficios, sus lugares para explorar, sus rumores, sus eventos y (en Trier) sus nombres. Historia del mundo libre, canon o alternativa, y la atención del mundo oculto. |
@@ -71,13 +71,15 @@ tests/          pruebas sin navegador y en navegador
 Requieren Node 18+ (y Playwright para la de navegador).
 
 ```
-node tests/scenarios.js      # 23 escenarios dirigidos: el ascenso, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
+node tests/scenarios.js      # 24 escenarios dirigidos: el ascenso, el combate, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
 node tests/simulate.js 40    # 40 vidas completas con un "jugador" automático: errores, bloqueos, estado serializable y balance
 node tests/simulate.js 10 --ui   # lo mismo, dibujando todas las pestañas con un DOM simulado
 node tests/simulate.js 40 --diff=easy --style=dedicado --funnel
                              # balance: dificultad fija, estilo de jugador (mixto, dedicado o tranquilo)
                              # y el "embudo" del camino místico (a qué edad se llega a cada paso, cuántos
                              # rituales se intentan y cuántos salen bien, y en qué Sequence se muere peleando)
+node tests/simulate.js 40 --style=mixto --combat
+                             # cuánto se pelea y cuánto se muere: por etapa, enemigo, origen y salud al empezar
 node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor,
                              # en nueve estados de vida, y avisa qué eventos no pudo disparar nunca
 node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil y una partida v7 migrada

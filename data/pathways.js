@@ -468,7 +468,7 @@ const ADVANCE_DIFFICULTY = {
   7:{label:'Difícil',                baseSuccess:0.56, maxSuccess:0.92, moneyCost:3000},
   6:{label:'Muy difícil',            baseSuccess:0.48, maxSuccess:0.88, moneyCost:6000},
   5:{label:'El umbral del semidiós', baseSuccess:0.32, maxSuccess:0.70, moneyCost:12000},
-  4:{label:'Semidiós',               baseSuccess:0.24, maxSuccess:0.60, moneyCost:24000},
+  4:{label:'Semidiós',               baseSuccess:0.22, maxSuccess:0.55, moneyCost:24000},
   3:{label:'Extremo',                baseSuccess:0.18, maxSuccess:0.50, moneyCost:45000},
   2:{label:'Casi legendario',        baseSuccess:0.14, maxSuccess:0.40, moneyCost:80000},
   1:{label:'Legendario',             baseSuccess:0.12, maxSuccess:0.35, moneyCost:140000}

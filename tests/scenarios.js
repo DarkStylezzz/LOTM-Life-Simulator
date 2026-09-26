@@ -161,6 +161,25 @@ scenario('cada habilidad de combate de cada vía y cada Sequence', ()=>{
   assert(res > 100, 'se usaron muy pocas habilidades: ' + res);
 });
 
+scenario('combate: la distancia entre Sequences y huir de a poco', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 40; const p = STATE.pathway; p.chosenPathway = 'moon'; p.sequence = 4; identifyPathway('moon'); invalidatePathwayMods();`);
+  // Contra alguien de Sequence 8, un semidiós recibe mucho menos y pega más.
+  run(ctx, `startCombat('rivalBeyonder', {env:'street', overrides:{seq:8}});`);
+  const low = run(ctx, `({edge: combatSeqEdge(), taken: edgeDamageTakenMult(), power: playerCombatPower(6.5)})`);
+  run(ctx, `STATE.combat = null; startCombat('rivalBeyonder', {env:'street', overrides:{seq:4}});`);
+  const even = run(ctx, `({edge: combatSeqEdge(), taken: edgeDamageTakenMult(), power: playerCombatPower(6.5)})`);
+  assert(low.edge === 4 && even.edge === 0, 'la distancia entre Sequences no se calcula bien: ' + JSON.stringify({low, even}));
+  assert(low.taken < 0.5 && even.taken === 1 && low.power > even.power, 'contra alguien de más abajo no se nota la diferencia: ' + JSON.stringify({low, even}));
+  // Contra alguien de más arriba no cambia nada (sus números ya son altos).
+  run(ctx, `STATE.combat = null; STATE.pathway.sequence = 7; invalidatePathwayMods(); startCombat('demigodHunter', {env:'street'});`);
+  assert(run(ctx, `combatSeqEdge() === 0 && edgeDamageTakenMult() === 1`), 'pelear hacia arriba cambió los números del enemigo');
+  // Cada intento de huida fallido hace más fácil el siguiente.
+  const tries = run(ctx, `(function(){ const a = fleeChanceNow(); const r0 = Math.random; Math.random = ()=>0.999; combatAction('flee'); Math.random = r0; return {a, b: STATE.combat ? fleeChanceNow() : null, left: !!STATE.combat, over: STATE.gameOver}; })()`);
+  assert(tries.left && tries.b > tries.a, 'huir de nuevo no es más fácil: ' + JSON.stringify(tries));
+  run(ctx, `STATE.combat = null;`);
+});
+
 scenario('cada escena de actuación de cada vía', ()=>{
   const ctx = fresh();
   run(ctx, NEWLIFE + `STATE.character.edad = 30; createNpc({met:true, trust:60, affection:60});`);
@@ -242,7 +261,7 @@ scenario('lo de semidiós: más lento, más escaso y nunca seguro', ()=>{
   // Buscar: lo de arriba es más difícil de encontrar; ningún ritual de semidiós es seguro.
   assert(run(ctx, `seekChance({kind:'formula', pathway:'moon', seq:3}) < seekChance({kind:'formula', pathway:'moon', seq:7})`), 'buscar una fórmula de Sequence 3 es tan fácil como una de 7');
   run(ctx, `STATE.pathway.sequence = 4;`);
-  assert(run(ctx, `advanceSuccessChance(100)`) <= 0.6, 'un ritual perfecto hacia la Sequence 3 es casi seguro');
+  assert(run(ctx, `advanceSuccessChance(100)`) <= 0.55, 'un ritual perfecto hacia la Sequence 3 es casi seguro');
   run(ctx, `STATE.pathway.sequence = 9;`);
   assert(run(ctx, `advanceSuccessChance(100)`) >= 0.9, 'un ritual perfecto hacia la Sequence 8 no es casi seguro');
 });

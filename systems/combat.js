@@ -36,17 +36,27 @@ function startCombat(keyOrTpl, opts){
   let key = typeof keyOrTpl === 'string' ? keyOrTpl : (keyOrTpl && keyOrTpl.id);
   const tpl = Object.assign({}, ENEMIES[key] || (typeof keyOrTpl === 'object' ? keyOrTpl : ENEMIES.mugger), opts.overrides || {});
   if(!ENEMIES[key]) key = 'mugger';
-  const hp = rndInt(tpl.hp[0], tpl.hp[1]);
+  let hp = rndInt(tpl.hp[0], tpl.hp[1]);
   let seq = Array.isArray(tpl.seq) ? rndInt(tpl.seq[0], tpl.seq[1]) : tpl.seq;
   // Un Beyonder hostil no escala con vos: su Sequence sale de una tabla propia.
-  if(key === 'rivalBeyonder' && !(opts.overrides && opts.overrides.seq)) seq = wpick([9,8,7,6,5], s=>({9:3,8:4,7:3,6:2,5:0.6})[s]);
+  const ov = opts.overrides || {};
+  if(key === 'rivalBeyonder' && !ov.seq) seq = wpick([9,8,7,6,5], s=>({9:3,8:4,7:3,6:2,5:0.6})[s]);
+  // Pero es tan fuerte como su Sequence: la plantilla es de una Sequence 6, y
+  // uno de Sequence 9 es mucho menos que uno de Sequence 3. (Si la escena ya
+  // fija su vida y su daño, se respetan.)
+  let dmg = tpl.dmg;
+  if(key === 'rivalBeyonder' && typeof seq === 'number' && !ov.hp && !ov.dmg){
+    const d = 6 - seq;
+    hp = Math.round(hp * clamp(1 + 0.15*d, 0.55, 1.9));
+    dmg = tpl.dmg.map(x=>Math.round(x * clamp(1 + 0.1*d, 0.7, 1.6)));
+  }
   const pathway = tpl.pathway === '$random' ? pick(Object.keys(PATHWAYS)) : (tpl.pathway || null);
   const envKey = opts.env && COMBAT_ENVS[opts.env] ? opts.env : pick(tpl.env || ['street']);
   const env = COMBAT_ENVS[envKey];
   let range = null;
   if(seq !== null && seq !== undefined){ const o = rndInt(-1,1); range = [clamp(seq-1+o,0,9), clamp(seq+1+o,0,9)]; if(range[0]>seq) range[0]=seq; if(range[1]<seq) range[1]=seq; }
   STATE.combat = {
-    enemy:{ key, name:tpl.name, archetype:tpl.archetype||'human', tier:tpl.tier, desc:tpl.desc, maxHp:hp, hp, dmg:tpl.dmg, defense:tpl.defense,
+    enemy:{ key, name:tpl.name, archetype:tpl.archetype||'human', tier:tpl.tier, desc:tpl.desc, maxHp:hp, hp, dmg, defense:tpl.defense,
       sanityDmg:tpl.sanityDmg||[0,0], corruptionDmg:tpl.corruptionDmg||[0,0], fleeChance:tpl.fleeChance, seq: seq ?? null, pathway, faction:tpl.faction||null,
       talk:tpl.talk||0, reward:tpl.reward||{}, humanoid: tpl.archetype!=='creature', statuses:[], analyzedPlayer:false, usedDesperate:false, next:null },
     env:envKey, distance: tpl.archetype==='smart' ? 1 : (env.hide ? 2 : 1), round:1,
@@ -85,6 +95,27 @@ function tickStatuses(list, who){
 }
 function statusMult(list, key){ return (list||[]).reduce((m,s)=>{ const d = STATUSES[s.id]; return m * (d && d[key] ? d[key] : 1); }, 1); }
 
+/* ------------------------------ la distancia entre Sequences ------------------------------ */
+// Cuánto pesa la diferencia de Sequence y cuánto ayuda insistir en huir
+// (medido con tests/simulate.js --combat).
+const COMBAT_TUNING = {
+  edgeTaken:0.15, edgeTakenMin:0.35,     // alguien de más abajo te pega menos, por cada Sequence de diferencia
+  edgeDealt:0.12,                         // y le pegás más
+  edgeFlee:0.05,                          // y te lo sacás de encima más fácil
+  fleeRetry:0.05, fleeRetryIncoming:0.9   // cada intento de huida fallido: el próximo es más fácil y el golpe no llega entero
+};
+// Contra un Beyonder que está por debajo tuyo, la diferencia se nota. (Al
+// revés no se suma nada: los enemigos de Sequence alta ya traen sus números.)
+function combatSeqEdge(){
+  const cb = STATE.combat, p = STATE.pathway;
+  if(!cb || !p.chosenPathway) return 0;
+  const s = cb.enemy.seq;
+  if(s === null || s === undefined) return 0;
+  return clamp(s - p.sequence, 0, 5);
+}
+function edgeDamageTakenMult(){ return Math.max(COMBAT_TUNING.edgeTakenMin, 1 - COMBAT_TUNING.edgeTaken*combatSeqEdge()); }
+function edgeDamageDealtMult(){ return 1 + COMBAT_TUNING.edgeDealt*combatSeqEdge(); }
+
 /* ------------------------------ poder del jugador ------------------------------ */
 function playerCombatPower(fixedRoll, opts){
   opts = opts || {};
@@ -101,6 +132,7 @@ function playerCombatPower(fixedRoll, opts){
     atk *= statusMult(STATE.combat.player.statuses, 'dmgMult');
     const aff = PATHWAY_ENV_AFFINITY[p.chosenPathway] || [];
     if(aff.includes(STATE.combat.env)) atk *= 1.2;
+    atk *= edgeDamageDealtMult();
   }
   return Math.max(1, Math.round(atk));
 }
@@ -138,7 +170,7 @@ function combatActions(){
   itemsByCat('artifact').forEach(it=>{ const eff = artifactCombatEffect(it); if(eff) acts.push({id:'art:'+it.uid, label:'Usar: '+it.name, small:eff.text}); });
   if(e.humanoid && e.talk > 0) acts.push({id:'talk', label:'Hablar', small:'Intimidar, convencer, engañar'});
   if(e.tier === 'mundane' && !e.faction && e.key !== 'hitman' && STATE.character.cash > 0) acts.push({id:'pay', label:'Darle lo que tenés', small:'Perdés la plata que llevás encima. Salís entero.'});
-  acts.push({id:'flee', label:'Huir', small:'No siempre funciona, pero es una salida válida'});
+  acts.push({id:'flee', label:'Huir', small: cb.player.fleeTries ? 'Ya viste por dónde salir: esta vez es más fácil' : 'No siempre funciona, pero es una salida válida'});
   return acts;
 }
 function combatAction(action){
@@ -179,10 +211,11 @@ function combatAction(action){
     remember('robbed', 'Te robaron en la calle y no te resististe.', {cat:'event'});
     peace = true;
   } else if(action === 'flee'){
-    const env = COMBAT_ENVS[cb.env] || {};
-    const p = clamp(e.fleeChance + (env.flee||0) + cb.distance*0.12 + (pathwayMods().fleeBonus||0) + luckMod() + diffAdd('flee'), 0.05, 0.95);
-    fled = chance(p);
-    log.push(fled ? 'Lográs escapar entre la confusión.' : 'Intentás escapar, pero no lo lográs.');
+    fled = chance(fleeChanceNow());
+    // Un intento fallido no es en vano: ya viste por dónde salir, y mientras
+    // te alejás el golpe no llega entero.
+    if(!fled){ cb.player.fleeTries = (cb.player.fleeTries||0) + 1; incoming = COMBAT_TUNING.fleeRetryIncoming; }
+    log.push(fled ? 'Lográs escapar entre la confusión.' : 'Intentás escapar, pero no lo lográs. Al menos ya sabés por dónde salir.');
   } else if(action.startsWith('ab:')){
     const r = useCombatAbility(action.slice(3));
     if(!r){ renderAll(); return; }
@@ -211,6 +244,11 @@ function combatAction(action){
   if(c.sanity <= 0){ STATE.combat = null; resolveLossOfControl(); saveGame(true); renderAll(); return; }
   if(cb.log.length > 40) cb.log.splice(0, cb.log.length-40);
   saveGame(true); renderAll();
+}
+function fleeChanceNow(){
+  const cb = STATE.combat, e = cb.enemy, env = COMBAT_ENVS[cb.env] || {};
+  return clamp(e.fleeChance + (env.flee||0) + cb.distance*0.12 + (pathwayMods().fleeBonus||0) + luckMod() + diffAdd('flee')
+    + (cb.player.fleeTries||0)*COMBAT_TUNING.fleeRetry + combatSeqEdge()*COMBAT_TUNING.edgeFlee, 0.05, 0.95);
 }
 function useCombatAbility(id){
   const cb = STATE.combat, e = cb.enemy, log = cb.log;
@@ -280,7 +318,7 @@ function enemyTurn(incoming, negate){
   const act = e.next || 'attack';
   const hit = (mult)=>{
     if(cb.distance >= 2 && e.archetype !== 'creature' && !e.pathway){ log.push(`${e.name} no llega a alcanzarte.`); return 0; }
-    let raw = rndInt(e.dmg[0], e.dmg[1]) * mult * incoming * statusMult(e.statuses, 'dmgMult') * statusMult(cb.player.statuses, 'dmgTaken');
+    let raw = rndInt(e.dmg[0], e.dmg[1]) * mult * incoming * statusMult(e.statuses, 'dmgMult') * statusMult(cb.player.statuses, 'dmgTaken') * edgeDamageTakenMult();
     if(e.analyzedPlayer) raw *= 1.2;
     if(e.tier==='mystic' && artifactActiveEffect('ward')) raw *= 0.5;
     raw *= diffMult('enemyDmg');
@@ -341,7 +379,7 @@ function combatThreat(){
   const e = cb.enemy, c = STATE.character;
   const myAvg = Math.max(1, playerCombatPower(6.5) - e.defense);
   const toWin = Math.ceil(Math.max(0,e.hp)/myAvg);
-  const eAvg = Math.max(0.5, (e.dmg[0]+e.dmg[1])/2 - Math.floor(c.spirituality/40));
+  const eAvg = Math.max(0.5, (e.dmg[0]+e.dmg[1])/2 * edgeDamageTakenMult() - Math.floor(c.spirituality/40));
   const toLose = Math.max(1, Math.floor(c.salud/eAvg));
   let level = toLose > toWin*2 ? 0 : toLose >= toWin ? 1 : 2;
   const known = cb.info.stage >= 3 || (cb.info.stage === 2 && cb.info.estimate !== null);

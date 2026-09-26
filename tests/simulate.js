@@ -7,11 +7,14 @@
    de ejecución, bloqueos, estado no serializable y estadísticas de balance.
    Uso:  node tests/simulate.js [vidas=40] [--ui] [--seed=N] [--verbose]
                                 [--diff=easy|normal|hard|nightmare] [--style=mixto|dedicado|tranquilo]
+                                [--funnel] [--combat]
      --ui     carga también la interfaz (ui/*.js + main.js) con el DOM simulado
      --diff   fija la dificultad (por defecto, una al azar entre normal, difícil y pesadilla)
      --style  cómo juega el "jugador": mixto (un poco de todo), dedicado (vive
               para el mundo oculto: investiga, actúa, explora y avanza apenas
               puede) o tranquilo (una vida común: trabajo, familia, amigos)
+     --funnel el embudo del camino místico y los rituales por Sequence
+     --combat cuánto se pelea y cuánto se muere: por etapa, enemigo, origen y salud al empezar
    ========================================================================= */
 const path = require('path');
 const { loadGame, run, scriptList } = require('./harness');
@@ -59,8 +62,21 @@ function __pickIdx(n){ return Math.floor(Math.random()*n); }
 var __rituals = [];
 var __resolveAdvancement0 = resolveAdvancement;
 resolveAdvancement = function(){ const s = STATE.pathway.sequence; __resolveAdvancement0(); __rituals.push({s, ok:STATE.pathway.sequence < s}); };
+// Cada pelea: en qué etapa estabas, contra qué, de dónde vino, con cuánta
+// salud empezaste y cómo terminó. Y cuántos meses pasaste en cada etapa.
+var __fights = [], __curFight = null, __stageMonths = {};
+function __stage(){ const p = STATE.pathway; return !p.chosenPathway ? 'humano' : p.sequence >= 8 ? 'S9-8' : p.sequence >= 6 ? 'S7-6' : p.sequence === 5 ? 'S5' : p.sequence === 4 ? 'S4' : 'S3-0'; }
+var __startCombat0 = startCombat;
+startCombat = function(keyOrTpl, opts){
+  const c = STATE.character, f = {st:__stage(), salud:c.salud, src:(opts && opts.source) || '', res:null};
+  const r = __startCombat0.apply(this, arguments);
+  if(STATE.combat){ f.name = STATE.combat.enemy.name; f.eseq = STATE.combat.enemy.seq; __fights.push(f); __curFight = f; }
+  return r;
+};
+var __endCombat0 = endCombat;
+endCombat = function(result){ if(__curFight && !__curFight.res) __curFight.res = result; return __endCombat0.apply(this, arguments); };
 function __newLife(i){
-  __rituals = [];
+  __rituals = []; __fights = []; __curFight = null; __stageMonths = {};
   const g = pick(['Hombre','Mujer','']);
   creationData = { nombre: randomFirstNameForGender(g), apellido: randomSurname(), genero:g, ciudad: CITIES_DATA[pick(CITY_KEYS)].name, clase: pick(CLASSES),
     rasgos: rollRandomTraits(3), difficulty: ${JSON.stringify(DIFF)} || pick(['normal','normal','hard','nightmare']), world: pick(['libre','canon','alternate']) };
@@ -253,7 +269,9 @@ function __liveOne(i, maxMonths){
     if(typeof renderNow === 'function' && steps % 15 === 0) __tryAct('ui', __renderEverything);
     if(timeBlocked()) continue;
     // Un jugador dedicado aprovecha cada temporada; los demás saltan hasta que pase algo.
+    const st = __stage();
     __tryAct('advance', ()=>{ if(Math.random() < __S.everySeason) advanceOneSeason(); else advanceUntilImportant(); });
+    __stageMonths[st] = (__stageMonths[st]||0) + (STATE.time.totalMonths - before);
     // Guardar y recargar a mitad de la vida (con decisiones pendientes incluidas).
     if(Math.random() < 0.03){
       __tryAct('reload', ()=>{
@@ -269,7 +287,8 @@ function __liveOne(i, maxMonths){
     cash: c.cash + c.bank - c.debt, job:c.profesion, tarot:STATE.tarot.stage, divine: !!(STATE.divinity&&STATE.divinity.ascended), div: STATE.divinity && STATE.divinity.stage,
     journal: STATE.journal.length, steps, reloads, ms: Date.now()-t0, diff: STATE.settings.difficulty, world: STATE.settings.world,
     attention: Math.round(STATE.world.attention), corruption: c.corruption, sanity: c.sanity, factions: memberFactions().join('/'), combats: c.stats.combatsWon + c.stats.combatsFled,
-    seqAge, funnel, rituals: __rituals.slice(), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey() };
+    seqAge, funnel, rituals: __rituals.slice(), fights: __fights.map(f=>Object.assign({}, f, {res: f.res || (STATE.gameOver ? 'otro final' : 'abierta')})),
+    stageMonths: Object.assign({}, __stageMonths), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey() };
 }
 `);
 
@@ -300,6 +319,22 @@ if(args.includes('--funnel')){
   const rit = {}; results.forEach(r=>(r.rituals||[]).forEach(x=>{ const o = rit[x.s] = rit[x.s] || {n:0, ok:0}; o.n++; if(x.ok) o.ok++; }));
   const rk = Object.keys(rit).sort((a,b)=>b-a);
   if(rk.length) console.log('Rituales (Sequence de origen: intentos → éxitos):', rk.map(s=>`${s}→${s-1}: ${rit[s].n}→${rit[s].ok} (${Math.round(rit[s].ok/rit[s].n*100)}%)`).join(' · '));
+}
+if(args.includes('--combat')){
+  // Cuánto se pelea y cuánto se muere, por etapa, por enemigo, por origen y por la salud con la que se empieza.
+  const fights = [].concat(...results.map(r=>r.fights||[]));
+  const months = {}; results.forEach(r=>{ for(const k in (r.stageMonths||{})) months[k] = (months[k]||0) + r.stageMonths[k]; });
+  const pc = (a,b)=> b ? Math.round(a/b*100) + '%' : '-';
+  const table = (label, keyOf, extra)=>{
+    const g = {}; fights.forEach(f=>{ const k = keyOf(f); const o = g[k] = g[k] || {n:0, d:0, fled:0, lost:0, salud:0}; o.n++; if(f.res==='death') o.d++; if(f.res==='fled') o.fled++; if(f.res==='otro final') o.lost++; o.salud += f.salud; });
+    console.log(label);
+    Object.keys(g).sort((a,b)=>g[b].n-g[a].n).slice(0, 12).forEach(k=>{ const o = g[k];
+      console.log(`  ${String(k).padEnd(44)} ${String(o.n).padStart(4)} peleas · mueren ${pc(o.d, o.n).padStart(4)} · huyen ${pc(o.fled, o.n).padStart(4)}${o.lost ? ` · pierden el control ${o.lost}` : ''} · salud al empezar ${Math.round(o.salud/o.n)}${extra ? extra(k, o) : ''}`); });
+  };
+  table('Peleas por etapa:', f=>f.st, (k, o)=> months[k] ? ` · ${(o.n / (months[k]/12)).toFixed(2)} por año` : '');
+  table('Peleas por enemigo:', f=>f.name);
+  table('Peleas por origen:', f=>f.src || '(sin origen)');
+  table('Peleas por salud al empezar:', f=>f.salud < 40 ? 'menos de 40' : f.salud < 70 ? '40 a 69' : '70 o más');
 }
 const savedLives = results.filter(r=>r.saved > 0).length;
 if(savedLives) console.log(`Segundas oportunidades usadas: ${results.reduce((a,r)=>a+r.saved,0)} en ${savedLives} vidas`);

@@ -67,11 +67,12 @@ const ENEMIES = {
             desc:'Lleva una máscara de hueso pintada. Le reza a un soberano que su imperio perdió hace mil años, y el soberano, a veces, contesta.'},
 
   // ---------------- lo que acecha a los que subieron alto (Sequence 6 o menos) ----------------
-  demigodHunter:{name:'Alguien que te estudió durante años', archetype:'smart', tier:'mystic', w:3, hp:[90,120], dmg:[15,26], defense:8, sanityDmg:[8,16], corruptionDmg:[2,6], fleeChance:0.2, seq:[4,5], pathway:'$random',
+  // Cuesta mucho sacárselos de encima: uno sabe por dónde vas a querer salir; el otro no se cansa.
+  demigodHunter:{name:'Alguien que te estudió durante años', archetype:'smart', tier:'mystic', w:3, hp:[90,120], dmg:[15,26], defense:8, sanityDmg:[8,16], corruptionDmg:[2,6], fleeChance:0.1, seq:[4,5], pathway:'$random',
             talk:0.15, reward:{cash:[0,80], clue:18, characteristic:0.6}, env:['street','night','alley','home'],
             req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence <= 6,
             desc:'Sabe tu nombre, tu vía y tu Sequence. Sabe a qué hora volvés a casa. Vos no sabés nada de él, y eso es exactamente lo que planeó.'},
-  fallenSaint:{name:'Un Santo que perdió el control', archetype:'creature', tier:'mystic', w:2, hp:[120,160], dmg:[18,30], defense:9, sanityDmg:[14,24], corruptionDmg:[5,10], fleeChance:0.22, seq:4, pathway:'$random',
+  fallenSaint:{name:'Un Santo que perdió el control', archetype:'creature', tier:'mystic', w:2, hp:[120,160], dmg:[18,30], defense:9, sanityDmg:[14,24], corruptionDmg:[5,10], fleeChance:0.12, seq:4, pathway:'$random',
             reward:{cash:0, clue:22, characteristic:0.7}, env:['ruins','night','fog','street'],
             req:()=>!!STATE.pathway.chosenPathway && STATE.pathway.sequence <= 5,
             desc:'Fue alguien venerado. Todavía lleva algo de esa luz encima, pero la luz ahora tiene dientes y una ciudad entera por delante.'},
