@@ -542,5 +542,22 @@ scenario('combate: la Sequence del rival pesa (vida, daño, ventaja y huida)', (
   assert(run(ctx, `STATE.combat && STATE.combat.player.fleeTries === 2`), 'no se cuentan los intentos de huida');
 });
 
+scenario('combate: los cazadores, la dificultad y el rival de una pista', ()=>{
+  const ctx = fresh();
+  run(ctx, NEWLIFE + `STATE.character.edad = 40; const p = STATE.pathway; p.chosenPathway = 'moon'; p.sequence = 4; identifyPathway('moon'); invalidatePathwayMods();`);
+  // Quien busca el mismo ingrediente que vos es de tu misma Sequence.
+  run(ctx, `(function(){ const r0 = Math.random; Math.random = ()=>0.01; try{ resolveLead({rumor:'ingredient', outcome:'danger', pathway:'moon', seq:3, name:'x', price:0}); } finally { Math.random = r0; } })()`);
+  assert(run(ctx, `!!STATE.combat && STATE.combat.enemy.key === 'rivalBeyonder' && STATE.combat.enemy.seq === 4`), 'el rival de la pista no es de tu Sequence: ' + run(ctx, `JSON.stringify(STATE.combat && {k:STATE.combat.enemy.key, s:STATE.combat.enemy.seq})`));
+  // Después de un intento de huida fallido, el botón avisa que ahora es más fácil.
+  run(ctx, `const e = STATE.combat.enemy; e.fleeChance = -5; e.dmg = [0,0]; e.sanityDmg = [0,0]; e.corruptionDmg = [0,0]; e.archetype = 'human'; e.talk = 0; e.next = 'attack'; const r0 = Math.random; Math.random = ()=>0.999; try{ combatAction('flee'); } finally { Math.random = r0; }`);
+  assert(run(ctx, `!!STATE.combat && /más fácil/.test(combatActions().find(a=>a.id==='flee').small)`), 'huir no avisa que el próximo intento es más fácil');
+  run(ctx, `STATE.combat = null;`);
+  // A quien te estudió durante años, o a un Santo que perdió el control, cuesta más dejarlos atrás.
+  assert(run(ctx, `[ENEMIES.demigodHunter, ENEMIES.fallenSaint].every(x=>x.fleeChance < ENEMIES.rivalBeyonder.fleeChance*0.6)`), 'los cazadores no son más difíciles de dejar atrás');
+  // Difícil y Pesadilla pegan más fuerte y cuesta más huir.
+  const d = run(ctx, `(function(){ const out = {}; ['normal','hard','nightmare'].forEach(k=>{ STATE.settings.difficulty = k; out[k] = [diffMult('enemyDmg'), diffAdd('flee')]; }); STATE.settings.difficulty = 'normal'; return out; })()`);
+  assert(d.hard[0] > d.normal[0] && d.nightmare[0] > d.hard[0] && d.hard[1] < d.normal[1] && d.nightmare[1] < d.hard[1], 'la dificultad no cambia el combate: ' + JSON.stringify(d));
+});
+
 console.log(`\n${passed} escenarios OK, ${failed} con fallas.`);
 if(failed) process.exitCode = 1;
