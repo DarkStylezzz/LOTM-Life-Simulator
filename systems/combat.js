@@ -155,7 +155,7 @@ function combatActions(){
   itemsByCat('artifact').forEach(it=>{ const eff = artifactCombatEffect(it); if(eff) acts.push({id:'art:'+it.uid, label:'Usar: '+it.name, small:eff.text}); });
   if(e.humanoid && e.talk > 0) acts.push({id:'talk', label:'Hablar', small:'Intimidar, convencer, engañar'});
   if(e.tier === 'mundane' && !e.faction && e.key !== 'hitman' && STATE.character.cash > 0) acts.push({id:'pay', label:'Darle lo que tenés', small:'Perdés la plata que llevás encima. Salís entero.'});
-  acts.push({id:'flee', label:'Huir', small:'No siempre funciona, pero es una salida válida'});
+  acts.push({id:'flee', label:'Huir', small: cb.player.fleeTries ? 'Ya viste por dónde salir: esta vez es más fácil' : 'No siempre funciona, pero es una salida válida'});
   return acts;
 }
 function combatAction(action){
@@ -201,7 +201,7 @@ function combatAction(action){
     fled = chance(p);
     // Cada intento fallido te deja más cerca de la salida: ya viste por dónde no.
     if(!fled) cb.player.fleeTries = (cb.player.fleeTries||0) + 1;
-    log.push(fled ? 'Lográs escapar entre la confusión.' : 'Intentás escapar, pero no lo lográs.');
+    log.push(fled ? 'Lográs escapar entre la confusión.' : 'Intentás escapar, pero no lo lográs. Al menos ya sabés por dónde salir.');
   } else if(action.startsWith('ab:')){
     const r = useCombatAbility(action.slice(3));
     if(!r){ renderAll(); return; }
