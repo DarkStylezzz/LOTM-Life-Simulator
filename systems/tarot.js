@@ -196,7 +196,7 @@ function tarotTick(){
   if(t.stage === 2 && (knowsLore('tarot_fool') || STATE.factions.tarotClub.discovered)) t.stage = 3;
   // Un Beyonder termina oyendo hablar del club, aunque no lo busque: tres
   // ecos distintos y ya sabe que existe.
-  if(t.stage === 2 && STATE.pathway.chosenPathway && !STATE.pendingEvent && chance(0.03)){
+  if(t.stage < 3 && STATE.pathway.chosenPathway && !STATE.pendingEvent && chance(0.03)){
     const echo = TAROT_ECHOES.find(e=>!(t.heard||[]).includes(e.source));
     if(echo){ tarotHear(echo.source); logJournal(echo.title, echo.text, {cat:'mystery', imp:1}); }
   }

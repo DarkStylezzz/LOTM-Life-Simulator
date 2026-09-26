@@ -59,8 +59,8 @@ scenario('guardar y recargar con una decisión pendiente', ()=>{
 
 scenario('Tarot Club sin buscarlo: los ecos y la invitación llegan solos', ()=>{
   const ctx = fresh();
-  run(ctx, NEWLIFE + `STATE.character.edad = 30; STATE.pathway.chosenPathway='sun'; STATE.pathway.sequence=8; STATE.flags.beyonderSince=0; invalidatePathwayMods(); STATE.tarot.stage = 2;`);
-  // Un Beyonder en la etapa 2 termina sabiendo que el club existe.
+  run(ctx, NEWLIFE + `STATE.character.edad = 30; STATE.pathway.chosenPathway='sun'; STATE.pathway.sequence=8; STATE.flags.beyonderSince=0; invalidatePathwayMods(); STATE.tarot.stage = 0;`);
+  // Un Beyonder que nunca oyó nada termina sabiendo que el club existe.
   for(let i=0;i<600 && run(ctx, `STATE.tarot.stage`) < 3;i++) run(ctx, `STATE.pendingEvent = null; tarotTick();`);
   assert(run(ctx, `STATE.tarot.stage`) >= 3, 'los ecos del club no llegaron');
   assert(run(ctx, `STATE.journal.some(j=>TAROT_ECHOES.some(e=>e.title===j.title))`), 'los ecos no quedaron en el diario');
