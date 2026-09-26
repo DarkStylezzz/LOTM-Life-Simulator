@@ -345,13 +345,15 @@ function blackMarketOffers(){
   STATE.bmOffers = {season, offers};
   return offers;
 }
+const BLACK_MARKET_MIN_SEQ = 5;
 function buildBlackMarketOffers(){
   const offers = [];
   const target = STATE.pathway.chosenPathway ? {p:STATE.pathway.chosenPathway, s:STATE.pathway.sequence-1} : null;
   const ids = identifiedPathways();
   const p = target ? target.p : (ids.length ? pick(ids) : null);
   const s = target ? target.s : 9;
-  if(p && s >= 0){
+  // Lo de semidiós (Sequence 4 para arriba) no llega a estos callejones.
+  if(p && s >= BLACK_MARKET_MIN_SEQ){
     offers.push({kind:'formula', pathway:p, seq:s, price:Math.round((400 + (9-s)*900)*priceIndex()), label:`Una fórmula que dicen que es "${formulaName(p,s)}"`});
     const need = ingredientsNeededFor(p, s).filter(n=>ownedQty(p, n) <= 0);
     if(need.length){ const nm = pick(need); offers.push({kind:'ingredient', pathway:p, seq:s, name:nm, price:Math.round((250 + (9-s)*700)*priceIndex()), label:`Un ingrediente: ${nm}`}); }

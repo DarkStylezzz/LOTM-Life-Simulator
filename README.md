@@ -26,7 +26,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 | Investigación | Siete métodos (biblioteca, iglesia, símbolos, documentos, interrogar, clandestino, místico), foco en un hilo, *atar cabos*, rumores que se enfrían. |
 | Conocimiento | Hechos, secretos, saber prohibido y entidades; algunos se pagan con cordura. |
 | Método de Actuación y digestión | Escenas por vía y Sequence; calidad de la actuación; digestión natural por vivir el papel (hasta en el trabajo). |
-| Pociones y Advancement | Fórmulas (verdaderas, incompletas o falsas), ingredientes con pureza, Características, preparación en pasos, ritual de cinco pasos con presentimiento. |
+| Pociones y Advancement | Para subir de Sequence hace falta: la poción actual digerida, la fórmula de la próxima, sus dos ingredientes (el principal se puede reemplazar por una Característica), el dinero del ritual (del bolsillo o del banco) y cordura suficiente. Todo está a la vista en **Misticismo → Tu camino**, con cómo se consigue cada cosa. **Buscar lo que te falta** (una vez por temporada) empuja siempre hacia el próximo paso: ponerle nombre a una vía, entenderla, la fórmula o un ingrediente. La poción se prepara dentro del ritual, que tiene cuatro pasos y un presentimiento antes de empezar; la primera se prepara y se bebe en la misma noche. Si el ritual falla, la fórmula queda. Lo que frena es la altura: de la Sequence 5 para arriba la poción tarda años en digerirse, las fórmulas y los ingredientes casi no circulan (las organizaciones sólo se los confían a quien tiene su confianza y el mercado negro no pasa de la Sequence 5) y ningún ritual de semidiós es seguro. |
 | Sequence 0 | Una cadena de acontecimientos extraordinarios, un ascenso que puede fallar y un modo divino que cambia la interfaz. |
 | Combate | Táctico: distancia, entorno, estados, arquetipos de enemigos, información oculta de la Sequence rival (??? → rango → estimación → exacta), heridas que quedan, huir o hablar como opciones reales. |
 | Facciones | Iglesias, Nighthawks, MI9, la Orden de la Aurora, la Mente Colmena, los Alquimistas de la Psicología… acceso, mérito, pedidos, deberes, sospecha, persecución, traición. |
@@ -71,12 +71,13 @@ tests/          pruebas sin navegador y en navegador
 Requieren Node 18+ (y Playwright para la de navegador).
 
 ```
-node tests/scenarios.js      # 21 escenarios dirigidos: Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
+node tests/scenarios.js      # 23 escenarios dirigidos: el ascenso, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
 node tests/simulate.js 40    # 40 vidas completas con un "jugador" automático: errores, bloqueos, estado serializable y balance
 node tests/simulate.js 10 --ui   # lo mismo, dibujando todas las pestañas con un DOM simulado
 node tests/simulate.js 40 --diff=easy --style=dedicado --funnel
                              # balance: dificultad fija, estilo de jugador (mixto, dedicado o tranquilo)
-                             # y el "embudo" del camino místico (a qué edad se llega a cada paso)
+                             # y el "embudo" del camino místico (a qué edad se llega a cada paso, cuántos
+                             # rituales se intentan y cuántos salen bien, y en qué Sequence se muere peleando)
 node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor,
                              # en nueve estados de vida, y avisa qué eventos no pudo disparar nunca
 node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil y una partida v7 migrada
@@ -86,4 +87,4 @@ node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil y
 
 `SAVE_VERSION = 8`. Las partidas de versiones anteriores (v6 y v7) se migran solas al cargarlas (`migrateSave` en `systems/save.js`): se conservan personaje, memoria, diario, hitos, NPCs, dinero, vía, Sequence, conocimiento (convertido en pistas), ingredientes, libros y artefactos. Una decisión o un encargo que haya quedado abierto se reabre si esa misma escena existe en esta versión; sólo se pierden las prácticas de actuación y los rituales a medio hacer (cambiaron por completo), con una nota en el diario. Un combate en curso se retoma si el enemigo existe en la versión nueva.
 
-Las partidas v8 ya empezadas reciben solas el contenido nuevo (ciudades, eventos, encargos, artefactos) y se reparan al cargar: si quedaron atrapadas en la "guerra corta" del mundo libre, que antes no terminaba nunca, la paz queda agendada.
+Las partidas v8 ya empezadas reciben solas el contenido nuevo (ciudades, eventos, encargos, artefactos) y se reparan al cargar: si quedaron atrapadas en la "guerra corta" del mundo libre, que antes no terminaba nunca, la paz queda agendada. Con el ascenso simplificado, una poción que ya estaba preparada cuenta como requisito cumplido, una preparación a medio hacer se termina como antes y un ritual de Advancement que haya quedado abierto con la versión anterior (de cinco pasos) se cierra solo al retomarlo.

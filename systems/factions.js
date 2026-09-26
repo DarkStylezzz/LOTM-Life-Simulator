@@ -214,31 +214,36 @@ function factionRequestAvailable(k, what){
   if(!f || !r || factionHostile(k) || k==='tarotClub') return {ok:false, why:'No es posible.'};
   if(f.access < r.minAccess) return {ok:false, why:`Necesitás acceso: ${FACTION_ACCESS_LABEL[r.minAccess]}.`};
   if(f.merit < r.merit) return {ok:false, why:`Te falta mérito (${f.merit}/${r.merit}).`};
-  if(what==='formula'){
-    const t = formulaTargetFor(k); if(!t) return {ok:false, why:'No custodian la fórmula que necesitás (o no la necesitás).'};
+  if(what==='formula' || what==='ingredient'){
+    const target = what==='formula' ? formulaTargetFor : ingredientTargetFor;
+    if(!target(k)){
+      const t = target(k, true);
+      if(t) return {ok:false, why:`Necesitás acceso: ${FACTION_ACCESS_LABEL[highSeqAccessNeeded(t.seq)]} (es de Sequence ${t.seq}).`};
+      return {ok:false, why: what==='formula' ? 'No custodian la fórmula que necesitás (o no la necesitás).' : 'No tienen nada que te falte.'};
+    }
   }
-  if(what==='ingredient'){ if(!ingredientTargetFor(k)) return {ok:false, why:'No tienen nada que te falte.'}; }
   if(what==='training' && !STATE.pathway.chosenPathway) return {ok:false, why:'Primero tenés que ser Beyonder.'};
   if(what==='ritual' && (!STATE.pathway.chosenPathway || STATE.pathway.sequence<=0)) return {ok:false, why:'No tenés un ritual por delante.'};
   return {ok:true};
 }
-function formulaTargetFor(k){
+// Lo de las Sequences altas (fórmulas e ingredientes) no se le entrega a cualquiera.
+function highSeqAccessNeeded(s){ return s <= 3 ? 5 : s <= 5 ? 4 : 0; }
+function formulaTargetFor(k, ignoreAccess){
   const f = F(k); const p = STATE.pathway;
   if(p.chosenPathway){
     const s = p.sequence - 1;
     if(s < 0 || !f.formulas.includes(p.chosenPathway) || hasFormula(p.chosenPathway, s, true)) return null;
-    // Las fórmulas de Sequences altas no se entregan a cualquiera.
-    if(s <= 5 && f.access < 4) return null;
-    if(s <= 3 && f.access < 5) return null;
+    if(!ignoreAccess && f.access < highSeqAccessNeeded(s)) return null;
     return {pathway:p.chosenPathway, seq:s};
   }
   const cands = f.formulas.filter(x=>isIdentified(x) && !hasFormula(x, 9, true));
   return cands.length ? {pathway:pick(cands), seq:9} : null;
 }
-function ingredientTargetFor(k){
+function ingredientTargetFor(k, ignoreAccess){
   const p = STATE.pathway;
   const t = p.chosenPathway ? {pathway:p.chosenPathway, seq:p.sequence-1} : (formulaTargetFor(k) || null);
   if(!t || t.seq < 0) return null;
+  if(!ignoreAccess && F(k).access < highSeqAccessNeeded(t.seq)) return null;
   // Guardan ingredientes de las vías que custodian (y las grandes iglesias, de casi todo).
   if(!F(k).formulas.includes(t.pathway) && !['church','storm','machinery'].includes(k)) return null;
   const need = ingredientsNeededFor(t.pathway, t.seq).filter(n=>ownedQty(t.pathway, n) <= 0);

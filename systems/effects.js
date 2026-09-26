@@ -86,7 +86,8 @@ function applyEffects(eff, ctx){
   if(eff.luckBuff !== undefined){ STATE.flags.luckBuffUntil = STATE.time.totalMonths + 6; STATE.flags.luckBuff = val(eff.luckBuff); }
 
   if(eff.digestion !== undefined && STATE.pathway.chosenPathway){
-    let d = val(eff.digestion); if(d>0) d = d*m.digestion;
+    // Cuanto más alta la Sequence, más despacio se asienta todo (ver digestionSeqFactor).
+    let d = val(eff.digestion); if(d>0) d = d*m.digestion*digestionSeqFactor(STATE.pathway.sequence);
     d = Math.round(d*10)/10;
     if(d){ const before = STATE.pathway.digestion; STATE.pathway.digestion = clamp(STATE.pathway.digestion + d, 0, 100); pushChange(changes, 'digestion', STATE.pathway.digestion - before); }
   }

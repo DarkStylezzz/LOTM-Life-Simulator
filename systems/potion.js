@@ -9,12 +9,14 @@
    - Ingredients: objetos con PUREZA y procedencia.
    - BeyonderCharacteristic: lo que queda de un Beyonder muerto; reemplaza
      al ingrediente principal de su misma vía y Sequence. Cargarla pesa.
-   - PotionPreparation: una escena de varios pasos (lugar, utensilios,
-     método, reacción, ayuda). Conocimiento, pureza, experiencia y
-     decisiones definen la calidad.
-   - Potion: el resultado, con calidad y fallas ocultas. Se bebe después
-     (primera poción) o en el ritual de Advancement.
-   "Tengo plata + ingredientes = poción" ya no alcanza (§20).
+   - PotionPreparation: quickBrew. La poción se prepara en el momento en
+     que se va a usar: la primera, en la misma noche en que se bebe
+     (startFirstPotion); las siguientes, dentro del ritual de avance. La
+     pureza de los ingredientes, tu educación y habilidad, los utensilios
+     y la fidelidad de la fórmula definen la calidad. (La escena de
+     preparación en varios pasos, startBrew, queda para las partidas que
+     la tenían a medio hacer.)
+   - Potion: el resultado, con calidad y fallas ocultas.
    ========================================================================= */
 
 /* ------------------------------ ingredientes ------------------------------ */
@@ -112,17 +114,61 @@ function brewCost(pathwayKey, seq){
 }
 function brewRequirements(pathwayKey, seq){
   const reqs = [];
+  if(seq === 9) reqs.push({id:'understand', label:'Comprender la vía', ok: knowledgeOf(pathwayKey) >= 50 && isIdentified(pathwayKey), hint:'"Buscar lo que te falta" o investigar este hilo.'});
   const f = formulaItems(pathwayKey, seq);
-  reqs.push({label:'Tener la fórmula', ok: f.length > 0});
+  reqs.push({id:'formula', label:'Tener la fórmula', ok: f.length > 0, hint:ADVANCE_HINTS.formula});
   const need = ingredientsNeededFor(pathwayKey, seq);
   need.forEach((ing,i)=>{
     const ch = i === 0 ? characteristicFor(pathwayKey, seq) : null;
-    reqs.push({label:'Ingrediente: '+ing + (i===0 && ch ? ' (o la Característica que tenés)' : ''), ok: ownedQty(pathwayKey, ing) > 0 || !!ch});
+    reqs.push({id:'ing'+i, label:'Ingrediente: '+ing + (i===0 && ch ? ' (o la Característica que tenés)' : ''), ok: ownedQty(pathwayKey, ing) > 0 || !!ch, hint:ADVANCE_HINTS.ing});
   });
-  reqs.push({label:'Dinero para prepararla: '+fmtMoney(brewCost(pathwayKey, seq)), ok: STATE.character.cash >= brewCost(pathwayKey, seq)});
-  if(seq === 9) reqs.push({label:'Comprender la vía', ok: knowledgeOf(pathwayKey) >= 50 && isIdentified(pathwayKey)});
-  reqs.push({label:'Tiempo libre esta temporada (2)', ok: canSpendFreeTime(2)});
+  reqs.push({id:'money', label:'Dinero para prepararla: '+fmtMoney(brewCost(pathwayKey, seq)), ok: canAfford(brewCost(pathwayKey, seq)), hint:ADVANCE_HINTS.money});
+  if(seq === 9) reqs.push({id:'age', label:'Tener al menos 16 años', ok: STATE.character.edad >= 16});
+  reqs.push({id:'time', label:'Tiempo libre esta temporada (2)', ok: canSpendFreeTime(2), hint:'Esperá a la próxima temporada.'});
   return reqs;
+}
+// Preparar una poción sin escena: el ritual de avance y la primera poción la
+// preparan en el momento. Consume los ingredientes (o la Característica), usa
+// la mejor fórmula que tengas y calcula la calidad con la pureza, tu
+// habilidad, tus utensilios y la fidelidad de la receta.
+function quickBrew(pathwayKey, seq, provenance){
+  const formula = formulaItems(pathwayKey, seq).sort((a,b)=>(b.fidelity==='true')-(a.fidelity==='true'))[0];
+  const fid = formula ? formula.fidelity : 'partial';
+  const purities = [];
+  ingredientsNeededFor(pathwayKey, seq).forEach((ing,i)=>{
+    const have = ingredientItems(pathwayKey, ing)[0];
+    const ch = i === 0 ? characteristicFor(pathwayKey, seq) : null;
+    if(have){ purities.push(have.purity||60); removeItem(have.uid); }
+    else if(ch){ purities.push(95); removeItem(ch.uid); }
+  });
+  const purity = purities.length ? avg(purities) : 50;
+  const skill = (EDUCATION_RANK[STATE.character.educacion]||0)*2 + (playerTags().has('meticulous')?5:0) + Math.round((pathwayMods().brew||0)*50) + Math.round((conditionMods().brew||0)*50);
+  let q = 58 + (purity-60)/2 + skill + (hasItem('tool_alchemy') ? 6 : 0) + rndInt(-8,8);
+  const flaws = [];
+  if(fid === 'false'){ flaws.push('toxic'); q = Math.min(q, 45); }
+  if(fid === 'partial' && q < 60) flaws.push('incomplete');
+  q = clamp(Math.round(q), 0, 100);
+  if(q < 30) flaws.push('unstable');
+  const sd = seqData(pathwayKey, seq);
+  const pot = addItem({cat:'potion', pathway:pathwayKey, seq, quality:q, flaws, fidelity:fid,
+    name:`Poción: ${sd ? sd.name : 'Sequence '+seq} (Sequence ${seq})`, rarity:'raro',
+    desc:'Un líquido que no debería existir. Brilla apenas en la oscuridad.', uses: seq===9 ? 'Beberla para convertirte en Beyonder.' : 'Beberla en el ritual de Advancement.',
+    risk:'Una poción mal preparada puede fallar, corromperte, dejarte marcas o matarte.', provenance: provenance || 'preparada por vos'}, 1);
+  remember('brewed_'+seq, `Preparaste tu propia poción (Sequence ${seq}).`, {cat:'achievement'});
+  return pot;
+}
+// La primera poción, en un solo paso: se prepara y se bebe en la misma noche
+// (la escena de beberla todavía deja echarse atrás y guardarla).
+function startFirstPotion(pathwayKey){
+  if(timeBlocked()) return;
+  if(STATE.pathway.chosenPathway) return;
+  const reqs = brewRequirements(pathwayKey, 9);
+  if(reqs.some(r=>!r.ok)){ toast('Todavía no tenés todo lo necesario.', 'neg'); return; }
+  spendFreeTime(2); markMysticAct();
+  payFromCashOrBank(brewCost(pathwayKey, 9));
+  const pot = quickBrew(pathwayKey, 9, 'preparada por vos');
+  logJournal('Preparar la poción', `Preparás ${pot.name.toLowerCase()} en una noche larga, con la fórmula abierta sobre la mesa. ${pot.quality >= 70 ? 'Sale bien: el color es el que describía la receta.' : pot.quality >= 45 ? 'Sale pasable. Algo en el color no te convence del todo.' : 'Sale mal, y lo sabés. El olor lo dice todo.'}`, {cat:'pathway', imp:2});
+  startDrinkPotion(pot.uid);
 }
 function brewHelpers(){
   return aliveNpcs().filter(n=>n.met && n.lifeState==='presente' && n.trust >= 50 && ((n.hidden.pathway && n.known.pathway) || n.profession==='Boticario' || n.flags.mysticContact));
@@ -303,7 +349,7 @@ function finishDrink(){
   removeItem(it.uid);
   const prep = (FIRST_POTIONS[key]||{prepDifficulty:0.6}).prepDifficulty;
   const score = it.quality*0.5 + b.stab + c.sanity*0.2 - c.corruption*0.3;
-  let p = 0.25 + (score-40)/100 + prep*0.35 + diffAdd('potion') + luckMod();
+  let p = 0.35 + (score-40)/100 + prep*0.35 + diffAdd('potion') + luckMod();
   if((it.flaws||[]).includes('toxic')) p = 0.03;
   if((it.flaws||[]).includes('unstable')) p -= 0.15;
   p = clamp(p, 0.03, 0.95);
