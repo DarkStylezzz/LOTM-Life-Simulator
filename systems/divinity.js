@@ -32,7 +32,7 @@ function divinityRequirements(){
     {label:'Sobrevivir a lo que mira desde afuera', ok: d.stage >= 4},
     {label:`Reunir las Características de los ángeles de tu vía (${Math.min(n,DIVINITY_CHAR_REQ)}/${DIVINITY_CHAR_REQ})`, ok: n >= DIVINITY_CHAR_REQ},
     {label:'Que otros crean en vos', ok: STATE.anchors.belief >= 40},
-    {label:'Años de preparación como Sequence 1', ok: monthsAtSeq1() >= 120}
+    {label:'Años de preparación como Sequence 1', ok: monthsAtSeq1() >= 72}
   ];
 }
 function divinityReady(){ const d = D(); return !d.renounced && !d.ascended && divinityRequirements().every(r=>r.ok); }

@@ -13,6 +13,7 @@
      --events cuántos eventos pasaron en alguna vida, y cuáles nunca
      --funnel el embudo del camino místico y los rituales por Sequence
      --combat cuánto se pelea y cuánto se muere: por etapa, enemigo, origen y salud al empezar
+     --years=N tope de la simulación en años (120, o 300 con --lineage)
      --lineage cuando una vida termina, sigue con un heredero (hasta cuatro generaciones)
      --style  cómo juega el "jugador": mixto (un poco de todo), dedicado (vive
               para el mundo oculto: investiga, actúa, explora y avanza apenas
@@ -26,6 +27,7 @@ const LIVES = +(args.find(a=>/^\d+$/.test(a)) || 40);
 const WITH_UI = args.includes('--ui');
 const VERBOSE = args.includes('--verbose');
 const LINEAGE = args.includes('--lineage');
+const YEARS = +((args.find(a=>a.startsWith('--years=')) || '').split('=')[1] || (LINEAGE ? 300 : 120));
 const seedArg = (args.find(a=>a.startsWith('--seed=')) || '').split('=')[1];
 const DIFF = (args.find(a=>a.startsWith('--diff=')) || '').split('=')[1] || '';
 const STYLE = (args.find(a=>a.startsWith('--style=')) || '').split('=')[1] || 'mixto';
@@ -311,7 +313,7 @@ function __liveOne(i, maxMonths){
 const results = [];
 for(let i=0;i<LIVES;i++){
   let r;
-  try{ r = run(ctx, `__liveOne(${i}, 12*${LINEAGE ? 300 : 120})`); }
+  try{ r = run(ctx, `__liveOne(${i}, 12*${YEARS})`); }
   catch(e){ console.error('La vida', i, 'explotó:', e.stack); process.exitCode = 1; break; }
   results.push(r);
   if(VERBOSE) console.log(JSON.stringify(r));

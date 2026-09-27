@@ -217,7 +217,7 @@ function actingStyleLabel(){
 // Cuanto más alta la Sequence, más tarda en asentarse la poción: las
 // primeras se digieren en un año o dos; las de semidiós, en muchos más.
 // Vale para todo lo que digiere (actuar, vivir tu papel, misiones, eventos).
-const DIGESTION_SEQ_FACTOR = {9:1, 8:0.85, 7:0.7, 6:0.5, 5:0.27, 4:0.15, 3:0.1, 2:0.08, 1:0.06, 0:0.06};
+const DIGESTION_SEQ_FACTOR = {9:1, 8:0.85, 7:0.7, 6:0.5, 5:0.27, 4:0.22, 3:0.17, 2:0.14, 1:0.1, 0:0.1};
 function digestionSeqFactor(seq){ return DIGESTION_SEQ_FACTOR[seq] ?? 1; }
 
 /* ------------------------------ digestión pasiva (mensual) ------------------------------ */
