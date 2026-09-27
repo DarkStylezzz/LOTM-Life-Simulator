@@ -401,6 +401,12 @@ function resolveAdvancement(){
       logJournal('ADVANCEMENT RITUAL — FRACASO', text, {cat:'pathway', imp:3});
     }
     remember('ritual_failed_'+seq, `Un ritual de Advancement te salió mal (Sequence ${seq-1}).`, {cat:'trauma'});
+    // De la Sequence 4 para arriba, cada intento cuesta décadas: el que
+    // sobrevive a un fracaso sabe dónde se rompió, y el próximo sale mejor.
+    if(seq <= 4 && !STATE.gameOver && p.advanceFlags && !p.advanceFlags[seq]){
+      p.advanceFlags[seq] = true;
+      text += ' Pero ahora sabés en qué paso se rompió. La próxima vez, eso no te va a tomar por sorpresa.';
+    }
     setResolution('El ritual falló', text, []);
   }
   checkDeathAndCrisis();

@@ -84,6 +84,8 @@ node tests/simulate.js 40 --style=mixto --combat
                              # cuánto se pelea y cuánto se muere: por etapa, enemigo, origen y salud al empezar
 node tests/simulate.js 30 --lineage
                              # cuando una vida termina, sigue con un heredero (hasta cuatro generaciones)
+node tests/simulate.js 20 --years=300 --funnel
+                             # sin el tope de 120 años: hasta dónde llega una vida Beyonder larga (Sequences 3 a 0)
 node tests/simulate.js 40 --events
                              # qué eventos pasaron en alguna vida jugada "de verdad" y cuáles nunca
 node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor,
