@@ -22,7 +22,7 @@ let _pmCache = {key:null, mods:null};
 function pathwayMods(){
   const p = STATE && STATE.pathway;
   if(!p) return {};
-  const key = (p.chosenPathway||'-') + ':' + p.sequence + ':' + STATE.time.totalMonths + ':' + (STATE.flags.researchBuffUntil||0);
+  const key = (p.chosenPathway||'-') + ':' + p.sequence + ':' + STATE.time.totalMonths + ':' + (STATE.flags.researchBuffUntil||0) + ':' + sefirahModsKey();
   if(_pmCache.key === key) return _pmCache.mods;
   const m = {research:0, social:0, deception:0, perception:0, stealth:0, exploreFind:0, exploreSafe:0, freeTime:0, sanityRegen:0,
     corruptionResist:0, combatPower:0, brew:0, acting:0, healMonthly:0, healthResist:0, fate:0, ritualAccuracy:0, interrogate:0,
@@ -35,6 +35,9 @@ function pathwayMods(){
       else if(v) m[k] = true;
     }
   });
+  // El Castillo de Sefirah también suma (ver systems/sefirah.js).
+  const sm = sefirahMods();
+  for(const k in sm) m[k] = (m[k]||0) + sm[k];
   _pmCache = {key, mods:m};
   return m;
 }

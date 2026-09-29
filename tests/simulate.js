@@ -7,13 +7,14 @@
    de ejecución, bloqueos, estado no serializable y estadísticas de balance.
    Uso:  node tests/simulate.js [vidas=40] [--ui] [--seed=N] [--verbose]
                                 [--diff=easy|normal|hard|nightmare] [--style=mixto|dedicado|tranquilo]
-                                [--funnel] [--combat] [--events] [--lineage]
+                                [--funnel] [--combat] [--events] [--lineage] [--sefirah]
      --ui     carga también la interfaz (ui/*.js + main.js) con el DOM simulado
      --diff   fija la dificultad (por defecto, una al azar entre normal, difícil y pesadilla)
      --events cuántos eventos pasaron en alguna vida, y cuáles nunca
      --funnel el embudo del camino místico y los rituales por Sequence
      --combat cuánto se pelea y cuánto se muere: por etapa, enemigo, origen y salud al empezar
      --years=N tope de la simulación en años (120, o 300 con --lineage)
+     --sefirah todas las vidas nacen con el Castillo de Sefirah (y un resumen de lo que hicieron con él)
      --lineage cuando una vida termina, sigue con un heredero (hasta cuatro generaciones)
      --style  cómo juega el "jugador": mixto (un poco de todo), dedicado (vive
               para el mundo oculto: investiga, actúa, explora y avanza apenas
@@ -48,6 +49,8 @@ const SEEDED = seedArg ? `
 ` : '';
 
 const ctx = WITH_UI ? loadGame({prelude:SEEDED}) : loadGame({scripts:systemScripts(), prelude:SEEDED + STUBS, boot:false});
+const SEFIRAH = args.includes('--sefirah');
+if(SEFIRAH) run(ctx, 'SEFIRAH_BIRTH_CHANCE = 1;');
 
 // El "jugador": todo lo que hace está en el contexto del juego.
 run(ctx, `
@@ -204,6 +207,11 @@ function __playerTurn(){
   if(timeBlocked()) return;
   if(tarotCanPray() && Math.random() < 0.2) tarotPray();
   if(timeBlocked()) return;
+  if(sefirahCanVisit().ok && Math.random() < 0.3 + __S.research*0.3){
+    const want = c.sanity < 60 ? 'rest' : (STATE.world.attention||0) >= 40 ? 'hide' : pick(['divine','divine','rest','hide']);
+    sefirahVisit(want);
+  }
+  if(timeBlocked()) return;
   const bm = knowsLore('black_market') ? blackMarketOffers() : [];
   if(bm.length && Math.random() < __S.market){
     // Un jugador dedicado compra lo que le sirve para su camino; los demás, cualquier cosa.
@@ -306,7 +314,8 @@ function __liveOne(i, maxMonths){
     journal: STATE.journal.length, steps, reloads, ms: Date.now()-t0, diff: STATE.settings.difficulty, world: STATE.settings.world,
     attention: Math.round(STATE.world.attention), corruption: c.corruption, sanity: c.sanity, factions: memberFactions().join('/'), combats: c.stats.combatsWon + c.stats.combatsFled,
     seqAge, funnel, rituals: __rituals.slice(), fights: __fights.map(f=>Object.assign({}, f, {res: f.res || (STATE.gameOver ? 'otro final' : 'abierta')})),
-    stageMonths: Object.assign({}, __stageMonths), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey(), fired: Object.keys(STATE.eventHistory), gens };
+    stageMonths: Object.assign({}, __stageMonths), saved: STATE.flags.secondChancesUsed || 0, city: currentCityKey(), fired: Object.keys(STATE.eventHistory), gens,
+    sef: STATE.sefirah && STATE.sefirah.owner ? {stage:STATE.sefirah.stage, age:STATE.sefirah.awakenedAge, visits:STATE.sefirah.visits, host:!!STATE.sefirah.host} : null };
 }
 `);
 
@@ -361,6 +370,11 @@ if(args.includes('--combat')){
   table('Peleas por enemigo:', f=>f.name);
   table('Peleas por origen:', f=>f.src || '(sin origen)');
   table('Peleas por salud al empezar:', f=>f.salud < 40 ? 'menos de 40' : f.salud < 70 ? '40 a 69' : '70 o más');
+}
+if(SEFIRAH || results.some(r=>r.sef)){
+  const s = results.filter(r=>r.sef), awake = s.filter(r=>r.sef.stage >= 2), hosts = s.filter(r=>r.sef.host);
+  const mean = (a, f)=> a.length ? (a.reduce((x,r)=>x+f(r),0)/a.length).toFixed(1) : '-';
+  console.log(`Castillo de Sefirah: ${s.length} dueños · despertaron ${awake.length} (edad media ${mean(awake, r=>r.sef.age)}) · subidas por vida ${mean(awake, r=>r.sef.visits)} · fundaron el club ${hosts.length}`);
 }
 if(LINEAGE){
   const g = results.map(r=>r.gens||1);

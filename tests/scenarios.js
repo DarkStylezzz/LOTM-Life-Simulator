@@ -678,5 +678,59 @@ scenario('el linaje: morir, elegir heredero y seguir con la herencia', ()=>{
   assert(!run(ctx, `closeLifeAvailable().ok`), 'se puede cerrar una vida a los 30');
 });
 
+scenario('el Castillo de Sefirah: nacer con él, despertarlo, subir, fundar el club y heredarlo', ()=>{
+  const storage = makeStorage();
+  const ctx = fresh(storage);
+  // Sin forzarlo, casi nadie nace con el castillo.
+  const owners = run(ctx, `(function(){ let n = 0; for(let i=0;i<400;i++){ ${NEWLIFE} if(STATE.sefirah.owner) n++; } return n; })()`);
+  assert(owners <= 12, 'demasiadas vidas nacen con el castillo: ' + owners + ' de 400');
+  run(ctx, `SEFIRAH_BIRTH_CHANCE = 1; ` + NEWLIFE);
+  assert(run(ctx, `STATE.sefirah.owner && STATE.sefirah.stage === 0 && /niebla gris/.test(STATE.journal.find(e=>e.title==='El comienzo').text)`), 'no nació con el castillo');
+  assert(run(ctx, `!sefirahAwake() && !pathwayMods().fate`), 'el castillo dormido ya da sus dones');
+  // Infancia: los sueños grises.
+  run(ctx, `STATE.character.edad = 6; triggerEventById('sef_child_dream');`);
+  assert(run(ctx, `STATE.sefirah.stage === 1`), 'el sueño gris no avanzó la etapa');
+  // El despertar: primero se niega, después acepta.
+  run(ctx, `STATE.character.edad = 16; triggerEventById('sef_awakening'); resolvePendingEvent(1);`);
+  assert(run(ctx, `STATE.sefirah.stage === 1 && STATE.sefirah.refusedAt === STATE.time.totalMonths`), 'negarse no quedó anotado');
+  run(ctx, `STATE.pendingEvent = null; triggerEventById('sef_awakening'); resolvePendingEvent(0);`);
+  const aw = run(ctx, `(function(){ invalidatePathwayMods(); const m = pathwayMods(); return {awake:sefirahAwake(), lore:knowsLore('sefirah_castle'), fate:m.fate, regen:m.sanityRegen, tab:loreCount() >= 1, truth:STATE.hiddenTruths.some(h=>h.key==='sefirah_birth' && h.revealed)}; })()`);
+  assert(aw.awake && aw.lore && aw.fate >= 6 && aw.regen > 0 && aw.tab && aw.truth, 'el despertar no dio lo que tenía que dar: ' + JSON.stringify(aw));
+  assert(run(ctx, `__seals.some(s=>s.kind==='sefirah')`), 'no hubo sello del castillo');
+  // Esconderse: el rastro se enfría, y lo nuevo deja menos rastro.
+  run(ctx, `STATE.pendingEvent = null; STATE.character.edad = 20; STATE.world.attention = 50; seasonStart(); sefirahVisit('hide');`);
+  assert(run(ctx, `STATE.world.attention <= 38 && STATE.sefirah.visits === 1`), 'esconderse bajo la niebla no bajó la atención');
+  assert(run(ctx, `!sefirahCanVisit().ok`), 'se puede subir dos veces en la misma temporada');
+  run(ctx, `seasonStart(); STATE.character.sanity = 40; sefirahVisit('rest');`);
+  assert(run(ctx, `STATE.character.sanity >= 46`), 'descansar en el palacio no devolvió cordura');
+  run(ctx, `seasonStart(); addClue({pathway:'moon', reliability:'false', strength:4, source:'un charlatán'}); var __unv = unverifiedClues().length; sefirahVisit('divine');`);
+  assert(run(ctx, `__unv > 0 && unverifiedClues().length === __unv - 1`), 'la adivinación sobre la niebla no resolvió una pista');
+  // Nadie invita a la niebla a su dueño.
+  run(ctx, `STATE.pathway.chosenPathway = 'fool'; STATE.pathway.sequence = 8; STATE.tarot.stage = 4; STATE.tarot.observed = 90;`);
+  assert(!run(ctx, `tarotInvitationReady()`), 'al dueño del castillo lo invitan al club de otro');
+  run(ctx, `invalidatePathwayMods();`);
+  assert(run(ctx, `pathwayMods().acting >= 3`), 'la vía del Loco no se lleva con el castillo');
+  // Fundar el club.
+  run(ctx, `STATE.pendingEvent = null; STATE.character.edad = 24; triggerEventById('sef_found_club'); resolvePendingEvent(0);`);
+  const club = run(ctx, `({host:sefirahHost(), card:STATE.tarot.card, member:tarotMember(), rel:STATE.factions.tarotClub.relationship, pray:tarotCanPray()})`);
+  assert(club.host && club.card === 'El Loco' && club.member && club.rel === 'miembro' && !club.pray, 'fundar el club no quedó bien: ' + JSON.stringify(club));
+  run(ctx, `STATE.pendingEvent = null; triggerEventById('tarot_meeting');`);
+  assert(run(ctx, `/Sos El Loco/.test(STATE.pendingEvent.text)`), 'la reunión no sabe que presidís');
+  run(ctx, `resolvePendingEvent(STATE.pendingEvent.choices.length-1); STATE.pendingEvent = null;`);
+  // Los eventos del castillo despierto no rompen nada.
+  ['sef_prayer','sef_gaze','sef_whispers'].forEach(id=>{ run(ctx, `STATE.pendingEvent = null; triggerEventById('${id}');`); resolveAll(ctx, 'Math.floor(Math.random()*pe.choices.length)'); });
+  // Guardar y recargar; una partida vieja sin castillo carga con el castillo dormido.
+  run(ctx, `STATE.pendingEvent = null; STATE.combat = null; STATE.pendingMission = null; saveGame(true)`);
+  const ctx2 = fresh(storage);
+  assert(run(ctx2, `loadGame() && sefirahHost()`), 'el castillo no sobrevive a guardar y recargar');
+  assert(run(ctx2, `(function(){ const d = JSON.parse(JSON.stringify(STATE)); delete d.sefirah; const m = migrateSave(d); return m.sefirah && m.sefirah.owner === false; })()`), 'una partida sin castillo no migra');
+  // La biografía lo cuenta.
+  assert(run(ctx, `analyzeLife('natural', {}).paragraphs.some(x=>/niebla gris/.test(x) && /El Loco/.test(x))`), 'la biografía no menciona el castillo');
+  // Heredarlo: con la niebla eligiendo siempre, el heredero lo recibe dormido... o despierto si ya es grande.
+  run(ctx, `SEFIRAH_BIRTH_CHANCE = 0;`);
+  const inh = run(ctx, `(function(){ const prev = {owner:true, stage:2}; let got = 0; for(let i=0;i<200;i++){ STATE.sefirah = null; SEF(); if(sefirahBirthRoll(prev)) got++; } return got; })()`);
+  assert(inh > 40 && inh < 110, 'la niebla elige heredero con una frecuencia rara: ' + inh + ' de 200');
+});
+
 console.log(`\n${passed} escenarios OK, ${failed} con fallas.`);
 if(failed) process.exitCode = 1;

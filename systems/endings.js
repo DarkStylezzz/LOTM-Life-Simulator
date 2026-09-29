@@ -165,7 +165,10 @@ function analyzeLife(category, meta){
   members.forEach(k=>{ const f = F(k), d = FACTIONS_DATA[k]; P.push(`Perteneció a ${factionName(k)}${f.rank ? `, donde llegó a ${d.ranks[f.rank]}` : ''}.`); });
   const hunted = huntingFactions();
   if(hunted.length) P.push(`${cap(factionShort(hunted[0]))} lo buscaba todavía cuando ${gone ? 'se retiró' : 'murió'}.`.replace(' lo buscaba', gx(' lo buscaba',' la buscaba',' le buscaba')));
-  if(STATE.tarot.stage >= 6) P.push(`En la niebla gris, se sentaba a la mesa de bronce como "${STATE.tarot.card}".`);
+  if(sefirahAwake()){
+    const s = STATE.sefirah;
+    P.push(`Desde los ${s.awakenedAge ?? '?'} años, con cuatro pasos y unas palabras antiguas, subía a un palacio sobre la niebla gris que era sólo suyo${s.visits ? ` (subió ${s.visits} ${s.visits===1?'vez':'veces'})` : ''}.` + (s.host ? ` Ahí convocaba al Tarot Club, ${gx('sentado','sentada','sentade')} a la cabecera, como El Loco.` : ' Nunca convocó a nadie a esa mesa.'));
+  } else if(STATE.tarot.stage >= 6) P.push(`En la niebla gris, se sentaba a la mesa de bronce como "${STATE.tarot.card}".`);
   // 8. Secretos.
   const forb = (STATE.lore.forbidden||[]).length + (STATE.lore.entity||[]).length;
   if(forb >= 3) P.push('Supo cosas que ninguna persona debería saber. Se las llevó.');

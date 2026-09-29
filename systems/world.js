@@ -40,7 +40,7 @@ function worldDangerMult(){ return 1.35 - (currentCityState().security/150); }
 // tranquilo. Habilidades de sigilo la amortiguan.
 function raiseAttention(n){
   if(!n) return;
-  if(n > 0){ n = n * diffMult('attention') * (1 - clamp(pathwayMods().stealth||0, 0, 0.6)); }
+  if(n > 0){ n = n * diffMult('attention') * (1 - clamp(pathwayMods().stealth||0, 0, 0.6)) * sefirahAttentionMult(); }
   STATE.world.attention = clamp((STATE.world.attention||0) + n, 0, 100);
 }
 function worldAttentionPressure(){

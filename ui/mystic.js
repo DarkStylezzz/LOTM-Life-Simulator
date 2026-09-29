@@ -15,6 +15,7 @@ function mysticSections(){
   if(!p.chosenPathway && (itemsByCat('formula').length || itemsByCat('potion').length || identifiedPathways().length)) items.push({id:'pocion', label:'La primera poción'});
   items.push({id:'saber', label:'Conocimiento'});
   if(STATE.anchors.revealed) items.push({id:'anclas', label:'Anclas'});
+  if(sefirahAwake()) items.push({id:'castillo', label:'El castillo'});
   if(STATE.tarot.stage >= 1) items.push({id:'tarot', label: STATE.tarot.stage >= 6 ? 'Tarot Club' : 'La niebla gris'});
   if(divinityVisible()) items.push({id:'trono', label:'El trono'});
   if(knowsLore('black_market')) items.push({id:'mercado', label:'Mercado negro'});
@@ -30,6 +31,7 @@ function renderMystic(){
     case 'pocion': body = mysticFirstPotion(); break;
     case 'saber': body = mysticLore(); break;
     case 'anclas': body = mysticAnchors(); break;
+    case 'castillo': body = mysticCastle(); break;
     case 'tarot': body = mysticTarot(); break;
     case 'trono': body = mysticThrone(); break;
     case 'mercado': body = mysticMarket(); break;
@@ -234,7 +236,7 @@ function mysticAnchors(){
 /* ------------------------------ Tarot ------------------------------ */
 function mysticTarot(){
   const t = STATE.tarot;
-  const stageTxt = t.stage >= 7 ? 'La mesa confía en vos.' : t.stage >= 6 ? `Te sentás a la mesa de bronce como "${t.card}".` : t.stage >= 4 ? 'A veces sentís una mirada que viene de muy arriba.' : t.stage >= 3 ? 'Sabés que existe algo que se reúne sobre una niebla gris. No sabés cómo llegar.' : 'Oíste cosas sueltas. Una niebla gris. Cartas fuera de lugar.';
+  const stageTxt = t.host ? 'Convocás el club desde la cabecera, como "El Loco".' : t.stage >= 7 ? 'La mesa confía en vos.' : t.stage >= 6 ? `Te sentás a la mesa de bronce como "${t.card}".` : t.stage >= 4 ? 'A veces sentís una mirada que viene de muy arriba.' : t.stage >= 3 ? 'Sabés que existe algo que se reúne sobre una niebla gris. No sabés cómo llegar.' : 'Oíste cosas sueltas. Una niebla gris. Cartas fuera de lugar.';
   const out = [`<section class="card"><p class="card-text">${esc(stageTxt)}</p>
     ${(t.heard||[]).length ? `<p class="small-note">Lo que oíste: ${(t.heard||[]).map(esc).join(' · ')}</p>` : ''}
     ${t.stage >= 6 ? `<p class="small-note">Reuniones: ${t.meetings||0}. Confianza de la mesa: ${esc(trustWord(STATE.factions.tarotClub.trust||0))}.</p>` : ''}</section>`];
@@ -247,6 +249,22 @@ function mysticTarot(){
 }
 function trustWord(v){ return v >= 60 ? 'alta' : v >= 30 ? 'buena' : v >= 10 ? 'escasa' : 'casi nula'; }
 onAct('tarot-pray', ()=>tarotPray());
+
+/* ------------------------------ el Castillo de Sefirah ------------------------------ */
+function mysticCastle(){
+  const s = STATE.sefirah, av = sefirahCanVisit();
+  const intro = s.host ? 'Tu palacio sobre la niebla gris. En la mesa de bronce se sienta el club que convocaste; la cabecera es tuya.'
+    : 'Tu palacio sobre la niebla gris: columnas altísimas, una mesa de bronce, veintidós sillas vacías. Nada de lo que pasa acá puede verse desde afuera.';
+  const gifts = ['Tu mente se recupera más rápido', 'Tu rastro se enfría antes', 'La suerte te empuja en los momentos límite', 'Investigás y preparás rituales con más claridad'];
+  if(STATE.pathway.chosenPathway === 'fool') gifts.push('Tu vía y el castillo se reconocen: actuás tu papel con más naturalidad');
+  return `<section class="card"><p class="card-text">${esc(intro)}</p>
+    <p class="small-note">Lo que te da: ${gifts.map(esc).join(' · ')}.</p>
+    ${s.visits ? `<p class="small-note">Subiste ${s.visits} ${s.visits===1?'vez':'veces'}.</p>` : ''}</section>
+    ${sec('Subir')}
+    <div class="action-grid">${SEFIRAH_ACTIONS.map(a=>actionButton({label:a.label, small:a.small, time:1, disabled:!av.ok, why:av.why}, 'castle-visit', {id:a.id})).join('')}</div>
+    <p class="small-note">Una vez por temporada. Quien sube demasiado seguido empieza a oír a la silla.</p>`;
+}
+onAct('castle-visit', (d)=>sefirahVisit(d.id));
 
 /* ------------------------------ el trono ------------------------------ */
 function mysticThrone(){

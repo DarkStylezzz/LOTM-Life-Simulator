@@ -211,7 +211,7 @@ function ritualSteps(){
   const siteF = STATE.flags.factionRitualSite;
   if(siteF && factionAccess(siteF) >= 3) places.push({label:`En el espacio que te reservó ${factionShort(siteF)}`, small:'Consagrado y custodiado.', v:4, place:'faccion'});
   else if(memberFactions().some(k=>k !== 'tarotClub')) places.push({label:'En un lugar consagrado de tu organización', small:'Protegido. Controlado.', v:3, place:'faccion'});
-  if(STATE.tarot.stage >= 7) places.push({label:'Sobre la niebla gris', small:'Nada de este mundo puede interrumpirte ahí.', v:5, place:'niebla'});
+  if(STATE.tarot.stage >= 7 || sefirahAwake()) places.push({label:'Sobre la niebla gris', small:'Nada de este mundo puede interrumpirte ahí.', v:5, place:'niebla'});
   places.push({label:'En un lugar abandonado, lejos de todos', small:'Nadie vería nada. Nadie ayudaría.', v:-1, place:'ruinas'});
   steps.push({title:'El lugar', text:`El ritual necesita un espacio propio: velas, el círculo, y en el centro el símbolo de tu vía: ${pw.symbol}.`, choices:places});
   if(r.brewed){

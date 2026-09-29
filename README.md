@@ -28,6 +28,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 | Conocimiento | Hechos, secretos, saber prohibido y entidades; algunos se pagan con cordura. |
 | Método de Actuación y digestión | Escenas por vía y Sequence; calidad de la actuación; digestión natural por vivir el papel (hasta en el trabajo). |
 | Pociones y Advancement | Para subir de Sequence hace falta: la poción actual digerida, la fórmula de la próxima, sus dos ingredientes (el principal se puede reemplazar por una Característica), el dinero del ritual (del bolsillo o del banco) y cordura suficiente. Todo está a la vista en **Misticismo → Tu camino**, con cómo se consigue cada cosa. **Buscar lo que te falta** (una vez por temporada) empuja siempre hacia el próximo paso: ponerle nombre a una vía, entenderla, la fórmula o un ingrediente. La poción se prepara dentro del ritual, que tiene cuatro pasos y un presentimiento antes de empezar; la primera se prepara y se bebe en la misma noche. Si el ritual falla, la fórmula queda. Lo que frena es la altura: de la Sequence 5 para arriba la poción tarda años en digerirse, las fórmulas y los ingredientes casi no circulan (las organizaciones sólo se los confían a quien tiene su confianza y el mercado negro no pasa de la Sequence 5) y ningún ritual de semidiós es seguro. |
+| Castillo de Sefirah | Muy rara vez (1 de cada 200 vidas, `SEFIRAH_BIRTH_CHANCE` en `systems/sefirah.js`) se nace atado al palacio sobre la niebla gris, sin saberlo. De chico hay sueños grises, un golpe en la niebla y una suerte rara; entre los 12 y los 20 y pico llega el despertar (cuatro pasos y unas palabras antiguas). Despierto da más suerte, destino y espiritualidad, recuperar la cordura más rápido, dejar menos rastro, un poco más de claridad al investigar y en los rituales, y un lugar para ritualizar sobre la niebla. Una vez por temporada se puede subir a adivinar sin errores, descansar o esconderse. Un Beyonder despierto puede convocar su propio Tarot Club como El Loco (y a su dueño nadie lo invita al de otro). Tiene su precio: algo de afuera mira hacia adentro, y la silla de la cabecera susurra. Si quien lo despertó muere, la niebla puede elegir a su heredero. |
 | Sequence 0 | Una cadena de acontecimientos extraordinarios, un ascenso que puede fallar y un modo divino que cambia la interfaz. |
 | Combate | Táctico: distancia, entorno, estados, arquetipos de enemigos, información oculta de la Sequence rival (??? → rango → estimación → exacta), la Sequence pesa (un rival más débil pega menos y es más fácil dejarlo atrás, y cada huida fallida acerca la siguiente), heridas que quedan, huir o hablar como opciones reales. A quien te estudió durante años, o a un Santo que perdió el control, cuesta mucho sacárselos de encima. |
 | Facciones | Iglesias, Nighthawks, MI9, la Orden de la Aurora, la Mente Colmena, los Alquimistas de la Psicología… acceso, mérito, pedidos, deberes, sospecha, persecución, traición. |
@@ -40,7 +41,7 @@ Abrí `index.html` en cualquier navegador moderno (funciona directo desde el dis
 | Anclas | Ocultas hasta la Sequence 5; sostienen la cordura y la humanidad. |
 | Finales | Biografía por etapas que analiza toda la vida. Sin puntaje. |
 
-En números: 258 eventos, 36 encargos, 23 enemigos, 20 artefactos, 23 rumores, 12 lugares para explorar, 36 oficios y 48 saberes.
+En números: 258 eventos, 36 encargos, 23 enemigos, 20 artefactos, 23 rumores, 12 lugares para explorar, 36 oficios y 50 saberes.
 
 La información sensible se muestra según lo que el personaje sabe: dato **objetivo** (●), **estimado** (◐) o **desconocido** (○). *Mostrar números exactos* está en Opciones.
 
@@ -73,7 +74,7 @@ tests/          pruebas sin navegador y en navegador
 Requieren Node 18+ (y Playwright para la de navegador).
 
 ```
-node tests/scenarios.js      # 29 escenarios dirigidos: las 22 vías, el ascenso, el combate, el linaje, Tarot Club, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
+node tests/scenarios.js      # 30 escenarios dirigidos: las 22 vías, el ascenso, el combate, el linaje, Tarot Club, Castillo de Sefirah, Sequence 0, finales, migración v7, modo fácil, ciudades, artefactos...
 node tests/simulate.js 40    # 40 vidas completas con un "jugador" automático: errores, bloqueos, estado serializable y balance
 node tests/simulate.js 10 --ui   # lo mismo, dibujando todas las pestañas con un DOM simulado
 node tests/simulate.js 40 --diff=easy --style=dedicado --funnel
@@ -86,6 +87,8 @@ node tests/simulate.js 30 --lineage
                              # cuando una vida termina, sigue con un heredero (hasta cuatro generaciones)
 node tests/simulate.js 20 --years=300 --funnel
                              # sin el tope de 120 años: hasta dónde llega una vida Beyonder larga (Sequences 3 a 0)
+node tests/simulate.js 40 --sefirah
+                             # todas las vidas nacen con el Castillo de Sefirah: a qué edad despiertan, cuánto suben, quién funda el club
 node tests/simulate.js 40 --events
                              # qué eventos pasaron en alguna vida jugada "de verdad" y cuáles nunca
 node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor,

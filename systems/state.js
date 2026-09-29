@@ -103,6 +103,7 @@ function freshState(){
     pendingConsequences:[],
     seasonActions:{ investigate:0, acting:0, work:0, explore:0, missions:0, personal:0, research:0 },
     anchors:{ people:[], followers:0, belief:0, identityStability:0, anchorStrength:0, revealed:false, grief:0, lost:[], followerBonus:0 },
+    sefirah:{ owner:false, stage:0, visits:0, host:false, lastVisit:-99, refusedAt:-99, clubDeclinedAt:-99, prayers:0, awakenedAge:null, inherited:false },
     tarot:{ stage:0, observed:0, card:null, meetings:0, lastMeeting:-99, honorific:false, declined:0, lastDecline:-99, heard:[], evals:0, shared:[], lastFormula:-99, lastPrayer:-99 },
     ritual:null, brew:null, pendingSeals:[],
     divinity:{ stage:0, ascended:false, uniqueness:false, characteristics:0, prayersAnswered:0, domainActs:0 },

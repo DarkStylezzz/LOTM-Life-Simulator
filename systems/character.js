@@ -82,6 +82,7 @@ function startNewGame(){
   c.reputation = clamp(tm.startReputation, -100, 100);
   c.luck = clamp(rndInt(40,60), 0, 100); c.fate = rndInt(0,6);
   c.rasgos.forEach(r=>{ const f = TRAIT_FORTUNE[r]; if(f){ c.luck = clamp(c.luck + (f.luck||0), 0, 100); c.fate += f.fate||0; } });
+  sefirahBirthRoll(null);
 
   buildInitialCast();
   seedFactionFormulas();
@@ -89,7 +90,7 @@ function startNewGame(){
   STATE.started = true;
   seasonStart();
   STATE._yearSnap = {profesion:c.profesion, educacion:c.educacion, estadoCivil:c.estadoCivil, ciudad:c.ciudad, seq:null, net:c.cash};
-  logJournal('El comienzo', `${c.nombre} ${c.apellido} nace en ${c.ciudad}, en ${fullDateLabel()}. Una vida como cualquier otra... por ahora.`, {cat:'life', imp:3});
+  logJournal('El comienzo', `${c.nombre} ${c.apellido} nace en ${c.ciudad}, en ${fullDateLabel()}. Una vida como cualquier otra... por ahora.${sefirahBirthText()}`, {cat:'life', imp:3});
   addMilestone('birth', `Nace en ${c.ciudad}`);
   showScreen('game');
   saveGame(true);
