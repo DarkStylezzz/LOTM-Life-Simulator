@@ -49,6 +49,7 @@ function tarotObserve(delta, why){
 function tarotInvitationReady(){
   const t = T(), c = STATE.character;
   if(t.stage < 4 || t.stage >= 6) return false;
+  if(sefirahOwner()) return false;   // nadie invita a la niebla a su dueño
   if(!STATE.pathway.chosenPathway) return false;
   if(c.sanity < 30 || c.corruption > 60) return false;
   if(t.declined >= 2) return false;
@@ -87,15 +88,15 @@ function tarotMeetingText(){
     `${others[0]} saluda con una formalidad exagerada y pregunta, como al pasar, si alguien sabe algo de ${pick(['una ruina bajo la ciudad','un barco que no llega a puerto','un culto que compra niños','un libro que cambia de autor'])}.`,
     `${others[1]||'Alguien'} ofrece ${pick(['un ingrediente raro','información sobre una Iglesia','una fórmula incompleta','dinero, mucho'])} a cambio de ${pick(['un favor','un secreto','una Característica','una dirección'])}.`,
     `${others[2]||others[0]} cuenta algo que pasó en ${currentCity().name} esta semana. Vos estabas ahí. Nadie lo sabe.`,
-    'El Loco escucha todo sin decir casi nada. Cuando habla, la niebla parece inclinarse hacia él.'
+    t.host ? 'Vos, desde la cabecera, escuchás casi sin hablar. Cuando hablás, la niebla se inclina hacia vos y todos se callan.' : 'El Loco escucha todo sin decir casi nada. Cuando habla, la niebla parece inclinarse hacia él.'
   ];
   const tl = (STATE.world.timeline||[]).find(ev=>!ev.triggered && ev.possible && ev.date.y - calendarYear() <= 1);
   if(tl) lines.push(`Alguien menciona, en voz baja, que "se viene algo" en ${tl.city && CITIES_DATA[tl.city] ? CITIES_DATA[tl.city].name : 'el continente'}. Nadie discute.`);
-  return `La niebla gris, otra vez. La mesa de bronce, las sillas de respaldo alto. Sos ${t.card}. ` + shuffle(lines).slice(0,3).join(' ');
+  return (t.host ? 'Convocás a la mesa. La niebla gris, la mesa de bronce, las sillas de respaldo alto: todo obedece. Sos El Loco. ' : `La niebla gris, otra vez. La mesa de bronce, las sillas de respaldo alto. Sos ${t.card}. `) + shuffle(lines).slice(0,3).join(' ');
 }
 function tarotShareableLore(){
   const shared = T().shared || [];
-  return allKnownLore().filter(id=>{ const L = LORE[id]; return L && id !== 'tarot_fool' && !shared.includes(id) && (L.cat==='secret' || L.cat==='forbidden' || L.cat==='entity'); });
+  return allKnownLore().filter(id=>{ const L = LORE[id]; return L && id !== 'tarot_fool' && L.tradeValue > 0 && !shared.includes(id) && (L.cat==='secret' || L.cat==='forbidden' || L.cat==='entity'); });
 }
 function tarotShareSecret(){
   const t = T(); t.shared = t.shared || [];
@@ -168,7 +169,7 @@ function tarotListen(){
   return 'Escuchás en silencio. A veces la mejor información es saber quién pregunta qué.';
 }
 // Rezarle al Loco: sólo funciona si conocés el nombre honorífico (§28).
-function tarotCanPray(){ return T().honorific && STATE.time.totalMonths - (T().lastPrayer||-99) >= 12; }
+function tarotCanPray(){ return T().honorific && !sefirahAwake() && STATE.time.totalMonths - (T().lastPrayer||-99) >= 12; }
 function tarotPray(){
   if(timeBlocked() || !tarotCanPray()) return;
   if(!spendFreeTime(1)){ toast('No te queda tiempo libre esta temporada.', 'neg'); return; }

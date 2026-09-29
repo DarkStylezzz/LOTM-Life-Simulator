@@ -189,7 +189,7 @@ function brewSteps(){
                   {label:'En un sótano alquilado', small:`Más tranquilo. Cuesta ${fmtMoney(Math.round(30*priceIndex()))}.`, v:5, place:'sotano', cost:30}];
   const fac = memberFactions().find(k=>k!=='tarotClub' && factionAccess(k)>=3);
   if(fac) places.push({label:`En las instalaciones de ${factionShort(fac)}`, small:'Espacio preparado y gente que sabe.', v:12, place:'faccion'});
-  if(STATE.tarot.stage >= 7) places.push({label:'Sobre la niebla gris', small:'El lugar más estable que conocés.', v:15, place:'niebla'});
+  if(STATE.tarot.stage >= 7 || sefirahAwake()) places.push({label:'Sobre la niebla gris', small:'El lugar más estable que conocés.', v:15, place:'niebla'});
   steps.push({title:'Dónde prepararla', text:'Una poción no se prepara en cualquier lado. El lugar importa: la calma, los testigos, lo que hay en el aire.', choices:places});
   const tools = [{label:'Improvisar con ollas y frascos de cocina', small:'Se puede. No se debe.', v:-8}];
   if(hasItem('tool_alchemy')) tools.push({label:'Usar tus utensilios de alquimia', small:'Lo que corresponde.', v:8});

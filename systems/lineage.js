@@ -199,7 +199,7 @@ function succeedAs(heirId){
   // Lo que se conserva del mundo: la fecha, la historia, las ciudades, los
   // precios, quién es quién (y quién sabe qué de la familia).
   const keep = {settings:STATE.settings, time:STATE.time, world:STATE.world, npcs:STATE.npcs, nextId:STATE.nextId, lineage:STATE.lineage};
-  const oldFactions = STATE.factions, oldTarot = STATE.tarot, oldAttention = STATE.world.attention || 0;
+  const oldFactions = STATE.factions, oldTarot = STATE.tarot, oldSef = STATE.sefirah, oldAttention = STATE.world.attention || 0;
   const pcs = (STATE.pendingConsequences||[]).filter(pc=>pc && !pc.eventId && !pc.ctx && !pc.memory && pc.effect && Object.keys(pc.effect).every(k=>['war','allCities'].includes(k)));
   STATE = fresh;
   Object.assign(STATE, keep);
@@ -218,6 +218,8 @@ function succeedAs(heirId){
     if(o.hunted || ['enemiga','traicionada','persiguiendo'].includes(o.relationship)){ f.known = true; f.suspicion = 25; }
   });
   if(oldTarot && oldTarot.stage >= 3) STATE.tarot.stage = 1;
+  // La niebla gris puede elegir al heredero de quien la despertó (o a nadie).
+  sefirahBirthRoll(oldSef);
   STATE.world.attention = Math.round(oldAttention*0.25) + (plan.characteristic ? 10 : 0);
   STATE.bmOffers = null;
   // Lo que el heredero sabía de lo que eras.

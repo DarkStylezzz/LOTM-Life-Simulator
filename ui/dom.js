@@ -182,6 +182,7 @@ function sealContent(s){
     case 'beyonder': return {ring:'✦', title:'Beyonder', body:'Ya no sos sólo una persona. El mundo oculto sabe que existís, y vos sabés que existe.', name: pw ? `${pw.name} — Sequence 9` : ''};
     case 'advance': { const sd = pw ? seqData(s.key, s.seq) : null; return {ring:String(s.seq), title:'Advancement', body: sd ? sd.ability : '', name: sd ? `Sequence ${s.seq} — ${sd.name}` : ''}; }
     case 'tarot': return {ring:'🃏', title:'Tarot Club', body:'Una mesa de bronce sobre la niebla gris. Un lugar. Un nombre que no es el tuyo.', name: s.card || ''};
+    case 'sefirah': return {ring:'☁', title:'El Castillo de Sefirah', body:'Un palacio sobre la niebla gris, con una mesa de bronce y veintidós sillas. Nadie puede ver lo que pasa adentro. Es tuyo.', name:'Sobre la niebla gris'};
     case 'anchors': return {ring:'⚓', title:'Anclas', body: s.names && s.names.length ? `Lo que te mantiene humano tiene nombres: ${s.names.slice(0,3).join(', ')}.` : 'Lo que te mantiene humano son las personas que te conocen. Casi no queda nadie.', name:''};
     case 'divine': return {ring:'☼', title:'Sequence 0', body:'El trono te acepta. El mundo ya no se ve igual desde acá. Vos tampoco.', name: pw ? (seqData(s.key,0)||{}).name || '' : ''};
     default: return {ring:'✦', title:s.title||'', body:s.text||'', name:''};
