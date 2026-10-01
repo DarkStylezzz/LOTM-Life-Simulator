@@ -5,7 +5,7 @@ Todo se genera con `node tools/store-assets.js` (Playwright + Chromium). Para ca
 | Archivo | Uso | Tamaño |
 |---|---|---|
 | `assets/icon.png` | Icono del juego | 512×512 |
-| `assets/thumbnail.png` | Miniatura del juego (y `og:image` de la página) | 1920×1080 |
+| `assets/thumbnail.png` | Miniatura del juego | 1920×1080 |
 | `assets/favicon.svg`, `assets/apple-touch-icon.png` | Pestaña del navegador y acceso directo en el celular | — |
 | `assets/store/pases/*.png` | Iconos de pases (medallón redondo, ya pensado para el recorte en círculo) | 512×512 |
 | `assets/store/productos/*.png` | Iconos de productos (placa cuadrada) | 512×512 |
