@@ -94,6 +94,8 @@ node tests/simulate.js 40 --events
 node tests/fuzz.js 3         # fuerza cada evento y cada opción, cada misión, acción de NPC, evento del mundo y rumor,
                              # en nueve estados de vida, y avisa qué eventos no pudo disparar nunca
 node tests/ui-smoke.js       # navegador real (Playwright): escritorio, móvil, una partida v7 migrada y el linaje
+node roblox/invite-rewards/tests/run.js
+                             # BitBeyonder (Roblox): las recompensas por invitar, con un Roblox simulado (necesita luau)
 ```
 
 ## Partidas guardadas
