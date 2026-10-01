@@ -7,7 +7,7 @@
 | `icon.png` | Icono del juego | 512×512 |
 | `thumbnail.png` | Miniatura del juego | 1920×1080 |
 | `pases/*.png` | Icono de cada pase (medallón redondo, ya pensado para el recorte en círculo) | 512×512 |
-| `productos/*.png` | Icono de cada producto (placa cuadrada) | 512×512 |
+| `productos/*.png` | Icono de cada producto (placa cuadrada, con el dibujo dentro del círculo por si se recorta) | 512×512 |
 
 ## Pases
 
@@ -24,16 +24,16 @@ El icono anterior de cada pase queda como imagen en la cuenta del grupo, con el 
 
 ## Productos
 
-La lista de productos de desarrollador no es pública, así que los iconos llevan el nombre de lo que muestran y se asignan según lo que da cada producto:
-
-| Archivo | Muestra | Para un producto que da |
+| Archivo | Producto | ID del producto |
 |---|---|---|
-| `productos/monedas.png` | Monedas de Loen | Dinero |
-| `productos/pocion.png` | Un frasco con la poción carmesí | Una poción |
-| `productos/caracteristica.png` | Una gema violeta que brilla | Una Característica Beyonder |
-| `productos/formula.png` | Un pergamino con un sello | Una fórmula o pistas |
-| `productos/vela-cordura.png` | Una vela que calma | Cordura |
-| `productos/reloj.png` | Un reloj de bolsillo que vuelve atrás | Una segunda oportunidad, revivir o tiempo |
+| `productos/ingrediente.png` | Ingrediente | 3714719893 |
+| `productos/formula-via.png` | Formula Via | 3714719675 |
+| `productos/11-tiradas-del-destino.png` | 11 Tiradas del destino | 3714719587 |
+| `productos/tirada-del-destino.png` | Tirada del destino | 3714719525 |
+| `productos/tesoro-de-legado.png` | Tesoro de Legado | 3714719482 |
+| `productos/cofre-de-legado.png` | Cofre de Legado | 3714719415 |
+| `productos/punado-de-legado.png` | Puñado de Legado | 3714719380 |
+| `productos/pack-de-inicio.png` | Pack de inicio | 3714719209 |
 
 ## Descripción
 

@@ -56,6 +56,15 @@ const DEFS = `
   <linearGradient id="parch" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#efe3c4"/><stop offset="1" stop-color="#c9b48a"/>
   </linearGradient>
+  <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#7a4d2a"/><stop offset="1" stop-color="#3a2213"/>
+  </linearGradient>
+  <linearGradient id="stone" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#5a5068"/><stop offset="1" stop-color="#1f1a27"/>
+  </linearGradient>
+  <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#a6d39a"/><stop offset="1" stop-color="#4f7a4f"/>
+  </linearGradient>
   <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
   <filter id="softer" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
   <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -128,6 +137,65 @@ function wordmark(x, y, size, anchor = 'middle') {
   return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="Cinzel Decorative" font-weight="700" font-size="${size}" stroke="#120c16" stroke-width="${Math.round(size / 9)}" paint-order="stroke" filter="url(#shadow)"><tspan fill="${C.ink}">Bit</tspan><tspan fill="url(#gold)">Beyonder</tspan></text>`;
 }
 
+// Moneda de legado: dorada, con el escudo de la familia.
+function legacyCoin(cx, cy, r) {
+  return `<g>
+    <circle cx="${cx}" cy="${cy + r * .1}" r="${r}" fill="#5e4519"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gold)" stroke="#6e5424" stroke-width="3"/>
+    <circle cx="${cx}" cy="${cy}" r="${r * .8}" fill="none" stroke="#7a5b25" stroke-width="2.5"/>
+    <g transform="translate(${cx} ${cy}) scale(${r * .42})">
+      <path d="M-1,-1.1 H1 V-.1 C1,.6 .45,1 0,1.25 C-.45,1 -1,.6 -1,-.1Z" fill="${C.crimson}" stroke="#6e5424" stroke-width=".1"/>
+      <path d="M-.7,.45 L0,-.3 L.7,.45" fill="none" stroke="${C.goldB}" stroke-width=".24" stroke-linejoin="round"/>
+    </g>
+  </g>`;
+}
+
+// Moneda de canto, para las pilas.
+function flatCoin(x, y, rx = 52) {
+  return `<ellipse cx="${x}" cy="${y + 8}" rx="${rx}" ry="${rx * .32}" fill="#5e4519"/><ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${rx * .32}" fill="url(#goldH)" stroke="#6e5424" stroke-width="2"/>`;
+}
+
+// Cofre de madera con herrajes dorados. open: la tapa abierta hacia atrás.
+function chest(open) {
+  const lid = open
+    ? `<path d="M150,236 L176,136 C196,114 316,114 336,136 L362,236Z" fill="#2a170c" stroke="url(#gold)" stroke-width="6" stroke-linejoin="round"/>
+       <path d="M170,226 L190,146 C206,130 306,130 322,146 L342,226Z" fill="#1a0e07"/>`
+    : `<path d="M146,252 V214 C146,178 196,160 256,160 C316,160 366,178 366,214 V252Z" fill="url(#wood)" stroke="#2a170c" stroke-width="4"/>
+       <path d="M182,252 V178 h16 V252Z M314,252 V178 h16 V252Z" fill="url(#goldH)"/>`;
+  return `${lid}
+    <rect x="146" y="248" width="220" height="142" rx="10" fill="url(#wood)" stroke="#2a170c" stroke-width="4"/>
+    <path d="M182,248 h16 V390 h-16Z M314,248 h16 V390 h-16Z" fill="url(#goldH)"/>
+    <rect x="140" y="240" width="232" height="16" rx="4" fill="url(#gold)" stroke="#5e4519" stroke-width="2"/>
+    <rect x="140" y="378" width="232" height="14" rx="4" fill="url(#gold)" stroke="#5e4519" stroke-width="2"/>
+    <rect x="232" y="252" width="48" height="58" rx="6" fill="url(#gold)" stroke="#5e4519" stroke-width="2"/>
+    <circle cx="256" cy="274" r="7" fill="#1a0e07"/><path d="M252,276 h8 l3,18 h-14Z" fill="#1a0e07"/>`;
+}
+
+// Carta del destino (la Rueda de la Fortuna, el arcano X).
+function fateCard(x = 0, y = 0, rot = 0, s = 1) {
+  const spokes = Array.from({length: 8}, (_, i) => `<line x1="256" y1="196" x2="256" y2="152" stroke="url(#gold)" stroke-width="5" transform="rotate(${i * 45} 256 204)"/>`).join('');
+  const knobs = Array.from({length: 8}, (_, i) => `<circle cx="256" cy="140" r="7" fill="url(#goldH)" transform="rotate(${i * 45 + 22.5} 256 204)"/>`).join('');
+  return `<g transform="translate(${x} ${y}) rotate(${rot} 256 232) translate(256 232) scale(${s}) translate(-256 -232)">
+    <rect x="176" y="104" width="160" height="256" rx="12" fill="#221b2c" stroke="url(#gold)" stroke-width="7"/>
+    <rect x="190" y="118" width="132" height="228" rx="6" fill="none" stroke="${C.gold}" stroke-width="2" opacity=".7"/>
+    <circle cx="256" cy="204" r="62" fill="url(#glowV)"/>
+    ${spokes}
+    <circle cx="256" cy="204" r="56" fill="none" stroke="url(#gold)" stroke-width="7"/>
+    ${knobs}
+    <circle cx="256" cy="204" r="16" fill="url(#moon)" stroke="url(#gold)" stroke-width="4"/>
+    <text x="256" y="312" text-anchor="middle" font-family="Cinzel" font-weight="700" font-size="40" fill="url(#gold)">X</text>
+    <path d="M214,328 H298" stroke="${C.gold}" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+  </g>`;
+}
+
+function cardBack(rot) {
+  return `<g transform="rotate(${rot} 256 430)">
+    <rect x="186" y="118" width="140" height="224" rx="11" fill="#2c1d3e" stroke="url(#gold)" stroke-width="5"/>
+    <rect x="198" y="130" width="116" height="200" rx="6" fill="none" stroke="${C.gold}" stroke-width="2" opacity=".6"/>
+    ${star(256, 230, 26, C.goldB, .9)}
+  </g>`;
+}
+
 // Cinta carmesí con texto dorado ("×2", "+3") sobre el borde inferior del dibujo.
 function banner(text, y = 348, w = 176) {
   const x0 = 256 - w / 2, x1 = 256 + w / 2;
@@ -165,9 +233,8 @@ function coins(cy = 200) {
     </g>`;
 }
 
-// Los que tienen `id` son los pases reales de BitBeyonder en Roblox. Los productos (`spare`) se
-// exportan con el nombre de lo que muestran, para asignarlos a los productos de desarrollador
-// según lo que da cada uno. El resto son diseños de repuesto para pases futuros.
+// Los que tienen `id` son los pases y productos reales de BitBeyonder en Roblox y se exportan;
+// los demás son diseños de repuesto para pases o productos futuros.
 const ICONS = {
   // ---------- pases (medallón)
   'sefirah-castle': { kind: 'pass', id: 2001356476, name: 'Sefirah Castle', draw: () => passFrame(`
@@ -283,7 +350,7 @@ const ICONS = {
   } },
 
   // ---------- productos (placa)
-  monedas: { kind: 'prod', spare: true, name: 'Bolsa de libras', draw: () => {
+  monedas: { kind: 'prod', name: 'Bolsa de libras', draw: () => {
     const coin = (x, y) => `<ellipse cx="${x}" cy="${y + 10}" rx="70" ry="22" fill="#5e4519"/><ellipse cx="${x}" cy="${y}" rx="70" ry="22" fill="url(#goldH)" stroke="#6e5424" stroke-width="2"/>`;
     return prodFrame(`
       <circle cx="256" cy="270" r="160" fill="url(#glowG)" opacity=".45"/>
@@ -299,7 +366,7 @@ const ICONS = {
       ${star(150, 170, 14, '#fff7d6')}${star(380, 150, 10, '#fff7d6')}`);
   } },
 
-  pocion: { kind: 'prod', spare: true, name: 'Poción', draw: () => prodFrame(`
+  pocion: { kind: 'prod', name: 'Poción', draw: () => prodFrame(`
     <circle cx="256" cy="300" r="150" fill="url(#glowC)"/>
     <g filter="url(#shadow)">
       <path d="M224,112 h64 v70 C356,206 384,256 384,300 A128,128 0 0 1 128,300 C128,256 156,206 224,182Z" fill="#1d1422" fill-opacity=".55" stroke="url(#gold)" stroke-width="8"/>
@@ -312,7 +379,7 @@ const ICONS = {
     </g>
     ${star(140, 160, 12)}${star(378, 182, 9)}`) },
 
-  caracteristica: { kind: 'prod', spare: true, name: 'Característica Beyonder', draw: () => prodFrame(`
+  caracteristica: { kind: 'prod', name: 'Característica Beyonder', draw: () => prodFrame(`
     <circle cx="256" cy="256" r="170" fill="url(#glowV)"/>
     <circle cx="256" cy="256" r="110" fill="url(#glowC)" opacity=".6"/>
     <g filter="url(#shadow)">
@@ -323,7 +390,7 @@ const ICONS = {
     </g>
     ${star(150, 120, 16, '#fff')}${star(372, 320, 12, '#e8dcff')}${star(360, 110, 8, C.goldB)}${star(150, 360, 8, C.goldB)}`) },
 
-  formula: { kind: 'prod', spare: true, name: 'Fórmula', draw: () => prodFrame(`
+  'formula-via': { kind: 'prod', id: 3714719675, name: 'Formula Via', draw: () => prodFrame(`
     <circle cx="256" cy="256" r="160" fill="url(#glowG)" opacity=".3"/>
     <g filter="url(#shadow)" transform="rotate(-8 256 256)">
       <rect x="150" y="120" width="212" height="272" fill="url(#parch)"/>
@@ -341,7 +408,7 @@ const ICONS = {
       <circle cx="256" cy="258" r="9" fill="${C.crimson}"/>
     </g>`) },
 
-  'vela-cordura': { kind: 'prod', spare: true, name: 'Vela de cordura', draw: () => prodFrame(`
+  'vela-cordura': { kind: 'prod', name: 'Vela de cordura', draw: () => prodFrame(`
     <circle cx="256" cy="176" r="150" fill="url(#glowS)"/>
     <circle cx="256" cy="150" r="70" fill="url(#glowG)"/>
     <g filter="url(#shadow)">
@@ -357,7 +424,7 @@ const ICONS = {
     </g>
     <g fill="${C.sanity}" opacity=".9">${star(146, 200, 12, '#b8e0a8')}${star(372, 240, 10, '#b8e0a8')}${star(360, 130, 7, '#fff')}</g>`) },
 
-  reloj: { kind: 'prod', spare: true, name: 'Segunda oportunidad', draw: () => {
+  reloj: { kind: 'prod', name: 'Segunda oportunidad', draw: () => {
     const ticks = Array.from({length: 12}, (_, i) => `<line x1="256" y1="${i % 3 ? 192 : 186}" x2="256" y2="${i % 3 ? 204 : 210}" stroke="#2a1d10" stroke-width="${i % 3 ? 4 : 7}" stroke-linecap="round" transform="rotate(${i * 30} 256 290)"/>`).join('');
     return prodFrame(`
       <circle cx="256" cy="290" r="160" fill="url(#glowV)" opacity=".7"/>
@@ -375,7 +442,96 @@ const ICONS = {
         <path d="M186,292 L194,316 L212,300Z" fill="${C.crimsonB}" opacity=".85"/>
         <circle cx="256" cy="290" r="10" fill="url(#goldH)" stroke="#2a1d10" stroke-width="2"/>
       </g>`);
-  } }
+  } },
+
+  ingrediente: { kind: 'prod', id: 3714719893, name: 'Ingrediente', draw: () => {
+    const leaf = (x, y, rot, s = 1) => `<path d="M0,0 C16,-30 16,-64 0,-96 C-16,-64 -16,-30 0,0Z" fill="url(#leaf)" stroke="#2f4a2f" stroke-width="2" transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"/>`;
+    const petals = Array.from({length: 6}, (_, i) => `<ellipse cx="0" cy="-22" rx="13" ry="24" fill="url(#violetGem)" stroke="#2c1f45" stroke-width="2" transform="rotate(${i * 60})"/>`).join('');
+    return prodFrame(`
+      <circle cx="256" cy="250" r="170" fill="url(#glowS)" opacity=".7"/>
+      <circle cx="214" cy="178" r="90" fill="url(#glowV)"/>
+      <g filter="url(#shadow)">
+        <g transform="rotate(30 256 256)"><rect x="296" y="96" width="36" height="200" rx="18" fill="url(#wood)" stroke="#2a170c" stroke-width="3"/><rect x="296" y="120" width="36" height="12" fill="url(#goldH)"/></g>
+        ${leaf(236, 300, -34)}${leaf(250, 300, -8, 1.15)}${leaf(276, 300, 22, .95)}${leaf(220, 304, -62, .8)}
+        <line x1="236" y1="300" x2="214" y2="192" stroke="#4f7a4f" stroke-width="6" stroke-linecap="round"/>
+        <g transform="translate(212 182)">${petals}<circle r="14" fill="url(#gold)" stroke="#6e5424" stroke-width="2"/><circle r="5" fill="#2a0a12"/></g>
+        <path d="M150,292 H362 C362,366 318,410 256,410 C194,410 150,366 150,292Z" fill="url(#stone)" stroke="url(#gold)" stroke-width="6" stroke-linejoin="round"/>
+        <ellipse cx="256" cy="292" rx="106" ry="20" fill="#1a1522" stroke="url(#gold)" stroke-width="5"/>
+        <path d="M166,320 C176,360 206,386 240,394" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".18"/>
+        <path d="M206,404 H306 L318,424 H194Z" fill="url(#goldH)" stroke="#5e4519" stroke-width="2"/>
+      </g>
+      ${star(130, 150, 12, '#e8dcff')}${star(386, 176, 10)}${star(372, 110, 7, '#fff')}`);
+  } },
+
+  'tirada-del-destino': { kind: 'prod', id: 3714719525, name: 'Tirada del destino', draw: () => prodFrame(`
+    <circle cx="256" cy="236" r="170" fill="url(#glowV)" opacity=".8"/>
+    <g filter="url(#shadow)">${fateCard(0, 8, -6)}</g>
+    ${star(128, 150, 14, '#fff')}${star(390, 130, 11)}${star(384, 360, 9, '#e8dcff')}${star(132, 352, 8)}`) },
+
+  '11-tiradas-del-destino': { kind: 'prod', id: 3714719587, name: '11 Tiradas del destino', draw: () => prodFrame(`
+    <circle cx="256" cy="226" r="180" fill="url(#glowV)" opacity=".9"/>
+    <g transform="translate(0 -22)">
+      ${cardBack(-30)}${cardBack(30)}${cardBack(-15)}${cardBack(15)}
+      <g filter="url(#shadow)">${fateCard(0, 10, 0, .92)}</g>
+    </g>
+    ${star(118, 120, 12, '#fff')}${star(398, 116, 12)}
+    ${banner('×11')}`) },
+
+  'punado-de-legado': { kind: 'prod', id: 3714719380, name: 'Puñado de Legado', draw: () => prodFrame(`
+    <circle cx="256" cy="290" r="150" fill="url(#glowG)" opacity=".45"/>
+    <g filter="url(#shadow)">
+      ${flatCoin(196, 380)}${flatCoin(316, 382)}${flatCoin(256, 392)}
+      ${flatCoin(226, 360)}${flatCoin(292, 362)}${flatCoin(258, 342)}
+      ${legacyCoin(212, 290, 50)}
+      ${legacyCoin(292, 256, 70)}
+    </g>
+    ${star(150, 196, 12, '#fff7d6')}${star(384, 190, 10, '#fff7d6')}${star(372, 120, 7, '#fff')}`) },
+
+  'cofre-de-legado': { kind: 'prod', id: 3714719415, name: 'Cofre de Legado', draw: () => prodFrame(`
+    <circle cx="256" cy="250" r="180" fill="url(#glowG)" opacity=".5"/>
+    <ellipse cx="256" cy="248" rx="150" ry="22" fill="#ffe7a0" opacity=".55" filter="url(#soft)"/>
+    <g filter="url(#shadow)">${chest(false)}</g>
+    <rect x="150" y="244" width="212" height="4" fill="#fff4cf" opacity=".9"/>
+    <g filter="url(#shadow)">${flatCoin(146, 404, 40)}${legacyCoin(118, 360, 34)}${flatCoin(378, 408, 36)}</g>
+    ${star(132, 160, 12, '#fff7d6')}${star(386, 150, 10, '#fff7d6')}${star(366, 104, 7, '#fff')}`) },
+
+  'tesoro-de-legado': { kind: 'prod', id: 3714719482, name: 'Tesoro de Legado', draw: () => prodFrame(`
+    <circle cx="256" cy="214" r="200" fill="url(#glowG)" opacity=".75"/>
+    <circle cx="256" cy="190" r="110" fill="url(#glowG)"/>
+    <g filter="url(#shadow)">${chest(true).split('<rect x="146"')[0]}</g>
+    <g filter="url(#shadow)">
+      ${flatCoin(196, 226)}${flatCoin(316, 228)}${flatCoin(256, 214)}${flatCoin(226, 200)}${flatCoin(290, 198)}
+      ${legacyCoin(206, 186, 40)}${legacyCoin(306, 178, 46)}
+      <path d="M250,152 L274,176 L250,214 L226,176Z" fill="url(#violetGem)" stroke="url(#gold)" stroke-width="3"/>
+      <circle cx="356" cy="214" r="16" fill="url(#moon)" stroke="url(#gold)" stroke-width="3"/>
+    </g>
+    <g filter="url(#shadow)">${'<rect x="146"' + chest(true).split('<rect x="146"')[1]}</g>
+    <g filter="url(#shadow)">${flatCoin(126, 410, 36)}${legacyCoin(392, 366, 34)}${flatCoin(400, 412, 32)}</g>
+    ${star(118, 120, 14, '#fff7d6')}${star(400, 110, 13, '#fff7d6')}${star(256, 84, 10, '#fff')}${star(150, 300, 8, '#fff')}`) },
+
+  'pack-de-inicio': { kind: 'prod', id: 3714719209, name: 'Pack de inicio', draw: () => prodFrame(`
+    <circle cx="256" cy="250" r="170" fill="url(#glowG)" opacity=".4"/>
+    <g filter="url(#shadow)">
+      <path d="M190,214 C190,112 322,112 322,214" fill="none" stroke="#3a1520" stroke-width="18"/>
+      <path d="M190,214 C190,112 322,112 322,214" fill="none" stroke="${C.gold}" stroke-width="2" stroke-dasharray="7 6"/>
+      <g transform="rotate(-12 206 200)">
+        <rect x="196" y="120" width="22" height="30" rx="5" fill="#7a5235" stroke="#3b2414" stroke-width="2"/>
+        <rect x="190" y="146" width="34" height="12" rx="4" fill="url(#goldH)"/>
+        <path d="M194,158 h26 v14 C246,184 252,206 252,226 H162 C162,206 168,184 194,172Z" fill="url(#crimsonLiquid)" stroke="url(#gold)" stroke-width="4"/>
+      </g>
+      <g transform="rotate(10 312 190)">
+        <rect x="292" y="132" width="40" height="110" fill="url(#parch)" stroke="#8a6d3f" stroke-width="2"/>
+        <rect x="286" y="124" width="52" height="14" rx="7" fill="url(#goldH)"/>
+        <circle cx="312" cy="176" r="10" fill="${C.crimson}"/>
+      </g>
+      <rect x="140" y="204" width="232" height="198" rx="30" fill="url(#leather)" stroke="#1d0a10" stroke-width="4"/>
+      <path d="M140,236 C140,216 156,204 176,204 H336 C356,204 372,216 372,236 V292 C372,312 356,326 336,326 H176 C156,326 140,312 140,292Z" fill="#3a1520" stroke="#1d0a10" stroke-width="3"/>
+      <path d="M152,238 C152,224 164,216 178,216 H334 C348,216 360,224 360,238 V290 C360,304 348,314 334,314 H178 C164,314 152,304 152,290Z" fill="none" stroke="${C.gold}" stroke-width="2" stroke-dasharray="7 6"/>
+      <rect x="244" y="300" width="24" height="64" rx="4" fill="#3a1520" stroke="#1d0a10" stroke-width="2"/>
+      <rect x="230" y="306" width="52" height="44" rx="7" fill="none" stroke="url(#gold)" stroke-width="7"/>
+      ${flatCoin(372, 404, 36)}${legacyCoin(392, 360, 30)}
+    </g>
+    ${star(120, 170, 12, '#fff7d6')}${star(398, 150, 10, '#fff7d6')}${star(128, 380, 8, '#fff')}`) },
 };
 
 // ---------------------------------------------------------------- icono del juego (512)
@@ -490,7 +646,7 @@ async function main() {
     [thumbnail(), 1920, 1080, path.join(rbx, 'thumbnail'), false]
   ];
   for (const [key, icon] of Object.entries(ICONS)) {
-    if (icon.id || icon.spare) jobs.push([iconSvg(key), 512, 512, path.join(dirs[icon.kind], key), true]);
+    if (icon.id) jobs.push([iconSvg(key), 512, 512, path.join(dirs[icon.kind], key), true]);
   }
   for (const [svg, w, h, base, transparent] of jobs) {
     await render(svg, w, h, base + '.png', transparent);
