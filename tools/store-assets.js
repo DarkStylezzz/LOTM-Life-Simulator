@@ -3,7 +3,7 @@
    Todo se dibuja acá como SVG y se exporta a PNG con Chromium (Playwright).
      node tools/store-assets.js   → escribe los PNG en assets/ (y assets/favicon.svg)
    Necesita Playwright con Chromium y curl (para bajar las fuentes del juego).
-   Tamaños: icono 512×512, miniatura 1920×1080, pases y productos 512×512.
+   Tamaños: icono 512×512, miniatura 1920×1080, pases y productos 512×512 (los de Roblox).
    Los pases son medallones redondos (la tienda los recorta en círculo);
    los productos, placas cuadradas con el dibujo dentro del círculo seguro. */
 const fs = require('fs');
@@ -123,16 +123,60 @@ function fogBand(y, h, w = 512, o = 1, id = 'fog') {
   </g>`;
 }
 
+// La marca: "Bit" en marfil y "Beyonder" en dorado, para que se lean las dos palabras.
+function wordmark(x, y, size, anchor = 'middle') {
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="Cinzel Decorative" font-weight="700" font-size="${size}" stroke="#120c16" stroke-width="${Math.round(size / 9)}" paint-order="stroke" filter="url(#shadow)"><tspan fill="${C.ink}">Bit</tspan><tspan fill="url(#gold)">Beyonder</tspan></text>`;
+}
+
+// Cinta carmesí con texto dorado ("×2", "+3") sobre el borde inferior del dibujo.
+function banner(text, y = 348, w = 176) {
+  const x0 = 256 - w / 2, x1 = 256 + w / 2;
+  return `<g filter="url(#shadow)">
+    <path d="M${x0 - 36},${y + 12} H${x0 + 6} V${y + 66} H${x0 - 36} L${x0 - 18},${y + 39}Z" fill="#4a0f1b" stroke="${C.gold}" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M${x1 + 36},${y + 12} H${x1 - 6} V${y + 66} H${x1 + 36} L${x1 + 18},${y + 39}Z" fill="#4a0f1b" stroke="${C.gold}" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="${x0}" y="${y}" width="${w}" height="66" rx="8" fill="${C.crimson}" stroke="url(#gold)" stroke-width="5"/>
+    <text x="256" y="${y + 53}" text-anchor="middle" font-family="Cinzel" font-weight="700" font-size="62" fill="url(#gold)" stroke="#2a0a12" stroke-width="3" paint-order="stroke">${text}</text>
+  </g>`;
+}
+
+// Escudo de la familia con corona (Linaje, x2 Legado).
+function crest() {
+  return `<g filter="url(#shadow)">
+      <path d="M180,128 L196,96 L218,118 L256,84 L294,118 L316,96 L332,128Z" fill="url(#gold)" stroke="#5e4519" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="196" cy="94" r="7" fill="${C.crimsonB}"/><circle cx="256" cy="82" r="8" fill="${C.crimsonB}"/><circle cx="316" cy="94" r="7" fill="${C.crimsonB}"/>
+      <path d="M160,142 H352 V250 C352,330 300,378 256,402 C212,378 160,330 160,250Z" fill="${C.crimson}" stroke="url(#gold)" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M256,142 V398 M160,236 H352" stroke="#5a1220" stroke-width="4" opacity=".6"/>
+      <path d="M176,296 L256,214 L336,296" fill="none" stroke="url(#gold)" stroke-width="22" stroke-linejoin="round"/>
+      ${star(210, 180, 16)}${star(302, 180, 16)}${star(256, 330, 18)}
+    </g>`;
+}
+
+// Pila de monedas de Loen con la moneda grande al frente.
+function coins(cy = 200) {
+  const coin = (x, y) => `<ellipse cx="${x}" cy="${y + 10}" rx="66" ry="21" fill="#5e4519"/><ellipse cx="${x}" cy="${y}" rx="66" ry="21" fill="url(#goldH)" stroke="#6e5424" stroke-width="2"/>`;
+  return `<g filter="url(#shadow)">
+      ${coin(170, cy + 128)}${coin(170, cy + 108)}${coin(170, cy + 88)}
+      ${coin(342, cy + 132)}${coin(342, cy + 112)}
+      <circle cx="264" cy="${cy + 8}" r="96" fill="#6e5424"/>
+      <circle cx="256" cy="${cy}" r="96" fill="url(#gold)" stroke="#6e5424" stroke-width="3"/>
+      <circle cx="256" cy="${cy}" r="78" fill="none" stroke="#7a5b25" stroke-width="3"/>
+      <circle cx="256" cy="${cy}" r="70" fill="none" stroke="#fff3c9" stroke-width="1.5" opacity=".6" stroke-dasharray="3 6"/>
+      <text x="256" y="${cy + 38}" text-anchor="middle" font-family="Cinzel" font-weight="700" font-size="104" fill="#6e5424">£</text>
+    </g>`;
+}
+
+// Los que tienen `id` son los pases y productos reales de BitBeyonder en Roblox y se exportan;
+// los demás son diseños de repuesto para pases o productos futuros.
 const ICONS = {
   // ---------- pases (medallón)
-  pass_sefirah: { kind: 'pass', name: 'Castillo de Sefirah', draw: () => passFrame(`
+  'sefirah-castle': { kind: 'pass', id: 2001356476, name: 'Sefirah Castle', draw: () => passFrame(`
     <circle cx="256" cy="210" r="120" fill="url(#glowV)"/>
     ${star(150, 130, 10)}${star(372, 150, 8)}${star(330, 96, 6, '#fff')}${star(178, 196, 5, '#fff', .8)}
     <g filter="url(#shadow)">${castle(256, 300, .95)}</g>
     <clipPath id="cpPass"><circle cx="256" cy="256" r="228"/></clipPath>
     <g clip-path="url(#cpPass)">${fogBand(372, 120, 512, .95)}</g>`) },
 
-  pass_tarot: { kind: 'pass', name: 'Invitación al Tarot Club', draw: () => passFrame(`
+  tarot: { kind: 'pass', name: 'Invitación al Tarot Club', draw: () => passFrame(`
     <circle cx="256" cy="256" r="150" fill="url(#glowC)" opacity=".6"/>
     <g transform="rotate(-14 256 300)" opacity=".85">
       <rect x="168" y="120" width="160" height="250" rx="12" fill="#1c1622" stroke="${C.gold}" stroke-width="4"/>
@@ -148,7 +192,7 @@ const ICONS = {
     </g>
     ${star(150, 170, 12)}${star(372, 360, 10)}${star(366, 150, 6, '#fff')}`) },
 
-  pass_via: { kind: 'pass', name: 'Elegir tu vía', draw: () => {
+  via: { kind: 'pass', name: 'Elegir tu vía', draw: () => {
     const rays = Array.from({length: 22}, (_, i) => {
       const long = i % 2 === 0;
       return `<path d="M256,${long ? 92 : 112} L263,190 L249,190Z" fill="${long ? 'url(#gold)' : C.gold}" opacity="${long ? 1 : .7}" transform="rotate(${i * 360 / 22} 256 256)"/>`;
@@ -166,19 +210,48 @@ const ICONS = {
       <circle cx="256" cy="256" r="18" fill="url(#violetGem)" stroke="url(#gold)" stroke-width="4"/>`);
   } },
 
-  pass_linaje: { kind: 'pass', name: 'Linaje', draw: () => passFrame(`
+  linaje: { kind: 'pass', name: 'Linaje', draw: () => passFrame(`
     <circle cx="256" cy="250" r="150" fill="url(#glowG)" opacity=".3"/>
-    <g filter="url(#shadow)">
-      <path d="M180,128 L196,96 L218,118 L256,84 L294,118 L316,96 L332,128Z" fill="url(#gold)" stroke="#5e4519" stroke-width="3" stroke-linejoin="round"/>
-      <circle cx="196" cy="94" r="7" fill="${C.crimsonB}"/><circle cx="256" cy="82" r="8" fill="${C.crimsonB}"/><circle cx="316" cy="94" r="7" fill="${C.crimsonB}"/>
-      <path d="M160,142 H352 V250 C352,330 300,378 256,402 C212,378 160,330 160,250Z" fill="${C.crimson}" stroke="url(#gold)" stroke-width="10" stroke-linejoin="round"/>
-      <path d="M256,142 V398 M160,236 H352" stroke="#5a1220" stroke-width="4" opacity=".6"/>
-      <path d="M176,296 L256,214 L336,296" fill="none" stroke="url(#gold)" stroke-width="22" stroke-linejoin="round"/>
-      ${star(210, 180, 16)}${star(302, 180, 16)}${star(256, 330, 18)}
-    </g>
+    ${crest()}
     <path d="M150,380 C190,404 222,412 256,412 C290,412 322,404 362,380 L372,412 C330,438 292,444 256,444 C220,444 182,438 140,412Z" fill="url(#goldH)" stroke="#5e4519" stroke-width="3"/>`) },
 
-  pass_diarios: { kind: 'pass', name: 'Partidas extra', draw: () => {
+  'x2-legado': { kind: 'pass', id: 1998638440, name: 'x2 Legado', draw: () => passFrame(`
+    <circle cx="256" cy="236" r="150" fill="url(#glowG)" opacity=".35"/>
+    <g transform="translate(0 -18)">${crest()}</g>
+    ${banner('×2')}`) },
+
+  'x2-dinero': { kind: 'pass', id: 1998890455, name: 'x2 Dinero', draw: () => passFrame(`
+    <circle cx="256" cy="230" r="150" fill="url(#glowG)" opacity=".45"/>
+    ${coins(196)}
+    ${star(146, 150, 13, '#fff7d6')}${star(372, 132, 10, '#fff7d6')}${star(392, 236, 7, '#fff7d6')}
+    ${banner('×2')}`) },
+
+  'vidas-extra': { kind: 'pass', id: 1998422449, name: 'Vidas Extra', draw: () => passFrame(`
+    <circle cx="256" cy="236" r="150" fill="url(#glowC)" opacity=".75"/>
+    <g filter="url(#shadow)">
+      <path d="M256,350 C196,310 136,262 136,204 C136,162 168,132 206,132 C230,132 248,144 256,162 C264,144 282,132 306,132 C344,132 376,162 376,204 C376,262 316,310 256,350Z" fill="url(#moon)" stroke="url(#gold)" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M256,322 C206,288 160,250 160,206 C160,176 182,156 206,156 C226,156 244,168 256,190 C268,168 286,156 306,156 C330,156 352,176 352,206 C352,250 306,288 256,322Z" fill="none" stroke="#ffd9a0" stroke-width="2" opacity=".55"/>
+      <path d="M172,196 C174,174 188,160 208,158" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".5"/>
+    </g>
+    ${star(130, 140, 12)}${star(388, 128, 10)}${star(392, 300, 7, '#fff')}
+    ${banner('+3')}`) },
+
+  'choose-birth': { kind: 'pass', id: 1999868427, name: 'Choose Birth', draw: () => {
+    // Un dado (re-tiradas) sobre el símbolo de infinito (ilimitadas).
+    const pip = (x, y) => `<circle cx="${x}" cy="${y}" r=".1" fill="#4a0f1b"/>`;
+    const face = (m, fill, inner) => `<g transform="matrix(${m})"><path d="M0,0 L1,0 L1,1 L0,1Z" fill="${fill}" stroke="#4a3510" stroke-width=".04" stroke-linejoin="round"/>${inner}</g>`;
+    return passFrame(`
+      <circle cx="256" cy="226" r="150" fill="url(#glowV)" opacity=".8"/>
+      <g filter="url(#shadow)">
+        ${face('114,-62,114,62,142,158', '#f6e3a6', star(.5, .5, .3, C.crimson))}
+        ${face('114,62,0,130,142,158', '#c9a35a', pip(.28, .28) + pip(.72, .72))}
+        ${face('114,-62,0,130,256,220', '#8a6a2c', pip(.25, .25) + pip(.5, .5) + pip(.75, .75))}
+      </g>
+      <path d="M256,402 C236,376 192,376 192,402 C192,428 236,428 256,402 C276,376 320,376 320,402 C320,428 276,428 256,402Z" fill="none" stroke="url(#goldH)" stroke-width="13" stroke-linejoin="round" filter="url(#shadow)"/>
+      ${star(124, 230, 11)}${star(390, 214, 13)}${star(372, 108, 7, '#fff')}${star(142, 112, 6, '#fff')}`);
+  } },
+
+  diarios: { kind: 'pass', name: 'Partidas extra', draw: () => {
     const book = (x, y, rot, front) => `<g transform="translate(${x} ${y}) rotate(${rot})">
       <rect x="-80" y="-104" width="160" height="208" rx="10" fill="url(#leather)" stroke="url(#gold)" stroke-width="${front ? 6 : 4}"/>
       <rect x="-80" y="-104" width="22" height="208" rx="6" fill="#1d0a10" stroke="${C.gold}" stroke-width="2"/>
@@ -194,7 +267,7 @@ const ICONS = {
       <g filter="url(#shadow)">${book(272, 256, 5, true)}</g>`);
   } },
 
-  pass_vision: { kind: 'pass', name: 'Visión Espiritual', draw: () => {
+  'vision-del-beyonder': { kind: 'pass', id: 1998386450, name: 'Vision del Beyonder', draw: () => {
     const rays = Array.from({length: 16}, (_, i) => `<line x1="256" y1="98" x2="256" y2="${i % 2 ? 132 : 118}" stroke="url(#gold)" stroke-width="${i % 2 ? 4 : 6}" stroke-linecap="round" transform="rotate(${i * 22.5} 256 256)"/>`).join('');
     return passFrame(`
       <circle cx="256" cy="256" r="140" fill="url(#glowV)"/>
@@ -209,7 +282,7 @@ const ICONS = {
   } },
 
   // ---------- productos (placa)
-  prod_libras: { kind: 'prod', name: 'Bolsa de libras', draw: () => {
+  libras: { kind: 'prod', name: 'Bolsa de libras', draw: () => {
     const coin = (x, y) => `<ellipse cx="${x}" cy="${y + 10}" rx="70" ry="22" fill="#5e4519"/><ellipse cx="${x}" cy="${y}" rx="70" ry="22" fill="url(#goldH)" stroke="#6e5424" stroke-width="2"/>`;
     return prodFrame(`
       <circle cx="256" cy="270" r="160" fill="url(#glowG)" opacity=".45"/>
@@ -225,7 +298,7 @@ const ICONS = {
       ${star(150, 170, 14, '#fff7d6')}${star(380, 150, 10, '#fff7d6')}`);
   } },
 
-  prod_pocion: { kind: 'prod', name: 'Poción', draw: () => prodFrame(`
+  pocion: { kind: 'prod', name: 'Poción', draw: () => prodFrame(`
     <circle cx="256" cy="300" r="150" fill="url(#glowC)"/>
     <g filter="url(#shadow)">
       <path d="M224,112 h64 v70 C356,206 384,256 384,300 A128,128 0 0 1 128,300 C128,256 156,206 224,182Z" fill="#1d1422" fill-opacity=".55" stroke="url(#gold)" stroke-width="8"/>
@@ -238,7 +311,7 @@ const ICONS = {
     </g>
     ${star(140, 160, 12)}${star(378, 182, 9)}`) },
 
-  prod_caracteristica: { kind: 'prod', name: 'Característica Beyonder', draw: () => prodFrame(`
+  caracteristica: { kind: 'prod', name: 'Característica Beyonder', draw: () => prodFrame(`
     <circle cx="256" cy="256" r="170" fill="url(#glowV)"/>
     <circle cx="256" cy="256" r="110" fill="url(#glowC)" opacity=".6"/>
     <g filter="url(#shadow)">
@@ -249,7 +322,7 @@ const ICONS = {
     </g>
     ${star(150, 120, 16, '#fff')}${star(372, 320, 12, '#e8dcff')}${star(360, 110, 8, C.goldB)}${star(150, 360, 8, C.goldB)}`) },
 
-  prod_formula: { kind: 'prod', name: 'Fórmula', draw: () => prodFrame(`
+  formula: { kind: 'prod', name: 'Fórmula', draw: () => prodFrame(`
     <circle cx="256" cy="256" r="160" fill="url(#glowG)" opacity=".3"/>
     <g filter="url(#shadow)" transform="rotate(-8 256 256)">
       <rect x="150" y="120" width="212" height="272" fill="url(#parch)"/>
@@ -267,7 +340,7 @@ const ICONS = {
       <circle cx="256" cy="258" r="9" fill="${C.crimson}"/>
     </g>`) },
 
-  prod_cordura: { kind: 'prod', name: 'Vela de cordura', draw: () => prodFrame(`
+  cordura: { kind: 'prod', name: 'Vela de cordura', draw: () => prodFrame(`
     <circle cx="256" cy="176" r="150" fill="url(#glowS)"/>
     <circle cx="256" cy="150" r="70" fill="url(#glowG)"/>
     <g filter="url(#shadow)">
@@ -283,7 +356,7 @@ const ICONS = {
     </g>
     <g fill="${C.sanity}" opacity=".9">${star(146, 200, 12, '#b8e0a8')}${star(372, 240, 10, '#b8e0a8')}${star(360, 130, 7, '#fff')}</g>`) },
 
-  prod_reloj: { kind: 'prod', name: 'Segunda oportunidad', draw: () => {
+  reloj: { kind: 'prod', name: 'Segunda oportunidad', draw: () => {
     const ticks = Array.from({length: 12}, (_, i) => `<line x1="256" y1="${i % 3 ? 192 : 186}" x2="256" y2="${i % 3 ? 204 : 210}" stroke="#2a1d10" stroke-width="${i % 3 ? 4 : 7}" stroke-linecap="round" transform="rotate(${i * 30} 256 290)"/>`).join('');
     return prodFrame(`
       <circle cx="256" cy="290" r="160" fill="url(#glowV)" opacity=".7"/>
@@ -304,18 +377,23 @@ const ICONS = {
   } }
 };
 
-// ---------------------------------------------------------------- icono del juego (512, sin marco)
-function gameIcon() {
+// ---------------------------------------------------------------- icono del juego (512)
+// Sin texto para la página web; con la marca BitBeyonder para Roblox.
+function gameIcon({ brand = false } = {}) {
+  const up = brand ? 34 : 0;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs>${DEFS}
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0a14"/><stop offset=".55" stop-color="#2a1830"/><stop offset="1" stop-color="#3a2a40"/></linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#sky)"/>
   ${star(70, 70, 8, '#fff', .9)}${star(450, 60, 6, '#fff', .8)}${star(420, 200, 5, '#fff', .7)}${star(96, 220, 4, '#fff', .7)}
-  <circle cx="256" cy="196" r="190" fill="url(#glowC)" opacity=".7"/>
-  <circle cx="256" cy="196" r="140" fill="url(#moon)"/>
-  <circle cx="214" cy="160" r="22" fill="#5a1220" opacity=".25"/><circle cx="304" cy="226" r="30" fill="#5a1220" opacity=".22"/><circle cx="296" cy="140" r="12" fill="#5a1220" opacity=".25"/>
-  ${castle(256, 330, 1.12, '#0c0910', '#e8b866')}
-  ${fogBand(410, 170, 512, 1)}
+  <g transform="translate(0 ${-up})">
+    <circle cx="256" cy="196" r="190" fill="url(#glowC)" opacity=".7"/>
+    <circle cx="256" cy="196" r="140" fill="url(#moon)"/>
+    <circle cx="214" cy="160" r="22" fill="#5a1220" opacity=".25"/><circle cx="304" cy="226" r="30" fill="#5a1220" opacity=".22"/><circle cx="296" cy="140" r="12" fill="#5a1220" opacity=".25"/>
+    ${castle(256, 330, 1.12, '#0c0910', '#e8b866')}
+  </g>
+  ${fogBand(410 - up, 170, 512, 1)}
+  ${brand ? wordmark(256, 466, 50) : ''}
   <rect x="6" y="6" width="500" height="500" fill="none" stroke="url(#goldH)" stroke-width="6" opacity=".9"/>
 </svg>`;
 }
@@ -332,7 +410,7 @@ function favicon() {
 </svg>`;
 }
 
-// ---------------------------------------------------------------- miniatura (1920×1080)
+// ---------------------------------------------------------------- miniatura de Roblox (1920×1080)
 function thumbnail() {
   const W = 1920, H = 1080;
   // Backlund: tejados, chimeneas y una torre del reloj.
@@ -342,9 +420,10 @@ function thumbnail() {
   const windows = [[150, 900], [176, 930], [340, 860], [520, 900], [700, 820], [726, 860], [760, 790], [930, 900], [1110, 870], [1140, 900], [1300, 850], [1520, 860], [1546, 900], [1720, 920]]
     .map(([x, y]) => `<rect x="${x}" y="${y + 130}" width="10" height="16" fill="#e8b866" opacity=".85"/>`).join('');
   const lamps = [620, 1000, 1380, 1760].map(x => `<g><circle cx="${x}" cy="960" r="60" fill="url(#glowG)" opacity=".55"/><rect x="${x - 3}" y="966" width="6" height="${H - 966}" fill="#0b0810"/><path d="M${x - 12},946 h24 l-4,22 h-16z" fill="#ffe7a0"/><path d="M${x - 16},946 h32 l-16,-14z" fill="#0b0810"/></g>`).join('');
-  const chips = ['22 vías', 'Tarot Club', 'Sequence 0', 'Linaje'];
+  // Chips medidos a ojo para Cinzel 600 de 26 px (versalitas): ~16,5 px por letra.
+  const chips = ['Beyonder Pathways', 'Potions & Rituals', 'Sefirah Castle'];
   let cx = 150;
-  const chipSvg = chips.map(t => { const w = t.length * 23 + 60; const s = `<g><rect x="${cx}" y="660" width="${w}" height="58" rx="29" fill="#141217" fill-opacity=".85" stroke="${C.gold}" stroke-width="2"/><text x="${cx + w / 2}" y="699" text-anchor="middle" font-family="Cinzel" font-weight="600" font-size="28" fill="${C.goldB}">${t}</text></g>`; cx += w + 20; return s; }).join('');
+  const chipSvg = chips.map(t => { const w = Math.round(t.length * 16.5) + 56; const s = `<g><rect x="${cx}" y="652" width="${w}" height="56" rx="28" fill="#141217" fill-opacity=".85" stroke="${C.gold}" stroke-width="2"/><text x="${cx + w / 2}" y="689" text-anchor="middle" font-family="Cinzel" font-weight="600" font-size="26" fill="${C.goldB}">${t.replace('&', '&amp;')}</text></g>`; cx += w + 18; return s; }).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>${DEFS}
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#07060b"/><stop offset=".6" stop-color="#211528"/><stop offset="1" stop-color="#3a2636"/></linearGradient>
     <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#07060b" stop-opacity=".85"/><stop offset=".55" stop-color="#07060b" stop-opacity="0"/></linearGradient>
@@ -358,12 +437,11 @@ function thumbnail() {
   <g transform="translate(0 0)">${fogBand(700, 260, W, .95)}</g>
   ${city}${windows}${lamps}
   <rect width="${W}" height="${H}" fill="url(#fade)"/>
-  <text x="150" y="330" font-family="Cinzel Decorative" font-weight="700" font-size="104" fill="url(#gold)" filter="url(#shadow)">Lord of the</text>
-  <text x="150" y="450" font-family="Cinzel Decorative" font-weight="700" font-size="124" fill="url(#gold)" filter="url(#shadow)">Mysteries</text>
-  <path d="M154,500 H360 M560,500 H766" stroke="${C.gold}" stroke-width="2"/>
-  ${star(460, 500, 14)}
-  <text x="460" y="574" text-anchor="middle" font-family="Cinzel" font-weight="600" font-size="52" letter-spacing="10" fill="${C.ink}">LIFE SIMULATOR</text>
-  <text x="152" y="636" font-family="Crimson Text" font-style="italic" font-size="38" fill="${C.ink}" opacity=".9">Nacé. Crecé. Descubrí lo oculto. Elegí qué precio pagar.</text>
+  ${wordmark(146, 420, 116, 'start')}
+  <path d="M154,478 H500 M640,478 H986" stroke="${C.gold}" stroke-width="2"/>
+  ${star(570, 478, 16)}
+  <text x="570" y="552" text-anchor="middle" font-family="Cinzel" font-weight="600" font-size="52" letter-spacing="12" fill="${C.ink}">LIFE SIMULATOR</text>
+  <text x="152" y="618" font-family="Crimson Text" font-style="italic" font-size="38" fill="${C.ink}" opacity=".92">Be born. Grow up. Uncover the hidden world. Choose the price.</text>
   ${chipSvg}
   <rect x="10" y="10" width="${W - 20}" height="${H - 20}" fill="none" stroke="url(#goldH)" stroke-width="6" opacity=".8"/>
 </svg>`;
@@ -398,22 +476,25 @@ async function render(svg, w, h, file, transparent) {
 }
 
 async function main() {
-  const dirs = { root: OUT, pases: path.join(OUT, 'store', 'pases'), productos: path.join(OUT, 'store', 'productos') };
-  Object.values(dirs).forEach(d => fs.mkdirSync(d, { recursive: true }));
-  const jobs = [
-    [gameIcon(), 512, 512, path.join(OUT, 'icon'), false],
-    [thumbnail(), 1920, 1080, path.join(OUT, 'thumbnail'), false]
-  ];
+  const rbx = path.join(OUT, 'roblox');
+  const dirs = { pass: path.join(rbx, 'pases'), prod: path.join(rbx, 'productos') };
+  [OUT, rbx, ...Object.values(dirs)].forEach(d => fs.mkdirSync(d, { recursive: true }));
+  // Página web: favicon, icono para el celular e icono sin texto.
   fs.writeFileSync(path.join(OUT, 'favicon.svg'), favicon());
-  for (const id of Object.keys(ICONS)) {
-    const dir = ICONS[id].kind === 'pass' ? dirs.pases : dirs.productos;
-    jobs.push([iconSvg(id), 512, 512, path.join(dir, id.replace(/^(pass|prod)_/, '')), true]);
+  const jobs = [
+    [favicon(), 180, 180, path.join(OUT, 'apple-touch-icon'), false],
+    [gameIcon(), 512, 512, path.join(OUT, 'icon'), false],
+    // Roblox: icono y miniatura de BitBeyonder, y un icono por cada pase o producto real.
+    [gameIcon({ brand: true }), 512, 512, path.join(rbx, 'icon'), false],
+    [thumbnail(), 1920, 1080, path.join(rbx, 'thumbnail'), false]
+  ];
+  for (const [key, icon] of Object.entries(ICONS)) {
+    if (icon.id) jobs.push([iconSvg(key), 512, 512, path.join(dirs[icon.kind], key), true]);
   }
   for (const [svg, w, h, base, transparent] of jobs) {
     await render(svg, w, h, base + '.png', transparent);
     console.log('✓', path.relative(path.join(__dirname, '..'), base + '.png'));
   }
-  await render(favicon(), 180, 180, path.join(OUT, 'apple-touch-icon.png'), false);
   if (render.browser) await render.browser.close();
 }
 

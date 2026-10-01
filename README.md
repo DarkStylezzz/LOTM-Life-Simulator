@@ -59,7 +59,7 @@ data/events/    eventos por tema (infancia, vida, místicos, sociales, familia, 
 systems/        reglas del juego (estado, efectos, tiempo, eventos, NPCs, vías, combate, guardado...)
 ui/             interfaz (una pieza por sección)
 tests/          pruebas sin navegador y en navegador
-assets/         icono, miniatura, favicon e iconos de pases y productos (ver assets/store/README.md)
+assets/         favicon e icono de la página; assets/roblox/: icono, miniatura e iconos de pases de BitBeyonder (ver su README)
 tools/          store-assets.js: genera todo el arte de assets/
 ```
 
