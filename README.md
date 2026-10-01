@@ -59,6 +59,8 @@ data/events/    eventos por tema (infancia, vida, místicos, sociales, familia, 
 systems/        reglas del juego (estado, efectos, tiempo, eventos, NPCs, vías, combate, guardado...)
 ui/             interfaz (una pieza por sección)
 tests/          pruebas sin navegador y en navegador
+assets/         icono, miniatura, favicon e iconos de pases y productos (ver assets/store/README.md)
+tools/          store-assets.js: genera todo el arte de assets/
 ```
 
 `STATE` sólo guarda datos (nunca funciones): las escenas pendientes se guardan como `{defId, ctx}` y se resuelven buscando la definición, así una decisión sobrevive a guardar y recargar.
