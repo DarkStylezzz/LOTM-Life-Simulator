@@ -165,8 +165,9 @@ function coins(cy = 200) {
     </g>`;
 }
 
-// Los que tienen `id` son los pases y productos reales de BitBeyonder en Roblox y se exportan;
-// los demás son diseños de repuesto para pases o productos futuros.
+// Los que tienen `id` son los pases reales de BitBeyonder en Roblox. Los productos (`spare`) se
+// exportan con el nombre de lo que muestran, para asignarlos a los productos de desarrollador
+// según lo que da cada uno. El resto son diseños de repuesto para pases futuros.
 const ICONS = {
   // ---------- pases (medallón)
   'sefirah-castle': { kind: 'pass', id: 2001356476, name: 'Sefirah Castle', draw: () => passFrame(`
@@ -282,7 +283,7 @@ const ICONS = {
   } },
 
   // ---------- productos (placa)
-  libras: { kind: 'prod', name: 'Bolsa de libras', draw: () => {
+  monedas: { kind: 'prod', spare: true, name: 'Bolsa de libras', draw: () => {
     const coin = (x, y) => `<ellipse cx="${x}" cy="${y + 10}" rx="70" ry="22" fill="#5e4519"/><ellipse cx="${x}" cy="${y}" rx="70" ry="22" fill="url(#goldH)" stroke="#6e5424" stroke-width="2"/>`;
     return prodFrame(`
       <circle cx="256" cy="270" r="160" fill="url(#glowG)" opacity=".45"/>
@@ -298,7 +299,7 @@ const ICONS = {
       ${star(150, 170, 14, '#fff7d6')}${star(380, 150, 10, '#fff7d6')}`);
   } },
 
-  pocion: { kind: 'prod', name: 'Poción', draw: () => prodFrame(`
+  pocion: { kind: 'prod', spare: true, name: 'Poción', draw: () => prodFrame(`
     <circle cx="256" cy="300" r="150" fill="url(#glowC)"/>
     <g filter="url(#shadow)">
       <path d="M224,112 h64 v70 C356,206 384,256 384,300 A128,128 0 0 1 128,300 C128,256 156,206 224,182Z" fill="#1d1422" fill-opacity=".55" stroke="url(#gold)" stroke-width="8"/>
@@ -311,7 +312,7 @@ const ICONS = {
     </g>
     ${star(140, 160, 12)}${star(378, 182, 9)}`) },
 
-  caracteristica: { kind: 'prod', name: 'Característica Beyonder', draw: () => prodFrame(`
+  caracteristica: { kind: 'prod', spare: true, name: 'Característica Beyonder', draw: () => prodFrame(`
     <circle cx="256" cy="256" r="170" fill="url(#glowV)"/>
     <circle cx="256" cy="256" r="110" fill="url(#glowC)" opacity=".6"/>
     <g filter="url(#shadow)">
@@ -322,7 +323,7 @@ const ICONS = {
     </g>
     ${star(150, 120, 16, '#fff')}${star(372, 320, 12, '#e8dcff')}${star(360, 110, 8, C.goldB)}${star(150, 360, 8, C.goldB)}`) },
 
-  formula: { kind: 'prod', name: 'Fórmula', draw: () => prodFrame(`
+  formula: { kind: 'prod', spare: true, name: 'Fórmula', draw: () => prodFrame(`
     <circle cx="256" cy="256" r="160" fill="url(#glowG)" opacity=".3"/>
     <g filter="url(#shadow)" transform="rotate(-8 256 256)">
       <rect x="150" y="120" width="212" height="272" fill="url(#parch)"/>
@@ -340,7 +341,7 @@ const ICONS = {
       <circle cx="256" cy="258" r="9" fill="${C.crimson}"/>
     </g>`) },
 
-  cordura: { kind: 'prod', name: 'Vela de cordura', draw: () => prodFrame(`
+  'vela-cordura': { kind: 'prod', spare: true, name: 'Vela de cordura', draw: () => prodFrame(`
     <circle cx="256" cy="176" r="150" fill="url(#glowS)"/>
     <circle cx="256" cy="150" r="70" fill="url(#glowG)"/>
     <g filter="url(#shadow)">
@@ -356,7 +357,7 @@ const ICONS = {
     </g>
     <g fill="${C.sanity}" opacity=".9">${star(146, 200, 12, '#b8e0a8')}${star(372, 240, 10, '#b8e0a8')}${star(360, 130, 7, '#fff')}</g>`) },
 
-  reloj: { kind: 'prod', name: 'Segunda oportunidad', draw: () => {
+  reloj: { kind: 'prod', spare: true, name: 'Segunda oportunidad', draw: () => {
     const ticks = Array.from({length: 12}, (_, i) => `<line x1="256" y1="${i % 3 ? 192 : 186}" x2="256" y2="${i % 3 ? 204 : 210}" stroke="#2a1d10" stroke-width="${i % 3 ? 4 : 7}" stroke-linecap="round" transform="rotate(${i * 30} 256 290)"/>`).join('');
     return prodFrame(`
       <circle cx="256" cy="290" r="160" fill="url(#glowV)" opacity=".7"/>
@@ -489,7 +490,7 @@ async function main() {
     [thumbnail(), 1920, 1080, path.join(rbx, 'thumbnail'), false]
   ];
   for (const [key, icon] of Object.entries(ICONS)) {
-    if (icon.id) jobs.push([iconSvg(key), 512, 512, path.join(dirs[icon.kind], key), true]);
+    if (icon.id || icon.spare) jobs.push([iconSvg(key), 512, 512, path.join(dirs[icon.kind], key), true]);
   }
   for (const [svg, w, h, base, transparent] of jobs) {
     await render(svg, w, h, base + '.png', transparent);

@@ -24,7 +24,16 @@ El icono anterior de cada pase queda como imagen en la cuenta del grupo, con el 
 
 ## Productos
 
-Pendiente: la lista de productos de desarrollador no es pública, así que todavía no tienen icono asignado.
+La lista de productos de desarrollador no es pública, así que los iconos llevan el nombre de lo que muestran y se asignan según lo que da cada producto:
+
+| Archivo | Muestra | Para un producto que da |
+|---|---|---|
+| `productos/monedas.png` | Monedas de Loen | Dinero |
+| `productos/pocion.png` | Un frasco con la poción carmesí | Una poción |
+| `productos/caracteristica.png` | Una gema violeta que brilla | Una Característica Beyonder |
+| `productos/formula.png` | Un pergamino con un sello | Una fórmula o pistas |
+| `productos/vela-cordura.png` | Una vela que calma | Cordura |
+| `productos/reloj.png` | Un reloj de bolsillo que vuelve atrás | Una segunda oportunidad, revivir o tiempo |
 
 ## Descripción
 
