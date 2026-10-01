@@ -12,7 +12,7 @@ Todo se genera con `node tools/store-assets.js` (Playwright + Chromium). Para ca
 
 ## Descripción del juego
 
-**Corta** (160 caracteres, también es la `meta description` de `index.html`):
+**Corta** (155 caracteres, también es la `meta description` de `index.html`):
 
 > Viví una vida entera en el mundo de Lord of the Mysteries: crecé en Backlund o Tingen, descubrí lo oculto, bebé tu primera poción y elegí qué precio pagar.
 
