@@ -408,6 +408,35 @@ const ICONS = {
       <circle cx="256" cy="258" r="9" fill="${C.crimson}"/>
     </g>`) },
 
+  'server-blessing': { kind: 'prod', id: 3720059254, name: 'Server Blessing', draw: () => {
+    // Una llama bendita dentro de un halo, que baña de luz a la gente del servidor.
+    const rays = Array.from({length: 24}, (_, i) => `<line x1="256" y1="${i % 2 ? 120 : 104}" x2="256" y2="${i % 2 ? 70 : 52}" stroke="${i % 2 ? C.gold : C.goldB}" stroke-width="${i % 2 ? 3 : 5}" stroke-linecap="round" opacity="${i % 2 ? .45 : .75}" transform="rotate(${i * 15} 256 184)"/>`).join('');
+    const person = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})">
+        <path d="M-44,62 C-44,22 -26,6 0,6 C26,6 44,22 44,62Z" fill="#1d1428" stroke="url(#gold)" stroke-width="3"/>
+        <circle cx="0" cy="-16" r="21" fill="#1d1428" stroke="url(#gold)" stroke-width="3"/>
+        <path d="M-17,-28 A21,21 0 0 1 17,-28" fill="none" stroke="#fff3c9" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+      </g>`;
+    return prodFrame(`
+      <circle cx="256" cy="200" r="190" fill="url(#glowG)" opacity=".55"/>
+      <linearGradient id="beam" x1="0" y1="236" x2="0" y2="430" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#ffe7a0" stop-opacity=".34"/><stop offset=".75" stop-color="#ffe7a0" stop-opacity=".12"/><stop offset="1" stop-color="#ffe7a0" stop-opacity="0"/>
+      </linearGradient>
+      <path d="M222,236 L104,430 H408 L290,236Z" fill="url(#beam)" filter="url(#soft)"/>
+      ${rays}
+      <g filter="url(#shadow)">
+        <circle cx="256" cy="184" r="66" fill="#2a1a10" fill-opacity=".55" stroke="url(#gold)" stroke-width="9"/>
+        <circle cx="256" cy="184" r="52" fill="none" stroke="${C.gold}" stroke-width="2" opacity=".8"/>
+        <path d="M256,126 C232,160 228,184 240,206 C247,219 265,219 272,206 C284,184 280,160 256,126Z" fill="#ffd36e"/>
+        <path d="M256,156 C247,174 245,188 250,200 C253,207 259,207 262,200 C267,188 265,174 256,156Z" fill="#fff"/>
+      </g>
+      <g filter="url(#shadow)">
+        ${person(150, 346, .78)}${person(362, 346, .78)}
+        ${person(200, 356, .92)}${person(312, 356, .92)}
+        ${person(256, 360, 1.08)}
+      </g>
+      ${star(118, 128, 14, '#fff7d6')}${star(394, 140, 11, '#fff7d6')}${star(380, 250, 7, C.goldB)}${star(132, 252, 8, C.goldB)}`);
+  } },
+
   'vela-cordura': { kind: 'prod', name: 'Vela de cordura', draw: () => prodFrame(`
     <circle cx="256" cy="176" r="150" fill="url(#glowS)"/>
     <circle cx="256" cy="150" r="70" fill="url(#glowG)"/>
