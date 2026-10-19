@@ -34,6 +34,7 @@ El icono anterior de cada pase queda como imagen en la cuenta del grupo, con el 
 | `productos/cofre-de-legado.png` | Cofre de Legado | 3714719415 |
 | `productos/punado-de-legado.png` | Puñado de Legado | 3714719380 |
 | `productos/pack-de-inicio.png` | Pack de inicio | 3714719209 |
+| `productos/server-blessing.png` | Server Blessing | 3720059254 |
 
 ## Descripción
 
